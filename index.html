@@ -54,7 +54,7 @@
 
         <div id="progressContainer" class="hidden mt-6">
           <div class="flex justify-between text-xs text-slate-400 mb-2 font-mono">
-            <span id="progressText">Uploading...</span>
+            <span id="progressText">Uploading to Local Engine...</span>
             <span id="progressPercent">0%</span>
           </div>
           <div class="w-full bg-slate-950 rounded-full h-3 border border-slate-700 overflow-hidden shadow-inner">
@@ -206,21 +206,18 @@
     
     let selectedFiles = [];
 
-    // Listen for file drops or clicks
     fileInput.addEventListener('change', (event) => {
       const newFiles = Array.from(event.target.files);
       selectedFiles = selectedFiles.concat(newFiles);
       updateUI();
     });
 
-    // Update the visual list
     function updateUI() {
       if (selectedFiles.length > 0) {
         emptyState.classList.add('hidden');
         fileListContainer.classList.remove('hidden');
         runAuditBtn.classList.remove('hidden');
         
-        // Dynamic Grammar Fix: 1 File vs 2 Files
         const fileWord = selectedFiles.length === 1 ? 'File' : 'Files';
         runAuditBtn.textContent = `Run Audit on ${selectedFiles.length} ${fileWord}`;
         
@@ -250,66 +247,85 @@
       }
     }
 
-    // Remove specific files
     window.removeFile = function(event, index) {
       event.preventDefault();
       selectedFiles.splice(index, 1);
       updateUI();
     };
 
-    // --- Smart Progress Bar & Dashboard Reveal Logic ---
+    // --- REAL API CONNECTION LOGIC ---
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
     const progressPercent = document.getElementById('progressPercent');
     const progressText = document.getElementById('progressText');
 
-    runAuditBtn.addEventListener('click', () => {
+    runAuditBtn.addEventListener('click', async () => {
+      // 1. Setup UI for loading
       runAuditBtn.classList.add('hidden');
       progressContainer.classList.remove('hidden');
       
       let width = 0;
       progressBar.style.width = '0%';
       progressBar.classList.replace('bg-green-500', 'bg-orange-500');
+      progressBar.classList.replace('bg-red-500', 'bg-orange-500');
+      progressText.textContent = "Connecting to Engine & Uploading...";
       
-      // Determine if we are simulating a heavy video upload or a light XML upload
-      const hasVideo = selectedFiles.some(file => file.name.toLowerCase().endsWith('.mp4'));
-      
-      // Set the dynamic text and speed
-      progressText.textContent = hasVideo ? "Uploading heavy video payloads..." : "Parsing lightweight metadata...";
-      const tickSpeed = hasVideo ? 600 : 150; // Milliseconds per tick (slower for video)
-
+      // Fake progress up to 90% while we wait for the real server
       const uploadInterval = setInterval(() => {
-        width += Math.floor(Math.random() * 10) + 2; 
-        
-        if (width >= 100) {
-          width = 100;
-          clearInterval(uploadInterval);
-          
-          progressBar.style.width = '100%';
-          progressPercent.textContent = '100%';
-          progressText.textContent = "Audit Complete! Generating logs...";
-          progressBar.classList.replace('bg-orange-500', 'bg-green-500');
-          
-          // --- THE MAGIC HANDOFF ---
-          setTimeout(() => {
-            // 1. Reset the left column
-            progressContainer.classList.add('hidden');
-            runAuditBtn.classList.remove('hidden');
-            
-            // 2. Inject the uploaded file name into the right column visualizer
-            injectedFileName.textContent = selectedFiles[0].name;
-
-            // 3. Hide the overlay and reveal the dashboard!
-            dashboardOverlay.classList.add('opacity-0', 'pointer-events-none');
-            resultsDashboard.classList.remove('opacity-30', 'blur-sm', 'grayscale-[50%]', 'pointer-events-none');
-            
-          }, 1500); // Wait 1.5 seconds so they can read "Audit Complete" before the animation triggers
-
-        } else {
+        if (width < 90) {
+          width += Math.floor(Math.random() * 5) + 1; 
           progressBar.style.width = width + '%';
           progressPercent.textContent = width + '%';
         }
-      }, tickSpeed);
+      }, 300);
+
+      try {
+        // 2. Prepare the real file data
+        const formData = new FormData();
+        formData.append('file', selectedFiles[0]); // Send the first file in the array
+
+        // 3. Send it to your local Python server!
+        const response = await fetch('http://127.0.0.1:8000/api/audit', {
+          method: 'POST',
+          body: formData
+        });
+
+        // Parse the JSON coming back from FastAPI
+        const serverData = await response.json();
+        console.log("Success! Server returned:", serverData); // Check your browser console to see this!
+
+        // 4. Server finished! Snap progress to 100%
+        clearInterval(uploadInterval);
+        progressBar.style.width = '100%';
+        progressPercent.textContent = '100%';
+        progressText.textContent = `Audit Complete! Found ${serverData.anomalies_found} anomalies.`;
+        progressBar.classList.replace('bg-orange-500', 'bg-green-500');
+        
+        // 5. Inject the real data and reveal the dashboard
+        setTimeout(() => {
+          progressContainer.classList.add('hidden');
+          runAuditBtn.classList.remove('hidden');
+          
+          // Inject the real filename returned from the server
+          injectedFileName.textContent = serverData.filename;
+
+          // Reveal!
+          dashboardOverlay.classList.add('opacity-0', 'pointer-events-none');
+          resultsDashboard.classList.remove('opacity-30', 'blur-sm', 'grayscale-[50%]', 'pointer-events-none');
+        }, 2000);
+
+      } catch (error) {
+        // Handle Server Errors
+        clearInterval(uploadInterval);
+        progressText.textContent = "Error: Could not connect to Python Engine.";
+        progressBar.classList.replace('bg-orange-500', 'bg-red-500');
+        console.error("Backend connection failed:", error);
+        
+        setTimeout(() => {
+          progressContainer.classList.add('hidden');
+          runAuditBtn.classList.remove('hidden');
+        }, 3000);
+      }
     });
 
     // --- Service Worker Registration for PWA ---
