@@ -28,6 +28,9 @@ except Exception as e:
 def read_root():
     return {"message": "DeepCut Engine is online"}
 
+# ---------------------------------------------------------
+# ENGINE STAGE 1: VIRUSTOTAL
+# ---------------------------------------------------------
 def security_scan(file_content, filename):
     api_key = os.getenv("VIRUSTOTAL_API_KEY")
     if not api_key:
@@ -59,9 +62,12 @@ def security_scan(file_content, filename):
     except Exception as e:
         return True 
 
-def detect_with_ai(file_content, filename):
+# ---------------------------------------------------------
+# ENGINE STAGE 2A: XML TIMELINE AUDITOR
+# ---------------------------------------------------------
+def detect_with_ai_xml(file_content, filename):
     if not client:
-        return {"anomalies": [], "error": "AI Engine offline. Check Render Environment Variables for OPENAI_API_KEY."}
+        return {"anomalies": [], "error": "AI Engine offline. Check API Key."}
 
     text_content = file_content.decode('utf-8', errors='ignore')[:10000] 
 
@@ -80,32 +86,14 @@ def detect_with_ai(file_content, filename):
             ],
             response_format={ "type": "json_object" }
         )
-        
         return json.loads(response.choices[0].message.content)
-
     except Exception as e:
         print(f"OpenAI API Error: {e}")
-        return {"anomalies": [], "error": "OpenAI Error: Ensure you have billing/credits set up on your OpenAI account."}
+        return {"anomalies": [], "error": str(e)}
 
-@app.post("/api/audit")
-@app.post("/api/audit/")
-async def run_audit(file: UploadFile = File(...)):
-    file_content = await file.read()
-    
-    is_safe = security_scan(file_content, file.filename)
-    if not is_safe:
-        raise HTTPException(status_code=400, detail="Security scan failed.")
-        
-    ai_analysis = detect_with_ai(file_content, file.filename)
-    
-    return {
-        "status": "success",
-        "filename": file.filename,
-        "anomalies": ai_analysis.get('anomalies', []),
-        "error": ai_analysis.get('error', None)
-    }
-
-# This keeps the server awake and listening for traffic
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+# ---------------------------------------------------------
+# ENGINE STAGE 2B: AUDIO/VIDEO DIALOGUE AUDITOR
+# ---------------------------------------------------------
+def detect_with_ai_audio(file_content, filename):
+    if not client:
+        return {"anomalies": [], "error": "AI Engine offline.
