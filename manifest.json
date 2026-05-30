@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "DeepCut AI Compliance Auditor",
   "short_name": "DeepCut",
   "description": "AI-driven post-production compliance and continuity auditing tool for video editors.",
