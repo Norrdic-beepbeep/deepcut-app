@@ -1,3 +1,18 @@
+That is actually a classic "suffering from success" problem!
+
+The reason it isn't holding at 90% is that your local Python server is processing the file **faster** than your frontend animation can play.
+
+Right now, your frontend progress bar adds about 3% every 300 milliseconds. It takes almost 9 seconds for that bar to reach 90%. But your Python server only takes 1 to 4 seconds to finish processing and send the "Success!" signal back. When the frontend receives that success signal, it immediately kills the animation and snaps the bar straight to 100%.
+
+To fix this and make the prototype feel realistic, we need the frontend progress bar to **race** to 90% in less than a second, so it actually has time to sit there and "wait" for the Python server to finish its job.
+
+Here is the updated code where I have turbocharged the progress bar's initial loading speed.
+
+### The Complete `index.html` Code
+
+Select everything in your `index.html` file, delete it, and paste this updated version in:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,7 +69,7 @@
 
         <div id="progressContainer" class="hidden mt-6">
           <div class="flex justify-between text-xs text-slate-400 mb-2 font-mono">
-            <span id="progressText">Uploading to Local Engine...</span>
+            <span id="progressText">Connecting to Engine & Uploading...</span>
             <span id="progressPercent">0%</span>
           </div>
           <div class="w-full bg-slate-950 rounded-full h-3 border border-slate-700 overflow-hidden shadow-inner">
@@ -270,21 +285,22 @@
       progressBar.classList.replace('bg-red-500', 'bg-orange-500');
       progressText.textContent = "Connecting to Engine & Uploading...";
       
-      // Fake progress up to 90% while we wait for the real server
+      // 2. The Fix: Race to 90% super fast (ticks every 100ms, jumps 10-25% at a time)
       const uploadInterval = setInterval(() => {
         if (width < 90) {
-          width += Math.floor(Math.random() * 5) + 1; 
+          width += Math.floor(Math.random() * 15) + 10; 
+          if (width > 90) width = 90; // Don't let it pass 90%
           progressBar.style.width = width + '%';
           progressPercent.textContent = width + '%';
         }
-      }, 300);
+      }, 100);
 
       try {
-        // 2. Prepare the real file data
+        // 3. Prepare the real file data
         const formData = new FormData();
-        formData.append('file', selectedFiles[0]); // Send the first file in the array
+        formData.append('file', selectedFiles[0]);
 
-        // 3. Send it to your local Python server!
+        // 4. Send it to your local Python server!
         const response = await fetch('http://127.0.0.1:8000/api/audit', {
           method: 'POST',
           body: formData
@@ -292,30 +308,27 @@
 
         // Parse the JSON coming back from FastAPI
         const serverData = await response.json();
-        console.log("Success! Server returned:", serverData); // Check your browser console to see this!
+        console.log("Success! Server returned:", serverData); 
 
-        // 4. Server finished! Snap progress to 100%
+        // 5. Server finished! Snap progress to 100%
         clearInterval(uploadInterval);
         progressBar.style.width = '100%';
         progressPercent.textContent = '100%';
         progressText.textContent = `Audit Complete! Found ${serverData.anomalies_found} anomalies.`;
         progressBar.classList.replace('bg-orange-500', 'bg-green-500');
         
-        // 5. Inject the real data and reveal the dashboard
+        // 6. Inject the real data and reveal the dashboard
         setTimeout(() => {
           progressContainer.classList.add('hidden');
           runAuditBtn.classList.remove('hidden');
           
-          // Inject the real filename returned from the server
           injectedFileName.textContent = serverData.filename;
 
-          // Reveal!
           dashboardOverlay.classList.add('opacity-0', 'pointer-events-none');
           resultsDashboard.classList.remove('opacity-30', 'blur-sm', 'grayscale-[50%]', 'pointer-events-none');
         }, 2000);
 
       } catch (error) {
-        // Handle Server Errors
         clearInterval(uploadInterval);
         progressText.textContent = "Error: Could not connect to Python Engine.";
         progressBar.classList.replace('bg-orange-500', 'bg-red-500');
@@ -343,3 +356,5 @@
   </script>
 </body>
 </html>
+
+```
