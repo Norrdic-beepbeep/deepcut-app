@@ -54,7 +54,7 @@
 
         <div id="progressContainer" class="hidden mt-6">
           <div class="flex justify-between text-xs text-slate-400 mb-2 font-mono">
-            <span id="progressText">Uploading & Analyzing batch...</span>
+            <span id="progressText">Uploading...</span>
             <span id="progressPercent">0%</span>
           </div>
           <div class="w-full bg-slate-950 rounded-full h-3 border border-slate-700 overflow-hidden shadow-inner">
@@ -232,7 +232,7 @@
       updateUI();
     };
 
-    // --- Progress Bar Simulation Logic ---
+    // --- Smart Progress Bar Simulation Logic ---
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
     const progressPercent = document.getElementById('progressPercent');
@@ -245,8 +245,14 @@
       let width = 0;
       progressBar.style.width = '0%';
       progressBar.classList.replace('bg-green-500', 'bg-orange-500');
-      progressText.textContent = "Uploading & Analyzing batch...";
       
+      // Determine if we are simulating a heavy video upload or a light XML upload
+      const hasVideo = selectedFiles.some(file => file.name.toLowerCase().endsWith('.mp4'));
+      
+      // Set the dynamic text and speed
+      progressText.textContent = hasVideo ? "Uploading heavy video payloads..." : "Parsing lightweight metadata...";
+      const tickSpeed = hasVideo ? 600 : 150; // Milliseconds per tick (slower for video)
+
       const uploadInterval = setInterval(() => {
         width += Math.floor(Math.random() * 10) + 2; 
         
@@ -267,7 +273,7 @@
           progressBar.style.width = width + '%';
           progressPercent.textContent = width + '%';
         }
-      }, 400);
+      }, tickSpeed);
     });
 
     // --- Service Worker Registration for PWA ---
