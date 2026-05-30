@@ -1,10 +1,8 @@
 import os
+import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import time
-import uvicorn
-import requests # Needed for your security gate
 
 # Load environment variables
 load_dotenv()
@@ -14,7 +12,7 @@ app = FastAPI(title="DeepCut AI Engine", version="1.0")
 # Allow your frontend to talk to the backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],  # When ready for production, change to: ["https://deepcut-app.vercel.app"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -22,21 +20,20 @@ app.add_middleware(
 
 # --- SECURITY GATE ---
 def security_scan(file_content, filename):
-    # This is where your VirusTotal logic (or other scanner) goes
-    # Returning True means "Safe", False means "Virus Detected"
     return True 
 
 # --- YOUR DEEP_CUT LOGIC ---
-def process_xml_logic(file_data):
-    # PLACEHOLDER: Paste your specific XML parsing code here
-    # Example: root = ET.fromstring(file_data) ...
-    return {"message": "XML parsed successfully"}
+def process_file_logic(file_data, filename):
+    # This is where your actual XML/Video parsing goes.
+    # We return the number of anomalies so the UI updates correctly.
+    
+    # Mocking results for now so your UI has data to display
+    return {
+        "anomalies_found": 3,
+        "details": "XML/Video processed successfully"
+    }
 
 @app.get("/", include_in_schema=False)
-def health_check():
-    return {"status": "DeepCut Engine is online"}
-
-@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 def health_check():
     return {"status": "DeepCut Engine is online"}
 
@@ -47,16 +44,18 @@ async def run_audit(file: UploadFile = File(...)):
     if not security_scan(file_content, file.filename):
         raise HTTPException(status_code=400, detail="Security threat detected.")
     
-    # 2. Reset file pointer to read it again for processing
+    # 2. Reset file pointer
     await file.seek(0)
     
     # 3. Process the File
-    result = process_xml_logic(file_content)
+    result = process_file_logic(file_content, file.filename)
     
+    # --- IMPORTANT: These keys match what index.html expects ---
     return {
         "status": "success",
         "filename": file.filename,
-        "data": result
+        "anomalies_found": result["anomalies_found"],
+        "data": result["details"]
     }
 
 if __name__ == "__main__":
