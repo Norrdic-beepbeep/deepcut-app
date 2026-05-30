@@ -1,6 +1,7 @@
 {
   "name": "DeepCut AI Compliance Auditor",
   "short_name": "DeepCut",
+  "description": "AI-driven post-production compliance and continuity auditing tool for video editors.",
   "start_url": "https://deepcut-app.vercel.app/",
   "display": "standalone",
   "background_color": "#020617",
@@ -12,6 +13,6 @@
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any"
-    }
+   }
   ]
 }
