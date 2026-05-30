@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepCut // AI Post-Production Compliance Auditor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="h-8 w-8 bg-gradient-to-tr from-indigo-500 to-violet-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">✂️</div>
+            <div>
+                <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">DeepCut</span>
+                <span class="text-xs font-semibold mono text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded ml-2 bg-indigo-500/10">v1.0-MVP</span>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4 text-sm text-slate-400">
+            <span class="flex items-center"><span class="h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>AI Engine Online</span>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Column: File Ingestion & Architecture Details -->
+        <div class="space-y-6 lg:col-span-1">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+                <h2 class="text-lg font-bold mb-3 flex items-center gap-2">
+                    <span>📥</span> Timeline Ingestion
+                </h2>
+                <p class="text-slate-400 text-sm mb-4 leading-relaxed">
+                    Upload your sequence metadata (<span class="mono text-indigo-300">.xml</span> or <span class="mono text-indigo-300">.edl</span>) exported from Premiere, DaVinci, or Final Cut. DeepCut audits the timeline without needing your raw source footage files.
+                </p>
+
+                <!-- Drag & Drop Zone Simulation -->
+                <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500/50 bg-slate-950/50 rounded-lg p-6 text-center cursor-pointer transition duration-200">
+                    <div class="text-3xl mb-2">📄</div>
+                    <p class="text-sm font-semibold text-slate-300">sample_timeline_final_v4.xml</p>
+                    <p class="text-xs text-slate-500 mt-1">FCPXML 1.9 Format (Standard Export)</p>
+                    <button onclick="runAudit()" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm py-2 px-4 rounded-lg shadow-lg shadow-indigo-600/20 transition duration-150 active:scale-[0.98]">
+                        Run Compliance Audit
+                    </button>
+                </div>
+            </div>
+
+            <!-- DeepTech Architecture Explained Panel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-3 mono text-xs">How it works underneath</h3>
+                <div class="space-y-3 text-xs leading-relaxed text-slate-400">
+                    <div class="flex gap-3">
+                        <div class="mono text-indigo-400 font-bold">01</div>
+                        <div><strong class="text-slate-200 block">Metadata Parsing:</strong> The client-side parser reads the XML file, extracting sequence frame rates, absolute clip tracks, and paths to external references.</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="mono text-indigo-400 font-bold">02</div>
+                        <div><strong class="text-slate-200 block">Multimodal Vector Alignment:</strong> DeepCut matches the timeline sequence coordinates against a lightweight cloud proxy that evaluates target visual and audio hashes.</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="mono text-indigo-400 font-bold">03</div>
+                        <div><strong class="text-slate-200 block">EDL Manifest Return:</strong> The audit generates a standard markers file that can be loaded straight back into NLE software to display warnings exactly on the editor's timeline ruler.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Interactive Processing Timeline & Logs -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Audit Progress / Status Section -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl relative overflow-hidden">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold tracking-tight">Compliance Log & Flagged Anomalies</h2>
+                        <p class="text-slate-400 text-sm mt-0.5">Timeline Scan: 00:00:00:00 to 00:14:32:12</p>
+                    </div>
+                    <div id="badge" class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider mono bg-slate-800 text-slate-400">Ready</div>
+                </div>
+
+                <!-- Live Progress Bar Indicator -->
+                <div class="w-full bg-slate-950 rounded-full h-2 mb-6 hidden" id="progress-container">
+                    <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-2 rounded-full w-0 transition-all duration-300 ease-out"></div>
+                </div>
+
+                <!-- Simulated Visual Timeline Map -->
+                <div class="mb-6 bg-slate-950 border border-slate-800 rounded-lg p-4 relative">
+                    <div class="text-slate-500 font-bold tracking-wider uppercase mb-2 mono text-[10px]">Sequence Tracks Analysis Visualizer</div>
+                    <div class="space-y-2">
+                        <!-- Video Track -->
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 mono text-xs text-slate-500 text-right">V1</span>
+                            <div class="flex-1 bg-slate-800 h-6 rounded relative overflow-hidden flex items-center px-2 text-[10px] mono text-slate-400">
+                                primary_A_cam_footage.mov
+                                <div id="v-flag-1" class="absolute left-[15%] w-[4%] bg-amber-500/40 border-x border-amber-400 h-full hidden cursor-pointer hover:bg-amber-500/60" title="Flagged Block"></div>
+                                <div id="v-flag-2" class="absolute left-[65%] w-[3%] bg-red-500/40 border-x border-red-400 h-full hidden cursor-pointer hover:bg-red-500/60" title="Flagged Block"></div>
+                            </div>
+                        </div>
+                        <!-- Audio Track -->
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 mono text-xs text-slate-500 text-right">A1</span>
+                            <div class="flex-1 bg-slate-800 h-6 rounded relative overflow-hidden flex items-center px-2 text-[10px] mono text-slate-400">
+                                master_mix_stereo.wav
+                                <div id="a-flag-1" class="absolute left-[40%] w-[8%] bg-red-500/40 border-x border-red-400 h-full hidden cursor-pointer hover:bg-red-500/60" title="Flagged Block"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Time ruler -->
+                    <div class="flex justify-between mt-2 text-[10px] mono text-slate-600 px-9">
+                        <span>00:00</span><span>03:30</span><span>07:00</span><span>10:30</span><span>14:32</span>
+                    </div>
+                </div>
+
+                <!-- Findings Cards Container -->
+                <div id="findings-wrapper" class="space-y-3">
+                    <div class="text-center py-8 text-slate-500 border border-dashed border-slate-800 rounded-lg bg-slate-950/20">
+                        Click "Run Compliance Audit" to ingest the XML manifest stream and execute analysis.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Fix Manifest Panel -->
+            <div id="export-panel" class="bg-slate-900 border border-indigo-900/30 bg-gradient-to-r from-slate-900 to-indigo-950/20 rounded-xl p-5 hidden animate-fadeIn">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h4 class="font-bold text-slate-200 flex items-center gap-2">
+                            <span class="text-indigo-400">✨</span> Export Corrective Automation Profiles
+                        </h4>
+                        <p class="text-xs text-slate-400 mt-1">Inject blur frames, color-grading corrections, and ambient background masking scripts straight into your timeline.</p>
+                    </div>
+                    <button class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-md shrink-0 transition" onclick="alert('Exporting localized XML change-markers file to disk...')">
+                        Generate FCPXML Markers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function runAudit() {
+            const wrapper = document.getElementById('findings-wrapper');
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            const badge = document.getElementById('badge');
+            
+            // UI state changes
+            progressContainer.classList.remove('hidden');
+            badge.innerText = "Scanning...";
+            badge.className = "px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider mono bg-amber-500/10 text-amber-400";
+            wrapper.innerHTML = `<div class="text-center py-8 text-slate-400 mono text-xs animate-pulse">Initializing heuristic model parameters... parsing structure nodes.</div>`;
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 8;
+                progressBar.style.width = `${progress}%`;
+                
+                if(progress === 32) {
+                    wrapper.innerHTML = `<div class="text-center py-8 text-slate-400 mono text-xs animate-pulse">Parsing sequence frames... matching vector metadata hashes.</div>`;
+                }
+                if(progress === 64) {
+                    wrapper.innerHTML = `<div class="text-center py-8 text-slate-400 mono text-xs animate-pulse">Running frame signature copyright detection filters...</div>`;
+                }
+
+                if (progress >= 105) {
+                    clearInterval(interval);
+                    renderResults();
+                }
+            }, 180);
+        }
+
+        function renderResults() {
+            const wrapper = document.getElementById('findings-wrapper');
+            const badge = document.getElementById('badge');
+            const exportPanel = document.getElementById('export-panel');
+            
+            badge.innerText = "Risk Alert";
+            badge.className = "px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider mono bg-red-500/10 text-red-400";
+            
+            // Show timeline markers
+            document.getElementById('v-flag-1').classList.remove('hidden');
+            document.getElementById('v-flag-2').classList.remove('hidden');
+            document.getElementById('a-flag-1').classList.remove('hidden');
+            exportPanel.classList.remove('hidden');
+
+            wrapper.innerHTML = `
+                <!-- Issue 1: Audio Copyright Risk -->
+                <div class="bg-red-950/30 border border-red-900/40 p-4 rounded-lg flex items-start gap-3 transition hover:bg-red-950/40">
+                    <div class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-xs uppercase font-bold mono mt-0.5">Audio</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-baseline">
+                            <h4 class="text-sm font-semibold text-red-200">Copyright Infringement Risk (High)</h4>
+                            <span class="mono text-xs text-slate-400">00:05:48:12 - 00:06:58:02</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                            A track matched signature matches **"Stay" by Justin Bieber**. The background volume index registers above monetization safety threshholds (-42dB limit).
+                        </p>
+                        <div class="mt-2.5 flex gap-2">
+                            <span class="text-[11px] bg-slate-950 text-slate-300 border border-slate-800 rounded px-2 py-0.5 mono">Risk Factor: De-monetization / Content ID strike</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Issue 2: Visual Continuity Break -->
+                <div class="bg-amber-950/20 border border-amber-900/40 p-4 rounded-lg flex items-start gap-3 transition hover:bg-amber-950/30">
+                    <div class="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-xs uppercase font-bold mono mt-0.5">Visual</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-baseline">
+                            <h4 class="text-sm font-semibold text-amber-200">Continuity Discrepancy Error</h4>
+                            <span class="mono text-xs text-slate-400">00:02:11:05</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                            Jump cut discrepancy observed between track clips. Speaker's eyewear disappears instantly between camera perspective matrices.
+                        </p>
+                        <div class="mt-2.5 flex gap-2">
+                            <span class="text-[11px] bg-slate-950 text-slate-300 border border-slate-800 rounded px-2 py-0.5 mono">Jump Cut Match Value: Delta 84% mismatch</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Issue 3: Logo Risk -->
+                <div class="bg-red-950/10 border border-slate-800 p-4 rounded-lg flex items-start gap-3 transition hover:bg-slate-900/50">
+                    <div class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-xs uppercase font-bold mono mt-0.5">Brand</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-baseline">
+                            <h4 class="text-sm font-semibold text-slate-200">Unlicensed Brand Protection Target</h4>
+                            <span class="mono text-xs text-slate-400">00:09:25:22</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                            Distinct **Starbucks Circular Siren Logo** exposed on a prop package in the background. Requires blur masking for clear distribution approval.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
