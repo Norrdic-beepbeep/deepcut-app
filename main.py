@@ -57,3 +57,11 @@ if __name__ == "__main__":
 # This never shows the key; it only retrieves it from the secure environment
 api_key = os.getenv("OPENAI_API_KEY") 
 client = openai.OpenAI(api_key=api_key)
+
+@app.get("/")
+def read_root():
+    return {"message": "DeepCut Engine is online"}
+
+@app.get("/api/audit")
+def audit_info():
+    return {"message": "Use POST to /api/audit/ to process files"}
