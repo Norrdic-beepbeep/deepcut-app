@@ -1,0 +1,17 @@
+{
+  "name": "DeepCut AI Compliance Auditor",
+  "short_name": "DeepCut",
+  "start_url": "https://deepcut-app.vercel.app/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=512&h=512&q=80",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
