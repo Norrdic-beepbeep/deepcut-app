@@ -27,7 +27,6 @@ def security_scan(file_content, filename):
 # Adding both routes prevents the redirect from ever needing to happen
 @app.post("/api/audit")
 @app.post("/api/audit/")
-async def run_audit(file: UploadFile = File(...)):
     # ... your existing code ...
 async def run_audit(file: UploadFile = File(...)):
     file_content = await file.read()
