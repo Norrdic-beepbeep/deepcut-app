@@ -32,7 +32,11 @@ def process_xml_logic(file_data):
     # Example: root = ET.fromstring(file_data) ...
     return {"message": "XML parsed successfully"}
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
+def health_check():
+    return {"status": "DeepCut Engine is online"}
+
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 def health_check():
     return {"status": "DeepCut Engine is online"}
 
