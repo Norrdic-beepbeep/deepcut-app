@@ -1,10 +1,17 @@
-from fastapi import FastAPI, File, UploadFile
+import os
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 import time
+import uvicorn
+import requests # Needed for your security gate
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(title="DeepCut AI Engine", version="1.0")
 
-# Allow your frontend (local or Vercel) to talk to the backend
+# Allow your frontend to talk to the backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -13,51 +20,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- SECURITY GATE ---
+def security_scan(file_content, filename):
+    # This is where your VirusTotal logic (or other scanner) goes
+    # Returning True means "Safe", False means "Virus Detected"
+    return True 
+
+# --- YOUR DEEP_CUT LOGIC ---
+def process_xml_logic(file_data):
+    # PLACEHOLDER: Paste your specific XML parsing code here
+    # Example: root = ET.fromstring(file_data) ...
+    return {"message": "XML parsed successfully"}
+
 @app.get("/")
 def health_check():
     return {"status": "DeepCut Engine is online"}
 
 @app.post("/api/audit")
 async def run_audit(file: UploadFile = File(...)):
-    # 1. Log the receipt
-    print(f"📥 Receiving file: {file.filename}")
+    # 1. Security Check
+    file_content = await file.read()
+    if not security_scan(file_content, file.filename):
+        raise HTTPException(status_code=400, detail="Security threat detected.")
     
-    # 2. Add your "Audit" logic here
-    # (Currently simulates processing time)
-    is_video = file.filename.lower().endswith('.mp4')
-    time.sleep(2) 
+    # 2. Reset file pointer to read it again for processing
+    await file.seek(0)
     
-    # 3. Return the response to the frontend
+    # 3. Process the File
+    result = process_xml_logic(file_content)
+    
     return {
         "status": "success",
         "filename": file.filename,
-        "type": "video" if is_video else "metadata",
-        "message": "Audit completed successfully.",
-        "anomalies_found": 3
+        "data": result
     }
 
 if __name__ == "__main__":
-    import uvicorn
-    # Starts the server on port 8000
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
-
-import os
-from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile, HTTPException
-
-# Load the .env file
-load_dotenv()
-
-app = FastAPI(title="DeepCut AI Engine")
-
-# Get the key from the environment
-VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY")
-
-@app.post("/api/audit")
-async def run_audit(file: UploadFile = File(...)):
-    if not VIRUSTOTAL_API_KEY:
-        raise HTTPException(status_code=500, detail="API Key not configured.")
-        
-    # Use VIRUSTOTAL_API_KEY here...
-    print(f"Using API Key: {VIRUSTOTAL_API_KEY[:4]}****") # Only print first 4 chars to be safe
-    # ... rest of your code
+    # Render-ready deployment settings
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
