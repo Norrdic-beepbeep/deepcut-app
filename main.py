@@ -3,6 +3,8 @@ import uvicorn
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import openai
+import os
 
 load_dotenv()
 
@@ -52,3 +54,7 @@ async def run_audit(file: UploadFile = File(...)):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
+
+# This never shows the key; it only retrieves it from the secure environment
+api_key = os.getenv("OPENAI_API_KEY") 
+client = openai.OpenAI(api_key=api_key)
