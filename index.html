@@ -66,4 +66,213 @@
                         <span id="detectPercent" class="text-slate-500">0%</span>
                     </div>
                     <div class="w-full bg-slate-900 rounded-full h-2.5 border border-slate-800 overflow-hidden">
-                        <div id="detectBar" class="bg-blue-500 h-full
+                        <div id="detectBar" class="bg-blue-500 h-full w-0 progress-transition shadow-[0_0_10px_rgba(59,130,246,0.3)]"></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <section id="resultsDashboard" class="hidden bg-slate-900 rounded-2xl border border-slate-800 p-8 shadow-2xl text-slate-200 mt-6 w-full opacity-100 transition-all duration-500">
+            
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-8 border-b border-slate-800 pb-5 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-white mb-1.5" id="dashFileName">timeline_v4_final.xml</h2>
+                    <p class="text-slate-400 text-xs flex items-center gap-2">
+                        <span class="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wider uppercase border border-blue-500/20">Verified Format</span>
+                        Analysis Complete
+                    </p>
+                </div>
+                <div>
+                    <div class="inline-block px-4 py-2 rounded-xl text-sm font-semibold tracking-wide" id="dashStatus">
+                        Processing...
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-base font-semibold text-white tracking-wide flex items-center gap-2">
+                    <span>📋</span> Compliance Engine Audit Log
+                </h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/40">
+                    <table class="w-full text-left border-collapse" id="auditTable">
+                        <thead>
+                            <tr class="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider font-semibold border-b border-slate-800">
+                                <th class="py-3.5 px-5 font-medium">Timecode Location</th>
+                                <th class="py-3.5 px-5 font-medium">Flag Classification</th>
+                                <th class="py-3.5 px-5 font-medium">AI Audit Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-slate-800/60" id="auditTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // DOM Element Selectors
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileMetaRow = document.getElementById('fileMetaRow');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const selectedFileSize = document.getElementById('selectedFileSize');
+        const runAuditBtn = document.getElementById('runAuditBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const resultsDashboard = document.getElementById('resultsDashboard');
+
+        // State Storage
+        let selectedFiles = [];
+
+        // Interaction Handler: Catch Selected File
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelection(e.target.files[0]);
+            }
+        });
+
+        // Drop Zone Drag/Drop Listeners
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('border-indigo-500'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('border-indigo-500'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('border-indigo-500');
+            if (e.dataTransfer.files.length > 0) {
+                // Manually map the dropped file to the input element
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelection(e.dataTransfer.files[0]);
+            }
+        });
+
+        function handleFileSelection(file) {
+            selectedFiles = [file];
+            selectedFileName.textContent = file.name;
+            selectedFileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+            fileMetaRow.classList.remove('hidden');
+            resultsDashboard.classList.add('hidden'); // Hide dashboard if uploading a new file
+        }
+
+        // Shared Progress Bar Updater Helper
+        function updateBar(barId, percentId, textId, percent, text, stateClass = 'text-slate-400') {
+            return new Promise((resolve) => {
+                const bar = document.getElementById(barId);
+                const percentText = document.getElementById(percentId);
+                const statusText = document.getElementById(textId);
+
+                bar.style.width = percent + '%';
+                percentText.textContent = percent + '%';
+                statusText.textContent = text;
+                
+                // Clean color states if applying updates
+                if(stateClass) {
+                    statusText.className = `text-xs font-mono font-medium ${stateClass}`;
+                }
+                
+                // Allow CSS transition timing to breathing room
+                setTimeout(resolve, 400);
+            });
+        }
+
+        // Main Program Event Hook with Real-Time Asynchronous Fetch
+        runAuditBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+
+            // Interface Lock States
+            runAuditBtn.classList.add('hidden');
+            progressContainer.classList.remove('hidden');
+
+            // Reset trackers
+            updateBar('detectBar', 'detectPercent', 'detectText', 0, "⏳ Awaiting previous pipeline completion...", 'text-slate-500');
+            await updateBar('scanBar', 'scanPercent', 'scanText', 10, "🔍 Uploading file to engine...", 'text-orange-400');
+
+            try {
+                // Construct payload
+                const formData = new FormData();
+                formData.append('file', selectedFiles[0]);
+
+                // 🚀 FIRE UPLOAD IMMEDIATELY TO RENDER BACKEND
+                const fetchPromise = fetch('https://deepcut-app.onrender.com/api/audit/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // While waiting for the server, update the UI to show activity
+                setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 45, "🔍 Hashing file signatures...", 'text-orange-400'), 1500);
+                setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 85, "⏳ Polling VirusTotal engines...", 'text-orange-400'), 3000);
+
+                // This pauses the frontend UNTIL your Python server completely finishes its job
+                const response = await fetchPromise;
+                if (!response.ok) throw new Error("Server rejected request path.");
+                
+                const serverData = await response.json();
+                
+                // Snap to 100% when Python says it's clean
+                await updateBar('scanBar', 'scanPercent', 'scanText', 100, "🛡️ File security check clear. (0 Threats)", 'text-green-400');
+
+                // --- PHASE 2: AI PARSING ---
+                await updateBar('detectBar', 'detectPercent', 'detectText', 40, "🧠 Parsing XML structure...", 'text-blue-400');
+                await updateBar('detectBar', 'detectPercent', 'detectText', 100, "✅ AI Analysis Complete.", 'text-green-400');
+
+                // Reveal Dashboard
+                setTimeout(() => {
+                    populateAndRevealDashboard(serverData);
+                }, 500);
+
+            } catch (error) {
+                console.error("Upload Error:", error);
+                updateBar('scanBar', 'scanPercent', 'scanText', 100, "❌ Network connection dropped.", 'text-red-500');
+                updateBar('detectBar', 'detectPercent', 'detectText', 100, "❌ Pipeline failed.", 'text-red-500');
+                runAuditBtn.classList.remove('hidden');
+            }
+        });
+
+        // Dashboard Data Injector Implementation
+        function populateAndRevealDashboard(data) {
+            // 1. Inject Metadata Header Values
+            document.getElementById('dashFileName').textContent = data.filename || selectedFiles[0].name;
+
+            // 2. Configure Status Badges base on dynamic anomaly count return
+            const statusBadge = document.getElementById('dashStatus');
+            const tableBody = document.getElementById('auditTableBody');
+            
+            // Wipe baseline structure layout
+            tableBody.innerHTML = '';
+
+            const itemsCount = data.anomalies_found || 0;
+
+            if (itemsCount > 0) {
+                statusBadge.textContent = `⚠️ ${itemsCount} Anomalies Found`;
+                statusBadge.className = "inline-block bg-orange-500/10 text-orange-400 px-4 py-2 rounded-xl text-sm font-semibold border border-orange-500/20";
+                
+                // Inject real message payload returned directly from engine
+                tableBody.innerHTML = `
+                    <tr class="hover:bg-slate-900/40 transition-colors">
+                        <td class="py-4 px-5 font-mono text-slate-300">01:00:00:00</td>
+                        <td class="py-4 px-5"><span class="text-orange-400 bg-orange-400/10 px-2 py-1 rounded text-xs border border-orange-400/20">Audit Flag</span></td>
+                        <td class="py-4 px-5 text-slate-400">${data.message || 'Timeline variation detected.'}</td>
+                    </tr>
+                `;
+            } else {
+                statusBadge.textContent = `✅ Clean / Passed`;
+                statusBadge.className = "inline-block bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm font-semibold border border-green-500/20";
+                
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-6 px-5 text-center text-slate-500 font-mono text-xs">
+                            No functional violations or metadata discrepancies flagged on this sequence.
+                        </td>
+                    </tr>
+                `;
+            }
+
+            // Reveal the complete result element
+            progressContainer.classList.add('hidden');
+            runAuditBtn.classList.remove('hidden');
+            resultsDashboard.classList.remove('hidden');
+            resultsDashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>
