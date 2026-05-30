@@ -50,16 +50,27 @@
           Run Compliance Audit
         </button>
 
-        <div id="progressContainer" class="hidden mt-6">
-          <div class="flex justify-between text-xs text-slate-400 mb-2 font-mono">
-            <span id="progressText">Connecting to Engine & Uploading...</span>
-            <span id="progressPercent">0%</span>
-          </div>
-          <div class="w-full bg-slate-950 rounded-full h-3 border border-slate-700 overflow-hidden shadow-inner">
-            <div id="progressBar" class="bg-orange-500 h-full rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
-          </div>
+        <div id="progressContainer" class="hidden mt-6 space-y-4">
+    <div>
+        <div class="flex justify-between text-xs text-slate-400 mb-1 font-mono">
+            <span id="scanText">Scanning for viruses...</span>
+            <span id="scanPercent">0%</span>
         </div>
-      </div>
+        <div class="w-full bg-slate-950 rounded-full h-2 border border-slate-700 overflow-hidden">
+            <div id="scanBar" class="bg-orange-500 h-full w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+    
+    <div>
+        <div class="flex justify-between text-xs text-slate-400 mb-1 font-mono">
+            <span id="detectText">Running AI Analysis...</span>
+            <span id="detectPercent">0%</span>
+        </div>
+        <div class="w-full bg-slate-950 rounded-full h-2 border border-slate-700 overflow-hidden">
+            <div id="detectBar" class="bg-blue-500 h-full w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+</div>
 
       <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 text-sm shadow-xl">
         <h3 class="text-xs font-bold text-slate-500 tracking-wider mb-4 uppercase">How It Works Underneath</h3>
