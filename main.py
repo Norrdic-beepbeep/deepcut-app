@@ -108,6 +108,9 @@ def detect_with_ai_audio(file_content, filename):
             file=(filename, file_content)
         )
         transcript_text = transcript_response.text
+        
+        # X-RAY 1: Watch Whisper in your Render logs
+        print(f"WHISPER HEARD: {transcript_text}")
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -123,7 +126,12 @@ def detect_with_ai_audio(file_content, filename):
             ],
             response_format={ "type": "json_object" }
         )
-        return json.loads(response.choices[0].message.content)
+        
+        # X-RAY 2: Watch GPT's final decision
+        ai_output = json.loads(response.choices[0].message.content)
+        print(f"GPT OUTPUT: {json.dumps(ai_output)}")
+        
+        return ai_output
 
     except Exception as e:
         print(f"Whisper/GPT Audio Error: {e}")
