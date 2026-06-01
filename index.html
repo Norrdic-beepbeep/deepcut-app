@@ -107,19 +107,22 @@
                 </div>
             </div>
 
-            <div id="fileMetaRow" class="hidden flex items-center justify-between bg-[#E2A73A] p-6 border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all">
-                <div class="flex items-center gap-5">
-                    <div class="text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-2 shadow-hard-sm" id="metaIconContainer">
-                        <span id="metaIconFile">📄</span>
-                        <span id="metaIconLink" class="hidden">🔗</span>
-                    </div>
-                    <div>
-                        <p id="selectedFileName" class="font-typewriter font-bold text-lg text-[#2D2824] truncate max-w-[200px] sm:max-w-[350px]">timeline.xml</p>
-                        <p id="selectedFileSize" class="text-sm text-[#2D2824] font-bold mt-1 uppercase tracking-wider">Ready for audit</p>
-                    </div>
-                </div>
-                <button id="runAuditBtn" class="bg-[#C86B5E] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Initialize</button>
-            </div>
+<!-- UPDATED MOBILE-FRIENDLY FILE METADATA ROW -->
+<div id="fileMetaRow" class="hidden flex flex-col sm:flex-row items-center justify-between bg-[#E2A73A] p-6 border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all gap-4">
+    <div class="flex items-center gap-5 w-full">
+        <div class="text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-2 shadow-hard-sm shrink-0" id="metaIconContainer">
+            <span id="metaIconFile">📄</span>
+            <span id="metaIconLink" class="hidden">🔗</span>
+        </div>
+        <div class="min-w-0">
+            <p id="selectedFileName" class="font-typewriter font-bold text-lg text-[#2D2824] truncate">timeline.xml</p>
+            <p id="selectedFileSize" class="text-sm text-[#2D2824] font-bold mt-1 uppercase tracking-wider">Ready for audit</p>
+        </div>
+    </div>
+    <button id="runAuditBtn" class="w-full sm:w-auto bg-[#C86B5E] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">
+        Initialize
+    </button>
+</div>
 
             <div id="progressContainer" class="hidden mt-2 space-y-8 bg-[#FDFBF7] p-8 border-[3px] border-[#2D2824] shadow-hard-sm">
                 <div class="space-y-3">
