@@ -403,16 +403,21 @@
                     body: formData
                 });
 
-                const data = await response.json();
+                let data = {};
+                try { data = await response.json(); } catch(e) {}
                 
-                if (!response.ok) throw new Error(data.detail || "Registration failed");
+                if (!response.ok) throw new Error(data.detail || `Server Error (${response.status})`);
 
                 showCustomMsg("Operator registered successfully. A confirmation email has been sent. You may now log in.", true);
                 
                 regName.value = ''; regUsername.value = ''; regEmail.value = ''; regPassword.value = '';
                 showLoginBtn.click();
             } catch (error) {
-                showCustomMsg(error.message);
+                if (error.message === 'Failed to fetch') {
+                    showCustomMsg("Server Crash (500 Error). Your database is outdated and missing the new 'Name' and 'Email' columns. Please clear your database on Render.");
+                } else {
+                    showCustomMsg(error.message);
+                }
             } finally {
                 registerBtn.textContent = "CREATE OPERATOR";
                 regPassword.dispatchEvent(new Event('input')); 
@@ -448,9 +453,11 @@
                     body: formData
                 });
 
-                if (!response.ok) throw new Error("Access Denied");
+                let data = {};
+                try { data = await response.json(); } catch(e) {}
 
-                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Access Denied");
+
                 authToken = data.access_token;
                 displayUsername.textContent = data.username || username;
 
@@ -461,7 +468,11 @@
                     setTimeout(() => appScreen.classList.remove('opacity-0'), 50);
                 }, 500);
             } catch (error) {
-                showCustomMsg("Authorization Failed: Invalid Username, Email, or Password.");
+                if (error.message === 'Failed to fetch') {
+                    showCustomMsg("Server Connection Failed. The backend may be offline or crashing due to an outdated database.");
+                } else {
+                    showCustomMsg("Authorization Failed: Invalid Username, Email, or Password.");
+                }
             } finally {
                 loginBtn.textContent = "AUTHORIZE";
                 loginBtn.disabled = false;
@@ -564,8 +575,11 @@
                 setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 85, "ANALYZING..."), 3000);
 
                 const response = await fetchPromise;
-                if (!response.ok) throw new Error("Server error.");
-                const data = await response.json();
+                
+                let data = {};
+                try { data = await response.json(); } catch(e) {}
+
+                if (!response.ok) throw new Error(data.detail || "Server error.");
                 
                 await updateBar('scanBar', 'scanPercent', 'scanText', 100, "COMPLETE.");
                 await updateBar('detectBar', 'detectPercent', 'detectText', 100, "AUDIT COMPLETE.");
@@ -573,7 +587,15 @@
             } catch (error) {
                 updateBar('scanBar', 'scanPercent', 'scanText', 100, "ERROR.");
                 updateBar('detectBar', 'detectPercent', 'detectText', 100, "FAILED.");
-                setTimeout(() => { document.getElementById('progressContainer').classList.add('hidden'); inputWorkspace.classList.remove('hidden'); }, 3000);
+                setTimeout(() => { 
+                    document.getElementById('progressContainer').classList.add('hidden'); 
+                    inputWorkspace.classList.remove('hidden'); 
+                    if (error.message === 'Failed to fetch') {
+                        showCustomMsg("Server Connection Failed. The backend may be offline or crashing.");
+                    } else {
+                        showCustomMsg(error.message);
+                    }
+                }, 3000);
             }
         });
 
