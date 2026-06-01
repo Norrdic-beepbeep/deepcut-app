@@ -208,23 +208,28 @@
         });
         // Logout Logic
 document.getElementById('logoutBtn').addEventListener('click', () => {
-    // 1. Clear the token
+    // 1. Clear the authorization token
     authToken = null;
     
-    // 2. Clear inputs
-    document.getElementById('passwordInput').value = '';
+    // 2. Clear inputs so they are empty when you log back in
     document.getElementById('usernameInput').value = '';
+    document.getElementById('passwordInput').value = '';
     
-    // 3. Switch screens
-    document.getElementById('appScreen').classList.add('hidden');
-    document.getElementById('loginScreen').classList.remove('hidden');
-    
-    // 4. Reset Login button to disabled
+    // 3. Reset the "Authorize" button state
     document.getElementById('loginBtn').disabled = true;
     
-    // 5. Hide dashboard/results if they were visible
+    // 4. Perform the screen swap
+    // Hide the app, show the login
+    document.getElementById('appScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.add('opacity-0');
+    
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('loginScreen').classList.remove('opacity-0');
+    
+    // 5. Ensure the dashboard is reset (so it doesn't show old results)
     document.getElementById('resultsDashboard').classList.add('hidden');
     document.getElementById('inputWorkspace').classList.remove('hidden');
+    document.getElementById('fileMetaRow').classList.add('hidden');
 });
         usernameInput.addEventListener('input', () => {
             // Re-trigger validation on username input to enable/disable button
