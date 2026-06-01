@@ -37,12 +37,12 @@
             <div class="space-y-6">
                 <div>
                     <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">Operator ID</label>
-                    <input type="text" id="usernameInput" placeholder="Enter identification..." class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm mb-4">
+                    <input type="text" id="usernameInput" placeholder="Enter Username" class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm mb-4">
                 </div>
 
                 <div>
-                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">Access Code</label>
-                    <input type="password" id="passwordInput" placeholder="Enter secure phrase..." class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">Password</label>
+                    <input type="password" id="passwordInput" placeholder="Enter Password" class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
                 </div>
 
                 <div class="bg-[#EAE3D2]/30 border-[2px] border-[#2D2824] p-4 shadow-inner">
@@ -243,7 +243,7 @@
             } catch (error) {
                 loginBtn.textContent = "AUTHORIZE";
                 loginBtn.disabled = false;
-                alert("Authorization Failed: Invalid Operator ID or Access Code.");
+                alert("Authorization Failed: Invalid Username or Password.");
             }
         });
 
