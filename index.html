@@ -16,36 +16,72 @@
         /* Hard, physical shadows for that tactile diorama look */
         .shadow-hard { box-shadow: 6px 6px 0px #2D2824; }
         .shadow-hard-sm { box-shadow: 3px 3px 0px #2D2824; }
-        .shadow-hard-hover:hover { box-shadow: 8px 8px 0px #2D2824; transform: translate(-2px, -2px); }
-        .shadow-hard-active:active { box-shadow: 2px 2px 0px #2D2824; transform: translate(4px, 4px); }
+        .shadow-hard-hover:hover:not(:disabled) { box-shadow: 8px 8px 0px #2D2824; transform: translate(-2px, -2px); }
+        .shadow-hard-active:active:not(:disabled) { box-shadow: 2px 2px 0px #2D2824; transform: translate(4px, 4px); }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 10px; height: 10px; }
         ::-webkit-scrollbar-track { background: #EAE3D2; border-left: 2px solid #2D2824; }
         ::-webkit-scrollbar-thumb { background: #C86B5E; border: 2px solid #2D2824; }
+
+        /* Validation List Styles */
+        .req-met { color: #7A9E7E; text-decoration: line-through; text-decoration-thickness: 2px; }
+        .req-unmet { color: #8C8273; }
     </style>
 </head>
 <body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
 
-    <div class="w-full max-w-4xl mx-auto space-y-10 mt-12 relative z-10">
+    <div id="loginScreen" class="w-full max-w-lg mx-auto mt-20 z-20 transition-all duration-500">
+        <div class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-10 shadow-hard relative overflow-hidden">
+            
+            <div class="text-center mb-8 border-b-[3px] border-[#2D2824] pb-6">
+                <span class="text-4xl mb-3 block">🔐</span>
+                <h1 class="text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Access</h1>
+                <p class="text-[#5C534A] text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Authorized Personnel Only</p>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">Access Code</label>
+                    <input type="password" id="passwordInput" placeholder="Enter secure phrase..." class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                </div>
+
+                <div class="bg-[#EAE3D2]/30 border-[2px] border-[#2D2824] p-4 shadow-inner">
+                    <p class="text-[#2D2824] text-[10px] font-bold tracking-[0.2em] uppercase mb-3 border-b-[2px] border-[#2D2824]/20 pb-2">Security Protocol</p>
+                    <ul class="space-y-2 text-sm font-typewriter font-bold" id="validationList">
+                        <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2">
+                            <span class="status-icon">○</span> Minimum 12 characters
+                        </li>
+                        <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2">
+                            <span class="status-icon">○</span> One uppercase letter
+                        </li>
+                        <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2">
+                            <span class="status-icon">○</span> One special character
+                        </li>
+                    </ul>
+                </div>
+
+                <button id="loginBtn" disabled class="w-full bg-[#C86B5E] disabled:bg-[#8C8273] disabled:cursor-not-allowed text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all">
+                    Authorize
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="appScreen" class="w-full max-w-4xl mx-auto space-y-10 mt-12 relative z-10 hidden opacity-0 transition-opacity duration-700">
         
         <header class="text-center space-y-4 border-b-4 border-[#2D2824] pb-8">
             <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
                 <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
             </div>
-            <h1 class="text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">
-                DeepCut Engine
-            </h1>
-            <p class="text-[#5C534A] max-w-lg mx-auto text-base font-medium tracking-wide">
-                Automated cinematic auditing for continuity, copyright compliance, and visual consistency.
-            </p>
+            <h1 class="text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
+            <p class="text-[#5C534A] max-w-lg mx-auto text-base font-medium tracking-wide">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
         </header>
 
         <main class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard relative overflow-hidden">
             
             <div id="inputWorkspace" class="space-y-10 transition-opacity duration-300">
-                
                 <label for="fileInput" id="uploadZone" class="group block border-[3px] border-dashed border-[#2D2824] bg-[#EAE3D2]/50 hover:bg-[#E2A73A]/20 p-12 text-center cursor-pointer transition-colors duration-300">
                     <input type="file" id="fileInput" class="hidden" accept=".xml,.edl,.mp4,.mp3,.wav,.m4a" />
                     <div class="space-y-4 pointer-events-none flex flex-col items-center">
@@ -65,9 +101,7 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 relative">
                     <input type="url" id="urlInput" placeholder="Paste a web media link here..." class="flex-1 bg-[#FDFBF7] border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
-                    <button id="runUrlBtn" class="bg-[#52796F] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">
-                        Scan Link
-                    </button>
+                    <button id="runUrlBtn" class="bg-[#52796F] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Scan Link</button>
                 </div>
             </div>
 
@@ -82,9 +116,7 @@
                         <p id="selectedFileSize" class="text-sm text-[#2D2824] font-bold mt-1 uppercase tracking-wider">Ready for audit</p>
                     </div>
                 </div>
-                <button id="runAuditBtn" class="bg-[#C86B5E] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">
-                    Initialize
-                </button>
+                <button id="runAuditBtn" class="bg-[#C86B5E] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Initialize</button>
             </div>
 
             <div id="progressContainer" class="hidden mt-2 space-y-8 bg-[#FDFBF7] p-8 border-[3px] border-[#2D2824] shadow-hard-sm">
@@ -108,11 +140,9 @@
                     </div>
                 </div>
             </div>
-
         </main>
 
         <section id="resultsDashboard" class="hidden bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard mt-8 w-full transition-all duration-500 transform translate-y-4 opacity-0">
-            
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-10 border-b-[4px] border-[#2D2824] pb-6 gap-5">
                 <div class="space-y-3">
                     <p class="text-[#2D2824] text-xs flex items-center gap-3 font-bold">
@@ -122,16 +152,13 @@
                     <h2 class="text-2xl font-bold tracking-tight text-[#2D2824] truncate max-w-sm sm:max-w-md font-typewriter uppercase" id="dashFileName">timeline_v4_final.xml</h2>
                 </div>
                 <div>
-                    <div class="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm" id="dashStatus">
-                        Processing...
-                    </div>
+                    <div class="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm" id="dashStatus">Processing...</div>
                 </div>
             </div>
 
             <div class="space-y-6">
                 <h3 class="text-base font-bold text-[#2D2824] tracking-[0.2em] uppercase flex items-center gap-3">
-                    <span class="text-2xl">📋</span>
-                    Compliance Audit Log
+                    <span class="text-2xl">📋</span> Compliance Audit Log
                 </h3>
                 <div class="overflow-x-auto border-[3px] border-[#2D2824] bg-[#FDFBF7] shadow-hard-sm">
                     <table class="w-full text-left border-collapse" id="auditTable">
@@ -142,37 +169,88 @@
                                 <th class="py-5 px-6">AI Insight</th>
                             </tr>
                         </thead>
-                        <tbody class="text-base font-medium" id="auditTableBody">
-                            </tbody>
+                        <tbody class="text-base font-medium" id="auditTableBody"></tbody>
                     </table>
                 </div>
             </div>
         </section>
-
     </div>
 
     <script>
+        // --- LOGIN VALIDATION LOGIC ---
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginScreen = document.getElementById('loginScreen');
+        const appScreen = document.getElementById('appScreen');
+
+        const reqLength = document.getElementById('reqLength');
+        const reqUpper = document.getElementById('reqUpper');
+        const reqSpecial = document.getElementById('reqSpecial');
+
+        function updateRequirement(element, isMet) {
+            if (isMet) {
+                element.classList.remove('req-unmet');
+                element.classList.add('req-met');
+                element.querySelector('.status-icon').textContent = '●';
+            } else {
+                element.classList.remove('req-met');
+                element.classList.add('req-unmet');
+                element.querySelector('.status-icon').textContent = '○';
+            }
+        }
+
+        passwordInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            
+            // Regex Checks
+            const hasLength = val.length >= 12;
+            const hasUpper = /[A-Z]/.test(val);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(val); // Common special chars
+
+            updateRequirement(reqLength, hasLength);
+            updateRequirement(reqUpper, hasUpper);
+            updateRequirement(reqSpecial, hasSpecial);
+
+            if (hasLength && hasUpper && hasSpecial) {
+                loginBtn.disabled = false;
+            } else {
+                loginBtn.disabled = true;
+            }
+        });
+
+        loginBtn.addEventListener('click', () => {
+            // Trigger exit animation for login
+            loginScreen.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+            
+            setTimeout(() => {
+                loginScreen.classList.add('hidden');
+                appScreen.classList.remove('hidden');
+                
+                // Trigger entrance animation for app
+                setTimeout(() => {
+                    appScreen.classList.remove('opacity-0');
+                }, 50);
+            }, 500);
+        });
+
+        // --- APP LOGIC (UNCHANGED) ---
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
         const inputWorkspace = document.getElementById('inputWorkspace');
         const fileMetaRow = document.getElementById('fileMetaRow');
-        
         const selectedFileName = document.getElementById('selectedFileName');
         const selectedFileSize = document.getElementById('selectedFileSize');
         const metaIconFile = document.getElementById('metaIconFile');
         const metaIconLink = document.getElementById('metaIconLink');
-        
         const urlInput = document.getElementById('urlInput');
         const runUrlBtn = document.getElementById('runUrlBtn');
         const runAuditBtn = document.getElementById('runAuditBtn');
-        
         const progressContainer = document.getElementById('progressContainer');
         const resultsDashboard = document.getElementById('resultsDashboard');
 
         let selectedFiles = [];
         let submittedUrl = null;
 
-        // Handle File Selection
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) handleFileSelection(e.target.files[0]);
         });
@@ -192,64 +270,48 @@
             selectedFiles = [file];
             submittedUrl = null; 
             urlInput.value = '';
-            
             metaIconLink.classList.add('hidden');
             metaIconFile.classList.remove('hidden');
-            
             selectedFileName.textContent = file.name;
             selectedFileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
-            
             inputWorkspace.classList.add('hidden');
             fileMetaRow.classList.remove('hidden');
-            
             resultsDashboard.classList.remove('opacity-100', 'translate-y-0');
             resultsDashboard.classList.add('opacity-0', 'translate-y-4');
             setTimeout(() => resultsDashboard.classList.add('hidden'), 300);
         }
 
-        // Handle URL Selection
         runUrlBtn.addEventListener('click', () => {
             if (!urlInput.value.trim()) return;
-            
             selectedFiles = []; 
             submittedUrl = urlInput.value.trim();
-            
             metaIconFile.classList.add('hidden');
             metaIconLink.classList.remove('hidden');
-            
             selectedFileName.textContent = submittedUrl;
             selectedFileSize.textContent = "Web Media Source";
-            
             inputWorkspace.classList.add('hidden');
             fileMetaRow.classList.remove('hidden');
-            
             resultsDashboard.classList.remove('opacity-100', 'translate-y-0');
             resultsDashboard.classList.add('opacity-0', 'translate-y-4');
             setTimeout(() => resultsDashboard.classList.add('hidden'), 300);
         });
 
-        // Progress Bar Logic
         function updateBar(barId, percentId, textId, percent, text) {
             return new Promise((resolve) => {
                 const bar = document.getElementById(barId);
                 const percentText = document.getElementById(percentId);
                 const statusText = document.getElementById(textId);
-
                 bar.style.width = percent + '%';
                 percentText.textContent = percent + '%';
                 statusText.textContent = text;
-                
                 setTimeout(resolve, 400);
             });
         }
 
-        // Main Engine Trigger
         runAuditBtn.addEventListener('click', async () => {
             if (selectedFiles.length === 0 && !submittedUrl) return;
-
             fileMetaRow.classList.add('hidden');
             progressContainer.classList.remove('hidden');
-
             updateBar('detectBar', 'detectPercent', 'detectText', 0, "STANDBY...");
             
             if (submittedUrl) {
@@ -293,7 +355,6 @@
                 console.error("Upload Error:", error);
                 updateBar('scanBar', 'scanPercent', 'scanText', 100, "NETWORK DROPPED.");
                 updateBar('detectBar', 'detectPercent', 'detectText', 100, "PIPELINE FAILED.");
-                
                 setTimeout(() => {
                     progressContainer.classList.add('hidden');
                     inputWorkspace.classList.remove('hidden');
@@ -301,17 +362,14 @@
             }
         });
 
-        // Dashboard Logic
         function populateAndRevealDashboard(data) {
             document.getElementById('dashFileName').textContent = data.filename || "Source Media";
-            
             const nameLower = (data.filename || "").toLowerCase();
             let formatType = "XML Timeline";
             if (nameLower.endsWith('.mp4') || nameLower.endsWith('.mp3') || nameLower.endsWith('.wav') || nameLower.endsWith('.m4a')) {
                 formatType = "Audio / Video Stream";
             }
             if (submittedUrl) formatType = "Web Stream";
-            
             document.getElementById('dashFormat').textContent = formatType;
 
             const statusBadge = document.getElementById('dashStatus');
@@ -321,7 +379,6 @@
             if (data.status === "error" || data.error) {
                 statusBadge.innerHTML = `⚠️ Engine Error`;
                 statusBadge.className = "inline-flex items-center gap-2 bg-[#C86B5E] text-[#FDFBF7] px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm";
-                
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="3" class="py-12 px-6 text-center bg-[#FDFBF7]">
@@ -330,11 +387,9 @@
                         </td>
                     </tr>
                 `;
-            } 
-            else if (data.anomalies && data.anomalies.length > 0) {
+            } else if (data.anomalies && data.anomalies.length > 0) {
                 statusBadge.innerHTML = `🚩 ${data.anomalies.length} Flags Detected`;
                 statusBadge.className = "inline-flex items-center gap-2 bg-[#E2A73A] text-[#2D2824] px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm";
-                
                 data.anomalies.forEach((anomaly, index) => {
                     const rowClass = index !== data.anomalies.length - 1 ? "border-b-[3px] border-[#2D2824]" : "";
                     tableBody.innerHTML += `
@@ -350,7 +405,6 @@
             } else {
                 statusBadge.innerHTML = `🌟 Clean / Verified`;
                 statusBadge.className = "inline-flex items-center gap-2 bg-[#7A9E7E] text-[#FDFBF7] px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm";
-                
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="3" class="py-16 px-6 text-center text-[#5C534A] font-typewriter text-sm font-bold tracking-widest uppercase bg-[#FDFBF7]">
@@ -362,9 +416,7 @@
 
             progressContainer.classList.add('hidden');
             inputWorkspace.classList.remove('hidden'); 
-            
             resultsDashboard.classList.remove('hidden');
-            
             setTimeout(() => {
                 resultsDashboard.classList.remove('opacity-0', 'translate-y-4');
                 resultsDashboard.classList.add('opacity-100', 'translate-y-0');
