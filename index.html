@@ -206,7 +206,26 @@
 
             loginBtn.disabled = !(hasLength && hasUpper && hasSpecial && usernameInput.value.trim().length > 0);
         });
-        
+        // Logout Logic
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    // 1. Clear the token
+    authToken = null;
+    
+    // 2. Clear inputs
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('usernameInput').value = '';
+    
+    // 3. Switch screens
+    document.getElementById('appScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    
+    // 4. Reset Login button to disabled
+    document.getElementById('loginBtn').disabled = true;
+    
+    // 5. Hide dashboard/results if they were visible
+    document.getElementById('resultsDashboard').classList.add('hidden');
+    document.getElementById('inputWorkspace').classList.remove('hidden');
+});
         usernameInput.addEventListener('input', () => {
             // Re-trigger validation on username input to enable/disable button
             passwordInput.dispatchEvent(new Event('input'));
