@@ -207,29 +207,36 @@
             loginBtn.disabled = !(hasLength && hasUpper && hasSpecial && usernameInput.value.trim().length > 0);
         });
         // Logout Logic
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    // 1. Clear the authorization token
+// Optimized Logout Logic
+logoutBtn.addEventListener('click', () => {
+    // 1. HARD RESET: Nullify token and clear inputs
     authToken = null;
+    usernameInput.value = '';
+    passwordInput.value = '';
     
-    // 2. Clear inputs so they are empty when you log back in
-    document.getElementById('usernameInput').value = '';
-    document.getElementById('passwordInput').value = '';
+    // 2. RESET VALIDATION: Force validation to re-run (which disables the login button)
+    passwordInput.dispatchEvent(new Event('input'));
+    loginBtn.textContent = "AUTHORIZE";
     
-    // 3. Reset the "Authorize" button state
-    document.getElementById('loginBtn').disabled = true;
-    
-    // 4. Perform the screen swap
-    // Hide the app, show the login
-    document.getElementById('appScreen').classList.add('hidden');
-    document.getElementById('appScreen').classList.add('opacity-0');
-    
-    document.getElementById('loginScreen').classList.remove('hidden');
-    document.getElementById('loginScreen').classList.remove('opacity-0');
-    
-    // 5. Ensure the dashboard is reset (so it doesn't show old results)
-    document.getElementById('resultsDashboard').classList.add('hidden');
-    document.getElementById('inputWorkspace').classList.remove('hidden');
-    document.getElementById('fileMetaRow').classList.add('hidden');
+    // 3. CLEAN UI STATE: Hide app, reset workspace
+    appScreen.style.opacity = '0';
+    setTimeout(() => {
+        appScreen.classList.add('hidden');
+        
+        // 4. RESET DASHBOARD: Clear old results
+        resultsDashboard.classList.add('hidden');
+        resultsDashboard.classList.remove('opacity-100');
+        inputWorkspace.classList.remove('hidden');
+        progressContainer.classList.add('hidden');
+        
+        // 5. SHOW LOGIN:
+        loginScreen.classList.remove('hidden');
+        loginScreen.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+        
+        // 6. CLEAR ANY PENDING API/PROCESSES:
+        // By reloading the file-meta row to hidden, we stop any hanging audit animations
+        document.getElementById('fileMetaRow').classList.add('hidden');
+    }, 300);
 });
         usernameInput.addEventListener('input', () => {
             // Re-trigger validation on username input to enable/disable button
