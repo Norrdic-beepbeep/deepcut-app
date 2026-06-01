@@ -120,7 +120,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
     access_token = create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    return {"access_token": access_token, "token_type": "bearer"}
+    # We return the username here so the frontend can display the "Operator" badge
+    return {"access_token": access_token, "token_type": "bearer", "username": user.username}
 
 @app.get("/")
 @app.head("/")
