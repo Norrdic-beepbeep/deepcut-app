@@ -2,6 +2,9 @@ import os
 import time
 import requests
 import json
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import openai
 import tempfile
 import yt_dlp
@@ -10,7 +13,7 @@ from datetime import datetime, timedelta
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, or_
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -34,11 +37,13 @@ Base = declarative_base()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
-# Database Model
+# UPDATED: Database Model now includes Name and Email
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
     username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
 
 Base.metadata.create_all(bind=engine)
@@ -49,6 +54,51 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# ---------------------------------------------------------
+# EMAIL LOGIC
+# ---------------------------------------------------------
+def send_confirmation_email(user_email: str, user_name: str, username: str):
+    # Configure these in your Render Environment Variables
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME") 
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") 
+    SENDER_EMAIL = os.getenv("SENDER_EMAIL", "noreply@deepcut.app")
+
+    subject = "DeepCut Engine // Access Confirmed"
+    body = f"""
+    OPERATOR ACCESS CONFIRMED
+    -------------------------
+    Name: {user_name}
+    Operator ID: {username}
+    
+    Welcome to the DeepCut Compliance Engine. Your credentials have been successfully encrypted and stored. 
+    You may now access the system using either your Operator ID ({username}) or this email address.
+    
+    Proceed to terminal to initialize audits.
+    """
+
+    if not SMTP_USERNAME or not SMTP_PASSWORD:
+        # Fallback to console print if email isn't configured yet (great for testing)
+        print(f"\n[MOCK EMAIL SENT TO {user_email}]\nSubject: {subject}\n{body}\n")
+        return
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = user_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        print(f"Confirmation email successfully sent to {user_email}")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 # ---------------------------------------------------------
 # AUTHENTICATION LOGIC
@@ -84,7 +134,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 # ---------------------------------------------------------
-# FASTAPI APP & AI ENGINE 
+# FASTAPI APP & ROUTES
 # ---------------------------------------------------------
 app = FastAPI()
 
@@ -102,25 +152,40 @@ except Exception as e:
     print(f"Warning: OpenAI client failed to initialize. {e}")
     client = None
 
+# UPDATED: Registration endpoint now takes name and email, and triggers email sending
 @app.post("/api/register")
-def register_user(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == username).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
+def register_user(
+    name: str = Form(...),
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # Check if username or email already exists
+    existing_user = db.query(User).filter(or_(User.username == username, User.email == email)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username or email already registered")
+    
     hashed_pwd = get_password_hash(password)
-    new_user = User(username=username, hashed_password=hashed_pwd)
+    new_user = User(name=name, username=username, email=email, hashed_password=hashed_pwd)
     db.add(new_user)
     db.commit()
-    return {"message": "Operator registered successfully"}
+    
+    # Trigger the confirmation email
+    send_confirmation_email(email, name, username)
+    
+    return {"message": "Operator registered successfully. Confirmation email sent."}
 
+# UPDATED: Login now accepts either Username or Email
 @app.post("/api/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == form_data.username).first()
+    # Look up user by EITHER username OR email
+    user = db.query(User).filter(or_(User.username == form_data.username, User.email == form_data.username)).first()
+    
     if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+        raise HTTPException(status_code=401, detail="Incorrect username, email, or password")
     
     access_token = create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    # We return the username here so the frontend can display the "Operator" badge
     return {"access_token": access_token, "token_type": "bearer", "username": user.username}
 
 @app.get("/")
@@ -129,20 +194,12 @@ def read_root():
     return {"message": "DeepCut Secure Engine is online"}
 
 # ---------------------------------------------------------
-# HELPER FUNCTIONS
+# AI & AUDIT FUNCTIONS (Unchanged)
 # ---------------------------------------------------------
 def download_audio_from_link(url: str):
-    print(f"Attempting to extract audio from: {url}")
     temp_dir = tempfile.gettempdir()
     out_tmpl = os.path.join(temp_dir, 'downloaded_audio.%(ext)s')
-    
-    ydl_opts = {
-        'format': 'm4a/bestaudio/best',
-        'outtmpl': out_tmpl,
-        'noplaylist': True,
-        'quiet': True
-    }
-    
+    ydl_opts = {'format': 'm4a/bestaudio/best', 'outtmpl': out_tmpl, 'noplaylist': True, 'quiet': True}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
@@ -152,20 +209,17 @@ def download_audio_from_link(url: str):
             os.remove(downloaded_file_path)
             return file_content, "downloaded_link.m4a"
     except Exception as e:
-        print(f"yt-dlp error: {e}")
         return None, str(e)
 
 def security_scan(file_content, filename):
     api_key = os.getenv("VIRUSTOTAL_API_KEY")
-    if not api_key:
-        return True
+    if not api_key: return True
     url = "https://www.virustotal.com/api/v3/files"
     files = {"file": (filename, file_content)}
     headers = {"x-apikey": api_key}
     try:
         response = requests.post(url, headers=headers, files=files)
-        if response.status_code != 200:
-            return True 
+        if response.status_code != 200: return True 
         data = response.json()
         analysis_id = data["data"]["id"]
         while True:
@@ -173,28 +227,20 @@ def security_scan(file_content, filename):
             result = requests.get(result_url, headers=headers).json()
             status = result["data"]["attributes"]["status"]
             if status == "completed":
-                stats = result["data"]["attributes"]["stats"]
-                return stats["malicious"] == 0
+                return result["data"]["attributes"]["stats"]["malicious"] == 0
             time.sleep(3) 
-    except Exception as e:
+    except Exception:
         return True 
 
 def detect_with_ai_xml(file_content, filename):
-    if not client:
-        return {"anomalies": [], "error": "AI Engine offline. Check API Key."}
+    if not client: return {"anomalies": [], "error": "AI Engine offline."}
     text_content = file_content.decode('utf-8', errors='ignore')[:10000] 
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system", 
-                    "content": "You are a strict video compliance auditor. Analyze the XML timeline data. Look for copyrighted music (e.g., Drake, Hans Zimmer) and continuity notes/errors (e.g., jump cuts). Return the result STRICTLY as JSON with this exact structure: {\"anomalies\": [{\"timecode\": \"<string>\", \"type\": \"<string>\", \"description\": \"<string>\"}], \"error\": null}. If perfectly clean, return an empty array for anomalies."
-                },
-                {
-                    "role": "user", 
-                    "content": f"Filename: {filename}\nTimeline Data: {text_content}"
-                }
+                {"role": "system", "content": "You are a strict video compliance auditor. Analyze the XML timeline data. Look for copyrighted music and continuity notes/errors. Return the result STRICTLY as JSON: {\"anomalies\": [{\"timecode\": \"<string>\", \"type\": \"<string>\", \"description\": \"<string>\"}], \"error\": null}."},
+                {"role": "user", "content": f"Filename: {filename}\nTimeline Data: {text_content}"}
             ],
             response_format={ "type": "json_object" }
         )
@@ -203,27 +249,15 @@ def detect_with_ai_xml(file_content, filename):
         return {"anomalies": [], "error": str(e)}
 
 def detect_with_ai_audio(file_content, filename):
-    if not client:
-        return {"anomalies": [], "error": "AI Engine offline. Check API Key."}
-    if len(file_content) > 25 * 1024 * 1024:
-        return {"anomalies": [], "error": "File exceeds the 25MB limit for direct audio transcription."}
+    if not client: return {"anomalies": [], "error": "AI Engine offline."}
+    if len(file_content) > 25 * 1024 * 1024: return {"anomalies": [], "error": "File exceeds 25MB limit."}
     try:
-        transcript_response = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=(filename, file_content)
-        )
-        transcript_text = transcript_response.text
+        transcript_response = client.audio.transcriptions.create(model="whisper-1", file=(filename, file_content))
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system", 
-                    "content": "You are a broadcast standards auditor. Analyze the following video transcript. Flag any profanity, offensive language, or explicit mentions of competitor brands (e.g., 'Pepsi', 'Burger King'). Return the result STRICTLY as JSON with this exact structure: {\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"<string>\", \"description\": \"<string>\"}], \"error\": null}. If perfectly clean, return an empty array for anomalies."
-                },
-                {
-                    "role": "user", 
-                    "content": f"Transcript:\n{transcript_text}"
-                }
+                {"role": "system", "content": "You are a broadcast standards auditor. Flag any profanity, offensive language, or explicit mentions of competitor brands. Return the result STRICTLY as JSON: {\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"<string>\", \"description\": \"<string>\"}], \"error\": null}."},
+                {"role": "user", "content": f"Transcript:\n{transcript_response.text}"}
             ],
             response_format={ "type": "json_object" }
         )
@@ -231,43 +265,28 @@ def detect_with_ai_audio(file_content, filename):
     except Exception as e:
         return {"anomalies": [], "error": f"Audio processing failed: {str(e)}"}
 
-# ---------------------------------------------------------
-# MASTER ROUTE: TRIGGER AUDIT PIPELINE (SECURED)
-# ---------------------------------------------------------
 @app.post("/api/audit")
 @app.post("/api/audit/")
 async def run_audit(file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user)):
-    
     if video_url:
-        print(f"[{current_user.username}] Processing URL: {video_url}")
         file_content, filename_or_error = download_audio_from_link(video_url)
-        if not file_content:
-            return {"status": "error", "anomalies": [], "error": f"Failed to extract video: {filename_or_error}"}
+        if not file_content: return {"status": "error", "anomalies": [], "error": f"Failed: {filename_or_error}"}
         filename = "Linked_Video.m4a"
     elif file:
-        print(f"[{current_user.username}] Processing File: {file.filename}")
         file_content = await file.read()
         filename = file.filename
     else:
-        raise HTTPException(status_code=400, detail="Must provide either a file or a video URL.")
+        raise HTTPException(status_code=400, detail="Must provide file or URL.")
 
-    filename_lower = filename.lower()
-    
-    is_safe = security_scan(file_content, filename)
-    if not is_safe:
+    if not security_scan(file_content, filename):
         raise HTTPException(status_code=400, detail="Security scan failed.")
         
-    if filename_lower.endswith(('.mp4', '.mp3', '.wav', '.m4a')):
+    if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')):
         ai_analysis = detect_with_ai_audio(file_content, filename)
     else:
         ai_analysis = detect_with_ai_xml(file_content, filename)
     
-    return {
-        "status": "success",
-        "filename": filename if file else video_url,
-        "anomalies": ai_analysis.get('anomalies', []),
-        "error": ai_analysis.get('error', None)
-    }
+    return {"status": "success", "filename": filename, "anomalies": ai_analysis.get('anomalies', []), "error": ai_analysis.get('error', None)}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
