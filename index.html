@@ -21,28 +21,28 @@
         ::-webkit-scrollbar-thumb { background: #C86B5E; border: 2px solid #2D2824; }
         .req-met { color: #7A9E7E; text-decoration: line-through; text-decoration-thickness: 2px; }
         .req-unmet { color: #8C8273; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
 
-    <!-- AUTHORIZATION SCREEN -->
     <div id="loginScreen" class="w-full max-w-lg mx-auto mt-20 z-20 transition-all duration-500">
         <div class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-10 shadow-hard relative overflow-hidden">
             <div class="text-center mb-8 border-b-[3px] border-[#2D2824] pb-6">
                 <span class="text-4xl mb-3 block">🔐</span>
-                <h1 class="text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Log in </h1>
-                <p class="text-[#5C534A] text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Registered Users Only</p>
+                <h1 class="text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Access</h1>
+                <p class="text-[#5C534A] text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Authorized Personnel Only</p>
             </div>
 
             <div class="space-y-6">
                 <div>
-                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">Username</label>
-                    <input type="text" id="usernameInput" placeholder="Enter Username" class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm mb-4">
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">User Name</label>
+                    <input type="text" id="usernameInput" placeholder="Enter user name" class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm mb-4">
                 </div>
 
                 <div>
                     <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">Password</label>
-                    <input type="password" id="passwordInput" placeholder="Enter Password" class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <input type="password" id="passwordInput" placeholder="Enter password" class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
                 </div>
 
                 <div class="bg-[#EAE3D2]/30 border-[2px] border-[#2D2824] p-4 shadow-inner">
@@ -61,16 +61,19 @@
         </div>
     </div>
 
-    <!-- MAIN APPLICATION -->
     <div id="appScreen" class="w-full max-w-4xl mx-auto space-y-10 mt-12 relative z-10 hidden opacity-0 transition-opacity duration-700">
-        <header class="text-center space-y-4 border-b-4 border-[#2D2824] pb-8">
+        
+        <header class="text-center space-y-4 border-b-4 border-[#2D2824] pb-8 relative">
+            <button id="logoutBtn" class="absolute top-0 right-0 bg-[#EAE3D2] text-[#2D2824] hover:bg-[#C86B5E] hover:text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-2 text-[10px] font-bold tracking-[0.2em] uppercase shadow-hard-sm transition-colors z-10">
+                Log Out ⏏
+            </button>
+
             <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
                 <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
             </div>
             <h1 class="text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
             <p class="text-[#5C534A] max-w-lg mx-auto text-base font-medium tracking-wide">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
-            <button id="logoutBtn" class="absolute top-0 right-0 bg-[#EAE3D2] border-[2px] border-[#2D2824] px-4 py-2 text-[10px] font-bold uppercase hover:bg-[#C86B5E] hover:text-[#FDFBF7] transition-colors">Log Out ⏏</button>
         </header>
 
         <main class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard relative overflow-hidden">
@@ -169,12 +172,11 @@
         </section>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // LOGIN LOGIC
         const passwordInput = document.getElementById('passwordInput');
         const usernameInput = document.getElementById('usernameInput');
         const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
         const loginScreen = document.getElementById('loginScreen');
         const appScreen = document.getElementById('appScreen');
 
@@ -194,6 +196,7 @@
             }
         }
 
+        // Live input security checklist evaluation
         passwordInput.addEventListener('input', (e) => {
             const val = e.target.value;
             const hasLength = val.length >= 12;
@@ -206,50 +209,16 @@
 
             loginBtn.disabled = !(hasLength && hasUpper && hasSpecial && usernameInput.value.trim().length > 0);
         });
-        // Logout Logic
-// Optimized Logout Logic
-logoutBtn.addEventListener('click', () => {
-    // 1. HARD RESET: Nullify token and clear inputs
-    authToken = null;
-    usernameInput.value = '';
-    passwordInput.value = '';
-    
-    // 2. RESET VALIDATION: Force validation to re-run (which disables the login button)
-    passwordInput.dispatchEvent(new Event('input'));
-    loginBtn.textContent = "AUTHORIZE";
-    
-    // 3. CLEAN UI STATE: Hide app, reset workspace
-    appScreen.style.opacity = '0';
-    setTimeout(() => {
-        appScreen.classList.add('hidden');
         
-        // 4. RESET DASHBOARD: Clear old results
-        resultsDashboard.classList.add('hidden');
-        resultsDashboard.classList.remove('opacity-100');
-        inputWorkspace.classList.remove('hidden');
-        progressContainer.classList.add('hidden');
-        
-        // 5. SHOW LOGIN:
-        loginScreen.classList.remove('hidden');
-        loginScreen.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
-        
-        // 6. CLEAR ANY PENDING API/PROCESSES:
-        // By reloading the file-meta row to hidden, we stop any hanging audit animations
-        document.getElementById('fileMetaRow').classList.add('hidden');
-    }, 300);
-});
         usernameInput.addEventListener('input', () => {
-            // Re-trigger validation on username input to enable/disable button
             passwordInput.dispatchEvent(new Event('input'));
         });
 
+        // Backend login router token extraction
         loginBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-
-            const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('password', password);
+            const formData = new URLSearchParams({ username, password });
 
             loginBtn.textContent = "VERIFYING...";
             loginBtn.disabled = true;
@@ -263,8 +232,7 @@ logoutBtn.addEventListener('click', () => {
 
                 if (!response.ok) throw new Error("Access Denied");
 
-                const data = await response.json();
-                authToken = data.access_token; // Store token locally!
+                authToken = (await response.json()).access_token;
 
                 loginScreen.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
                 setTimeout(() => {
@@ -275,11 +243,38 @@ logoutBtn.addEventListener('click', () => {
             } catch (error) {
                 loginBtn.textContent = "AUTHORIZE";
                 loginBtn.disabled = false;
-                alert("Authorization Failed: Invalid Username or Password.");
+                alert("Authorization Failed: Invalid User Name or Password.");
             }
         });
 
-        // APP LOGIC
+        // ATOMIC RESET LOGOUT BLOCK
+        logoutBtn.addEventListener('click', () => {
+            authToken = null;
+            usernameInput.value = '';
+            passwordInput.value = '';
+            urlInput.value = '';
+            selectedFiles = [];
+            submittedUrl = null;
+            
+            passwordInput.dispatchEvent(new Event('input'));
+            loginBtn.textContent = "AUTHORIZE";
+            
+            resultsDashboard.classList.add('hidden', 'opacity-0', 'translate-y-4');
+            inputWorkspace.classList.remove('hidden'); 
+            fileMetaRow.classList.add('hidden');
+            progressContainer.classList.add('hidden');
+
+            appScreen.classList.add('opacity-0');
+            setTimeout(() => {
+                appScreen.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+                setTimeout(() => {
+                    loginScreen.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+                }, 50);
+            }, 500);
+        });
+
+        // FILE AND COMPLIANCE INFRASTRUCTURE HANDLERS
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
         const inputWorkspace = document.getElementById('inputWorkspace');
@@ -357,7 +352,6 @@ logoutBtn.addEventListener('click', () => {
                 if (selectedFiles.length > 0) formData.append('file', selectedFiles[0]);
                 else if (submittedUrl) formData.append('video_url', submittedUrl);
 
-                // KEY CHANGE: Attach the Bearer Token here!
                 const fetchPromise = fetch('https://deepcut-app.onrender.com/api/audit/', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${authToken}` },
@@ -371,7 +365,7 @@ logoutBtn.addEventListener('click', () => {
                 }
 
                 const response = await fetchPromise;
-                if (!response.ok) throw new Error("Server rejected request. Token may be invalid.");
+                if (!response.ok) throw new Error("Server rejected request.");
                 
                 const serverData = await response.json();
                 
@@ -381,8 +375,8 @@ logoutBtn.addEventListener('click', () => {
 
                 setTimeout(() => populateAndRevealDashboard(serverData), 600);
             } catch (error) {
-                console.error("Audit Error:", error);
-                updateBar('scanBar', 'scanPercent', 'scanText', 100, "NETWORK OR AUTH DROPPED.");
+                console.error(error);
+                updateBar('scanBar', 'scanPercent', 'scanText', 100, "NETWORK DROPPED.");
                 updateBar('detectBar', 'detectPercent', 'detectText', 100, "PIPELINE FAILED.");
                 setTimeout(() => { progressContainer.classList.add('hidden'); inputWorkspace.classList.remove('hidden'); }, 3000);
             }
