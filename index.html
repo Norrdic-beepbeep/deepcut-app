@@ -84,6 +84,13 @@
             </div>
             <h1 class="text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
             <p class="text-[#5C534A] max-w-lg mx-auto text-base font-medium tracking-wide">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
+            
+            <!-- USER GUIDE BUTTON -->
+            <div class="pt-4">
+                <button id="guideBtn" class="bg-[#FDFBF7] text-[#2D2824] hover:bg-[#EAE3D2] border-[3px] border-[#2D2824] px-6 py-2 text-xs font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">
+                    View User Guide 📖
+                </button>
+            </div>
         </header>
 
         <main class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard relative overflow-hidden">
@@ -182,8 +189,87 @@
         </section>
     </div>
 
+    <!-- USER GUIDE MODAL -->
+    <div id="guideModal" class="fixed inset-0 bg-[#2D2824]/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300">
+        <div class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard max-w-3xl w-full max-h-[90vh] overflow-y-auto relative">
+            <button id="closeGuideBtn" class="absolute top-4 right-5 text-3xl font-bold text-[#2D2824] hover:text-[#C86B5E] transition-colors focus:outline-none">&times;</button>
+            
+            <div class="text-center mb-8 border-b-[4px] border-[#2D2824] pb-6">
+                <h2 class="text-4xl font-bold uppercase tracking-tight text-[#2D2824]">DeepCut Protocol</h2>
+                <p class="text-[#5C534A] text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Official User Documentation</p>
+            </div>
+            
+            <div class="space-y-10 text-[#2D2824]">
+                <!-- WHY SECTION -->
+                <section>
+                    <h3 class="inline-block bg-[#E2A73A] text-[#2D2824] border-[2px] border-[#2D2824] px-4 py-1.5 text-sm font-bold tracking-[0.2em] uppercase mb-4 shadow-hard-sm">Why DeepCut?</h3>
+                    <div class="space-y-4">
+                        <p class="font-medium leading-relaxed text-base">DeepCut is designed to eliminate the costly human errors associated with manual cinematic auditing. Before media goes live to broadcast or streaming, it must pass rigorous standards.</p>
+                        <p class="font-medium leading-relaxed text-base">Our proprietary engine leverages advanced AI to instantly detect unauthorized copyrighted material, glaring continuity errors, and broadcast standards violations (such as profanity or explicit competitor brand mentions). With military-grade JWT encryption and a secure cloud architecture, your pre-release media remains strictly confidential.</p>
+                    </div>
+                </section>
+                
+                <!-- HOW TO SECTION -->
+                <section>
+                    <h3 class="inline-block bg-[#52796F] text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-1.5 text-sm font-bold tracking-[0.2em] uppercase mb-4 shadow-hard-sm">How to operate</h3>
+                    <div class="space-y-5">
+                        <div class="flex gap-4 items-start">
+                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-3 py-1 border border-[#2D2824]">1</span>
+                            <div>
+                                <h4 class="font-bold text-lg uppercase tracking-wide">Input Timeline</h4>
+                                <p class="text-sm font-medium text-[#5C534A] mt-1">Drag and drop a supported file into the main workspace. DeepCut accepts structural timelines (FCPXML, EDL) or direct raw media (MP4, MP3, WAV, M4A). You may also paste a direct web media URL.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 items-start">
+                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-3 py-1 border border-[#2D2824]">2</span>
+                            <div>
+                                <h4 class="font-bold text-lg uppercase tracking-wide">Initialize Audit</h4>
+                                <p class="text-sm font-medium text-[#5C534A] mt-1">Once media is verified, click the <span class="bg-[#C86B5E] text-[#FDFBF7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">Initialize</span> button. The system will securely hash signatures and poll security APIs before moving to the AI processing phase.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 items-start">
+                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-3 py-1 border border-[#2D2824]">3</span>
+                            <div>
+                                <h4 class="font-bold text-lg uppercase tracking-wide">Review Findings</h4>
+                                <p class="text-sm font-medium text-[#5C534A] mt-1">Upon completion, the engine will generate an official Compliance Audit Log. If the engine detects flags (e.g., Drake's music detected, jump-cut noted), they will be timestamped and classified for immediate correction.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT LOGIC -->
     <script>
+        // MODAL LOGIC
+        const guideBtn = document.getElementById('guideBtn');
+        const guideModal = document.getElementById('guideModal');
+        const closeGuideBtn = document.getElementById('closeGuideBtn');
+
+        guideBtn.addEventListener('click', () => {
+            guideModal.classList.remove('hidden');
+            // Slight delay to allow display block to apply before transitioning opacity
+            setTimeout(() => {
+                guideModal.classList.remove('opacity-0');
+            }, 10);
+        });
+
+        closeGuideBtn.addEventListener('click', () => {
+            guideModal.classList.add('opacity-0');
+            setTimeout(() => {
+                guideModal.classList.add('hidden');
+            }, 300);
+        });
+
+        guideModal.addEventListener('click', (e) => {
+            if (e.target === guideModal) {
+                closeGuideBtn.click();
+            }
+        });
+
         // LOGIN LOGIC
         const passwordInput = document.getElementById('passwordInput');
         const usernameInput = document.getElementById('usernameInput');
