@@ -27,6 +27,7 @@ except Exception as e:
     client = None
 
 @app.get("/")
+@app.head("/")
 def read_root():
     return {"message": "DeepCut Engine is online"}
 
