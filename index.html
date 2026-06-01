@@ -21,11 +21,11 @@
         ::-webkit-scrollbar-thumb { background: #C86B5E; border: 2px solid #2D2824; }
         .req-met { color: #7A9E7E; text-decoration: line-through; text-decoration-thickness: 2px; }
         .req-unmet { color: #8C8273; }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
-   
+
+    <!-- AUTHORIZATION SCREEN -->
     <div id="loginScreen" class="w-full max-w-lg mx-auto mt-20 z-20 transition-all duration-500">
         <div class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-10 shadow-hard relative overflow-hidden">
             <div class="text-center mb-8 border-b-[3px] border-[#2D2824] pb-6">
@@ -61,26 +61,30 @@
         </div>
     </div>
 
+    <!-- MAIN APPLICATION -->
     <div id="appScreen" class="w-full max-w-4xl mx-auto space-y-10 mt-12 relative z-10 hidden opacity-0 transition-opacity duration-700">
         
-<header class="text-center space-y-6 border-b-4 border-[#2D2824] pb-8 relative flex flex-col items-center">
-    <!-- LOGOUT BUTTON - MOBILE FIRST -->
-    <button id="logoutBtn" class="w-full sm:w-auto bg-[#C86B5E] text-[#FDFBF7] border-[3px] border-[#2D2824] px-6 py-3 text-xs font-bold tracking-[0.2em] uppercase shadow-hard-sm active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all z-20 order-1 sm:order-2 sm:absolute sm:right-0 sm:top-0">
-        Log Out ⏏
-    </button>
+        <header class="text-center space-y-4 border-b-4 border-[#2D2824] pb-8 relative">
+            
+            <!-- USERNAME BADGE (TOP LEFT, GREEN) -->
+            <div class="absolute top-0 left-0 bg-[#7A9E7E] text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-2 shadow-hard-sm z-10 flex items-center">
+                <span class="text-[10px] font-bold tracking-[0.2em] uppercase opacity-80 mr-2">Operator:</span>
+                <span id="displayUsername" class="font-typewriter text-xs font-bold uppercase tracking-widest">UNKNOWN</span>
+            </div>
 
-    <!-- STATUS BADGE -->
-    <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm order-2 sm:order-1 sm:mt-0">
-        <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
-        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
-    </div>
+            <!-- LOGOUT BUTTON (TOP RIGHT) -->
+            <button id="logoutBtn" class="absolute top-0 right-0 bg-[#EAE3D2] text-[#2D2824] hover:bg-[#C86B5E] hover:text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-2 text-[10px] font-bold tracking-[0.2em] uppercase shadow-hard-sm transition-colors z-10">
+                Log Out ⏏
+            </button>
 
-    <!-- TITLE -->
-    <div class="order-3 w-full">
-        <h1 class="text-4xl sm:text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
-        <p class="text-[#5C534A] max-w-lg mx-auto text-sm sm:text-base font-medium tracking-wide mt-2">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
-    </div>
-</header>
+            <!-- TITLE BLOCK -->
+            <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm mt-12 sm:mt-0">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
+            </div>
+            <h1 class="text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
+            <p class="text-[#5C534A] max-w-lg mx-auto text-base font-medium tracking-wide">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
+        </header>
 
         <main class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard relative overflow-hidden">
             <div id="inputWorkspace" class="space-y-10 transition-opacity duration-300">
@@ -89,7 +93,7 @@
                     <div class="space-y-4 pointer-events-none flex flex-col items-center">
                         <div class="text-5xl mb-2 transition-transform duration-300 group-hover:scale-110">📂</div>
                         <div>
-                            <div class="text-[#2D2824] font-bold text-xl uppercase tracking-wide">Select or drag file</div>
+                            <div class="text-[#2D2824] font-bold text-xl uppercase tracking-wide">Select or drag timeline file</div>
                             <div class="text-[#5C534A] text-sm font-typewriter mt-2 font-bold">Supports FCPXML, EDL, MP4, MP3</div>
                         </div>
                     </div>
@@ -107,22 +111,19 @@
                 </div>
             </div>
 
-<!-- UPDATED MOBILE-FRIENDLY FILE METADATA ROW -->
-<div id="fileMetaRow" class="hidden flex flex-col sm:flex-row items-center justify-between bg-[#E2A73A] p-6 border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all gap-4">
-    <div class="flex items-center gap-5 w-full">
-        <div class="text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-2 shadow-hard-sm shrink-0" id="metaIconContainer">
-            <span id="metaIconFile">📄</span>
-            <span id="metaIconLink" class="hidden">🔗</span>
-        </div>
-        <div class="min-w-0">
-            <p id="selectedFileName" class="font-typewriter font-bold text-lg text-[#2D2824] truncate">timeline.xml</p>
-            <p id="selectedFileSize" class="text-sm text-[#2D2824] font-bold mt-1 uppercase tracking-wider">Ready for audit</p>
-        </div>
-    </div>
-    <button id="runAuditBtn" class="w-full sm:w-auto bg-[#C86B5E] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">
-        Initialize
-    </button>
-</div>
+            <div id="fileMetaRow" class="hidden flex items-center justify-between bg-[#E2A73A] p-6 border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all">
+                <div class="flex items-center gap-5">
+                    <div class="text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-2 shadow-hard-sm" id="metaIconContainer">
+                        <span id="metaIconFile">📄</span>
+                        <span id="metaIconLink" class="hidden">🔗</span>
+                    </div>
+                    <div>
+                        <p id="selectedFileName" class="font-typewriter font-bold text-lg text-[#2D2824] truncate max-w-[200px] sm:max-w-[350px]">timeline.xml</p>
+                        <p id="selectedFileSize" class="text-sm text-[#2D2824] font-bold mt-1 uppercase tracking-wider">Ready for audit</p>
+                    </div>
+                </div>
+                <button id="runAuditBtn" class="bg-[#C86B5E] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Initialize</button>
+            </div>
 
             <div id="progressContainer" class="hidden mt-2 space-y-8 bg-[#FDFBF7] p-8 border-[3px] border-[#2D2824] shadow-hard-sm">
                 <div class="space-y-3">
@@ -181,13 +182,16 @@
         </section>
     </div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
+        // LOGIN LOGIC
         const passwordInput = document.getElementById('passwordInput');
         const usernameInput = document.getElementById('usernameInput');
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const loginScreen = document.getElementById('loginScreen');
         const appScreen = document.getElementById('appScreen');
+        const displayUsername = document.getElementById('displayUsername');
 
         const reqLength = document.getElementById('reqLength');
         const reqUpper = document.getElementById('reqUpper');
@@ -205,7 +209,6 @@
             }
         }
 
-        // Live input security checklist evaluation
         passwordInput.addEventListener('input', (e) => {
             const val = e.target.value;
             const hasLength = val.length >= 12;
@@ -223,11 +226,13 @@
             passwordInput.dispatchEvent(new Event('input'));
         });
 
-        // Backend login router token extraction
         loginBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-            const formData = new URLSearchParams({ username, password });
+
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
 
             loginBtn.textContent = "VERIFYING...";
             loginBtn.disabled = true;
@@ -241,7 +246,11 @@
 
                 if (!response.ok) throw new Error("Access Denied");
 
-                authToken = (await response.json()).access_token;
+                const data = await response.json();
+                authToken = data.access_token;
+                
+                // Inject username into top left badge
+                displayUsername.textContent = data.username;
 
                 loginScreen.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
                 setTimeout(() => {
@@ -256,15 +265,13 @@
             }
         });
 
-        // ATOMIC RESET LOGOUT BLOCK
+        // LOGOUT LOGIC
         logoutBtn.addEventListener('click', () => {
             authToken = null;
-            usernameInput.value = '';
-            passwordInput.value = '';
-            urlInput.value = '';
-            selectedFiles = [];
-            submittedUrl = null;
+            displayUsername.textContent = "UNKNOWN";
             
+            passwordInput.value = '';
+            usernameInput.value = '';
             passwordInput.dispatchEvent(new Event('input'));
             loginBtn.textContent = "AUTHORIZE";
             
@@ -272,6 +279,9 @@
             inputWorkspace.classList.remove('hidden'); 
             fileMetaRow.classList.add('hidden');
             progressContainer.classList.add('hidden');
+            selectedFiles = [];
+            submittedUrl = null;
+            urlInput.value = '';
 
             appScreen.classList.add('opacity-0');
             setTimeout(() => {
@@ -283,7 +293,7 @@
             }, 500);
         });
 
-        // FILE AND COMPLIANCE INFRASTRUCTURE HANDLERS
+        // APP LOGIC
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
         const inputWorkspace = document.getElementById('inputWorkspace');
@@ -374,7 +384,7 @@
                 }
 
                 const response = await fetchPromise;
-                if (!response.ok) throw new Error("Server rejected request.");
+                if (!response.ok) throw new Error("Server rejected request. Token may be invalid.");
                 
                 const serverData = await response.json();
                 
@@ -384,8 +394,8 @@
 
                 setTimeout(() => populateAndRevealDashboard(serverData), 600);
             } catch (error) {
-                console.error(error);
-                updateBar('scanBar', 'scanPercent', 'scanText', 100, "NETWORK DROPPED.");
+                console.error("Audit Error:", error);
+                updateBar('scanBar', 'scanPercent', 'scanText', 100, "NETWORK OR AUTH DROPPED.");
                 updateBar('detectBar', 'detectPercent', 'detectText', 100, "PIPELINE FAILED.");
                 setTimeout(() => { progressContainer.classList.add('hidden'); inputWorkspace.classList.remove('hidden'); }, 3000);
             }
