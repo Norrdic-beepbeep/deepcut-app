@@ -3,159 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepCut // AI Video Compliance Auditor</title>
+    <title>DeepCut // Video Compliance</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        body { font-family: 'Jost', sans-serif; }
+        .font-typewriter { font-family: 'Courier Prime', monospace; }
         .progress-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* Modern Shimmer Animation for Progress Bars */
-        @keyframes shimmer {
-            100% { transform: translateX(100%); }
-        }
-        .animate-shimmer::after {
-            content: '';
-            position: absolute;
-            top: 0; right: 0; bottom: 0; left: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transform: translateX(-100%);
-            animation: shimmer 1.5s infinite;
-        }
+        /* Hard, physical shadows for that tactile diorama look */
+        .shadow-hard { box-shadow: 6px 6px 0px #2D2824; }
+        .shadow-hard-sm { box-shadow: 3px 3px 0px #2D2824; }
+        .shadow-hard-hover:hover { box-shadow: 8px 8px 0px #2D2824; transform: translate(-2px, -2px); }
+        .shadow-hard-active:active { box-shadow: 2px 2px 0px #2D2824; transform: translate(4px, 4px); }
 
-        /* Custom Scrollbar for the Table */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #EAE3D2; border-left: 2px solid #2D2824; }
+        ::-webkit-scrollbar-thumb { background: #C86B5E; border: 2px solid #2D2824; }
     </style>
 </head>
-<body class="bg-[#0B0F19] text-slate-200 min-h-screen flex flex-col items-center justify-start p-6 font-sans relative overflow-x-hidden selection:bg-indigo-500/30">
-
-    <div class="fixed top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none"></div>
-    <div class="fixed bottom-[-10%] right-[10%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[150px] pointer-events-none"></div>
+<body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
 
     <div class="w-full max-w-4xl mx-auto space-y-10 mt-12 relative z-10">
         
-        <header class="text-center space-y-3">
-            <div class="inline-flex items-center justify-center space-x-2 bg-slate-800/50 border border-slate-700/50 px-3 py-1 rounded-full mb-2 backdrop-blur-md">
-                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                <span class="text-xs font-mono text-slate-300 uppercase tracking-widest">DeepCut Online</span>
+        <header class="text-center space-y-4 border-b-4 border-[#2D2824] pb-8">
+            <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
             </div>
-            <h1 class="text-5xl font-extrabold tracking-tight bg-gradient-to-br from-white via-slate-200 to-slate-500 bg-clip-text text-transparent">
-                DeepCut
+            <h1 class="text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">
+                DeepCut Engine
             </h1>
-            <p class="text-slate-400 max-w-md mx-auto text-sm font-medium">
-                Automated video timeline auditing for continuity, copyright compliance, and visual consistency.
+            <p class="text-[#5C534A] max-w-lg mx-auto text-base font-medium tracking-wide">
+                Automated cinematic auditing for continuity, copyright compliance, and visual consistency.
             </p>
         </header>
 
-        <main class="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden">
+        <main class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard relative overflow-hidden">
             
-            <div id="inputWorkspace" class="space-y-8 transition-opacity duration-300">
+            <div id="inputWorkspace" class="space-y-10 transition-opacity duration-300">
                 
-                <label for="fileInput" id="uploadZone" class="group block border-2 border-dashed border-slate-700/70 hover:border-indigo-500/60 rounded-2xl p-10 text-center cursor-pointer bg-slate-950/30 hover:bg-indigo-500/5 transition-all duration-300">
+                <label for="fileInput" id="uploadZone" class="group block border-[3px] border-dashed border-[#2D2824] bg-[#EAE3D2]/50 hover:bg-[#E2A73A]/20 p-12 text-center cursor-pointer transition-colors duration-300">
                     <input type="file" id="fileInput" class="hidden" accept=".xml,.edl,.mp4,.mp3,.wav,.m4a" />
                     <div class="space-y-4 pointer-events-none flex flex-col items-center">
-                        <div class="w-16 h-16 rounded-2xl bg-slate-800/80 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 group-hover:scale-110 flex items-center justify-center text-slate-400 transition-all duration-300 shadow-lg border border-slate-700 group-hover:border-indigo-500/30">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-                            </svg>                              
-                        </div>
+                        <div class="text-5xl mb-2 transition-transform duration-300 group-hover:scale-110">📂</div>
                         <div>
-                            <div class="text-slate-200 font-semibold text-lg">Select or drag timeline file</div>
-                            <div class="text-slate-500 text-xs font-mono mt-1">Supports FCPXML, EDL, MP4, MP3</div>
+                            <div class="text-[#2D2824] font-bold text-xl uppercase tracking-wide">Select or drag timeline file</div>
+                            <div class="text-[#5C534A] text-sm font-typewriter mt-2 font-bold">Supports FCPXML, EDL, MP4, MP3</div>
                         </div>
                     </div>
                 </label>
 
-                <div class="flex items-center justify-center space-x-4 opacity-60">
-                    <div class="h-px bg-gradient-to-r from-transparent to-slate-700 w-full"></div>
-                    <span class="text-slate-500 text-xs font-semibold tracking-widest uppercase">OR</span>
-                    <div class="h-px bg-gradient-to-l from-transparent to-slate-700 w-full"></div>
+                <div class="flex items-center justify-center space-x-4">
+                    <div class="h-[3px] bg-[#2D2824] w-full"></div>
+                    <span class="text-[#2D2824] text-sm font-bold tracking-[0.2em] uppercase px-4">Or</span>
+                    <div class="h-[3px] bg-[#2D2824] w-full"></div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-3 relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
-                    </div>
-                    <input type="url" id="urlInput" placeholder="Paste a web media link here..." class="flex-1 bg-slate-950/50 border border-slate-700/80 text-slate-200 rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm font-mono placeholder:text-slate-600 shadow-inner">
-                    <button id="runUrlBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors border border-slate-700 shadow-sm whitespace-nowrap hover:shadow-md">
+                <div class="flex flex-col sm:flex-row gap-4 relative">
+                    <input type="url" id="urlInput" placeholder="Paste a web media link here..." class="flex-1 bg-[#FDFBF7] border-[3px] border-[#2D2824] text-[#2D2824] px-5 py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <button id="runUrlBtn" class="bg-[#52796F] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">
                         Scan Link
                     </button>
                 </div>
             </div>
 
-            <div id="fileMetaRow" class="hidden flex items-center justify-between bg-slate-950/60 p-5 rounded-2xl border border-slate-800/80 mt-2 backdrop-blur-sm shadow-inner transition-all">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20" id="metaIconContainer">
-                        <svg id="metaIconFile" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-                        <svg id="metaIconLink" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+            <div id="fileMetaRow" class="hidden flex items-center justify-between bg-[#E2A73A] p-6 border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all">
+                <div class="flex items-center gap-5">
+                    <div class="text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-2 shadow-hard-sm" id="metaIconContainer">
+                        <span id="metaIconFile">📄</span>
+                        <span id="metaIconLink" class="hidden">🔗</span>
                     </div>
                     <div>
-                        <p id="selectedFileName" class="font-mono text-sm font-semibold text-slate-200 truncate max-w-[200px] sm:max-w-[300px]">timeline.xml</p>
-                        <p id="selectedFileSize" class="text-xs text-slate-500 font-medium mt-0.5">Ready for audit</p>
+                        <p id="selectedFileName" class="font-typewriter font-bold text-lg text-[#2D2824] truncate max-w-[200px] sm:max-w-[350px]">timeline.xml</p>
+                        <p id="selectedFileSize" class="text-sm text-[#2D2824] font-bold mt-1 uppercase tracking-wider">Ready for audit</p>
                     </div>
                 </div>
-                <button id="runAuditBtn" class="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] hover:-translate-y-0.5 whitespace-nowrap">
-                    Initialize Audit
+                <button id="runAuditBtn" class="bg-[#C86B5E] text-[#FDFBF7] font-bold px-8 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">
+                    Initialize
                 </button>
             </div>
 
-            <div id="progressContainer" class="hidden mt-2 space-y-8 bg-slate-950/40 p-8 rounded-2xl border border-slate-800/50 shadow-inner">
+            <div id="progressContainer" class="hidden mt-2 space-y-8 bg-[#FDFBF7] p-8 border-[3px] border-[#2D2824] shadow-hard-sm">
                 <div class="space-y-3">
-                    <div class="flex justify-between text-xs font-mono">
-                        <span id="scanText" class="text-orange-400 font-semibold tracking-wide">Pending structural safety check...</span>
-                        <span id="scanPercent" class="text-slate-400 font-bold">0%</span>
+                    <div class="flex justify-between text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
+                        <span id="scanText">Pending structural safety check...</span>
+                        <span id="scanPercent">0%</span>
                     </div>
-                    <div class="w-full bg-slate-900 rounded-full h-3 border border-slate-800 overflow-hidden relative">
-                        <div id="scanBar" class="bg-orange-500 h-full w-0 progress-transition animate-shimmer shadow-[0_0_15px_rgba(249,115,22,0.5)]"></div>
+                    <div class="w-full bg-[#EAE3D2] h-6 border-[3px] border-[#2D2824] relative">
+                        <div id="scanBar" class="bg-[#E2A73A] h-full w-0 progress-transition border-r-[3px] border-[#2D2824]"></div>
                     </div>
                 </div>
                 
                 <div class="space-y-3">
-                    <div class="flex justify-between text-xs font-mono">
-                        <span id="detectText" class="text-slate-500 font-semibold tracking-wide">Waiting for compliance engine...</span>
-                        <span id="detectPercent" class="text-slate-400 font-bold">0%</span>
+                    <div class="flex justify-between text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
+                        <span id="detectText">Waiting for compliance engine...</span>
+                        <span id="detectPercent">0%</span>
                     </div>
-                    <div class="w-full bg-slate-900 rounded-full h-3 border border-slate-800 overflow-hidden relative">
-                        <div id="detectBar" class="bg-indigo-500 h-full w-0 progress-transition animate-shimmer shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+                    <div class="w-full bg-[#EAE3D2] h-6 border-[3px] border-[#2D2824] relative">
+                        <div id="detectBar" class="bg-[#52796F] h-full w-0 progress-transition border-r-[3px] border-[#2D2824]"></div>
                     </div>
                 </div>
             </div>
 
         </main>
 
-        <section id="resultsDashboard" class="hidden bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-800 p-8 sm:p-10 shadow-2xl text-slate-200 mt-6 w-full transition-all duration-500 transform translate-y-4 opacity-0">
+        <section id="resultsDashboard" class="hidden bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard mt-8 w-full transition-all duration-500 transform translate-y-4 opacity-0">
             
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-8 border-b border-slate-800/80 pb-6 gap-5">
-                <div class="space-y-2">
-                    <p class="text-slate-400 text-xs flex items-center gap-2 font-semibold">
-                        <span class="bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-md text-[10px] font-mono tracking-widest uppercase border border-indigo-500/20 shadow-sm" id="dashFormat">Verified Format</span>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-10 border-b-[4px] border-[#2D2824] pb-6 gap-5">
+                <div class="space-y-3">
+                    <p class="text-[#2D2824] text-xs flex items-center gap-3 font-bold">
+                        <span class="bg-[#EAE3D2] px-3 py-1.5 text-[11px] font-typewriter tracking-widest uppercase border-[2px] border-[#2D2824] shadow-hard-sm" id="dashFormat">Verified Format</span>
                         ANALYSIS COMPLETE
                     </p>
-                    <h2 class="text-xl font-bold tracking-tight text-white truncate max-w-sm sm:max-w-md font-mono" id="dashFileName">timeline_v4_final.xml</h2>
+                    <h2 class="text-2xl font-bold tracking-tight text-[#2D2824] truncate max-w-sm sm:max-w-md font-typewriter uppercase" id="dashFileName">timeline_v4_final.xml</h2>
                 </div>
                 <div>
-                    <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide shadow-sm" id="dashStatus">
+                    <div class="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm" id="dashStatus">
                         Processing...
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-5">
-                <h3 class="text-sm font-bold text-slate-300 tracking-widest uppercase flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-indigo-400"><path stroke-linecap="round" stroke-linejoin="round" d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a9 9 0 019 9v.375M10.125 2.25A3.375 3.375 0 0113.5 5.625v1.5c0 .621.504 1.125 1.125 1.125h1.5a3.375 3.375 0 013.375 3.375M9 15l2.25 2.25L15 12" /></svg>
+            <div class="space-y-6">
+                <h3 class="text-base font-bold text-[#2D2824] tracking-[0.2em] uppercase flex items-center gap-3">
+                    <span class="text-2xl">📋</span>
                     Compliance Audit Log
                 </h3>
-                <div class="overflow-x-auto rounded-2xl border border-slate-700/60 bg-slate-950/50 shadow-inner">
+                <div class="overflow-x-auto border-[3px] border-[#2D2824] bg-[#FDFBF7] shadow-hard-sm">
                     <table class="w-full text-left border-collapse" id="auditTable">
                         <thead>
-                            <tr class="bg-slate-900/80 text-slate-400 text-[11px] uppercase tracking-widest font-bold border-b border-slate-700/60">
-                                <th class="py-4 px-6">Timecode</th>
-                                <th class="py-4 px-6">Classification</th>
-                                <th class="py-4 px-6">AI Insight</th>
+                            <tr class="bg-[#EAE3D2] text-[#2D2824] text-[12px] uppercase tracking-widest font-bold border-b-[3px] border-[#2D2824]">
+                                <th class="py-5 px-6 border-r-[3px] border-[#2D2824]">Timecode</th>
+                                <th class="py-5 px-6 border-r-[3px] border-[#2D2824]">Classification</th>
+                                <th class="py-5 px-6">AI Insight</th>
                             </tr>
                         </thead>
-                        <tbody class="text-sm divide-y divide-slate-800/80" id="auditTableBody">
+                        <tbody class="text-base font-medium" id="auditTableBody">
                             </tbody>
                     </table>
                 </div>
@@ -190,11 +177,11 @@
             if (e.target.files.length > 0) handleFileSelection(e.target.files[0]);
         });
 
-        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('border-indigo-500/60', 'bg-indigo-500/5'); });
-        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('border-indigo-500/60', 'bg-indigo-500/5'));
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('bg-[#E2A73A]/20'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('bg-[#E2A73A]/20'));
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadZone.classList.remove('border-indigo-500/60', 'bg-indigo-500/5');
+            uploadZone.classList.remove('bg-[#E2A73A]/20');
             if (e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
                 handleFileSelection(e.dataTransfer.files[0]);
@@ -215,7 +202,6 @@
             inputWorkspace.classList.add('hidden');
             fileMetaRow.classList.remove('hidden');
             
-            // Hide dashboard smoothly
             resultsDashboard.classList.remove('opacity-100', 'translate-y-0');
             resultsDashboard.classList.add('opacity-0', 'translate-y-4');
             setTimeout(() => resultsDashboard.classList.add('hidden'), 300);
@@ -243,7 +229,7 @@
         });
 
         // Progress Bar Logic
-        function updateBar(barId, percentId, textId, percent, text, stateClass = 'text-slate-400') {
+        function updateBar(barId, percentId, textId, percent, text) {
             return new Promise((resolve) => {
                 const bar = document.getElementById(barId);
                 const percentText = document.getElementById(percentId);
@@ -253,7 +239,6 @@
                 percentText.textContent = percent + '%';
                 statusText.textContent = text;
                 
-                if(stateClass) statusText.className = `text-xs font-mono font-bold tracking-wide ${stateClass}`;
                 setTimeout(resolve, 400);
             });
         }
@@ -265,12 +250,12 @@
             fileMetaRow.classList.add('hidden');
             progressContainer.classList.remove('hidden');
 
-            updateBar('detectBar', 'detectPercent', 'detectText', 0, "⏳ STANDBY...", 'text-slate-500');
+            updateBar('detectBar', 'detectPercent', 'detectText', 0, "STANDBY...");
             
             if (submittedUrl) {
-                await updateBar('scanBar', 'scanPercent', 'scanText', 10, "🌐 EXTRACTING MEDIA...", 'text-purple-400');
+                await updateBar('scanBar', 'scanPercent', 'scanText', 10, "EXTRACTING MEDIA...");
             } else {
-                await updateBar('scanBar', 'scanPercent', 'scanText', 10, "🔍 UPLOADING TO ENGINE...", 'text-orange-400');
+                await updateBar('scanBar', 'scanPercent', 'scanText', 10, "UPLOADING TO ENGINE...");
             }
 
             try {
@@ -287,10 +272,10 @@
                 });
 
                 if (submittedUrl) {
-                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 40, "🎧 PROCESSING AUDIO...", 'text-purple-400'), 2500);
+                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 40, "PROCESSING AUDIO..."), 2500);
                 } else {
-                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 45, "🔍 HASHING SIGNATURES...", 'text-orange-400'), 1500);
-                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 85, "⏳ POLLING SECURITY API...", 'text-orange-400'), 3000);
+                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 45, "HASHING SIGNATURES..."), 1500);
+                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 85, "POLLING SECURITY API..."), 3000);
                 }
 
                 const response = await fetchPromise;
@@ -298,16 +283,16 @@
                 
                 const serverData = await response.json();
                 
-                await updateBar('scanBar', 'scanPercent', 'scanText', 100, "🛡️ SECURE. PHASE 1 COMPLETE.", 'text-green-400');
-                await updateBar('detectBar', 'detectPercent', 'detectText', 40, "🧠 AI PROCESSING...", 'text-indigo-400');
-                await updateBar('detectBar', 'detectPercent', 'detectText', 100, "✅ AUDIT COMPLETE.", 'text-green-400');
+                await updateBar('scanBar', 'scanPercent', 'scanText', 100, "SECURE. PHASE 1 COMPLETE.");
+                await updateBar('detectBar', 'detectPercent', 'detectText', 40, "AI PROCESSING...");
+                await updateBar('detectBar', 'detectPercent', 'detectText', 100, "AUDIT COMPLETE.");
 
                 setTimeout(() => populateAndRevealDashboard(serverData), 600);
 
             } catch (error) {
                 console.error("Upload Error:", error);
-                updateBar('scanBar', 'scanPercent', 'scanText', 100, "❌ NETWORK DROPPED.", 'text-red-500');
-                updateBar('detectBar', 'detectPercent', 'detectText', 100, "❌ PIPELINE FAILED.", 'text-red-500');
+                updateBar('scanBar', 'scanPercent', 'scanText', 100, "NETWORK DROPPED.");
+                updateBar('detectBar', 'detectPercent', 'detectText', 100, "PIPELINE FAILED.");
                 
                 setTimeout(() => {
                     progressContainer.classList.add('hidden');
@@ -334,51 +319,52 @@
             tableBody.innerHTML = '';
 
             if (data.status === "error" || data.error) {
-                statusBadge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg> Engine Error`;
-                statusBadge.className = "inline-flex items-center gap-2 bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-sm font-bold border border-red-500/20 shadow-sm";
+                statusBadge.innerHTML = `⚠️ Engine Error`;
+                statusBadge.className = "inline-flex items-center gap-2 bg-[#C86B5E] text-[#FDFBF7] px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm";
                 
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="py-10 px-6 text-center">
-                            <p class="text-red-400 font-mono text-sm mb-2 font-bold tracking-wide">ERROR PROCESSING INPUT</p>
-                            <p class="text-slate-500 text-xs">${data.error}</p>
+                        <td colspan="3" class="py-12 px-6 text-center bg-[#FDFBF7]">
+                            <p class="text-[#C86B5E] font-typewriter text-base mb-2 font-bold tracking-wide uppercase">Error Processing Input</p>
+                            <p class="text-[#5C534A] text-sm font-bold">${data.error}</p>
                         </td>
                     </tr>
                 `;
             } 
             else if (data.anomalies && data.anomalies.length > 0) {
-                statusBadge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg> ${data.anomalies.length} Flags Detected`;
-                statusBadge.className = "inline-flex items-center gap-2 bg-orange-500/10 text-orange-400 px-4 py-2 rounded-xl text-sm font-bold border border-orange-500/30 shadow-sm";
+                statusBadge.innerHTML = `🚩 ${data.anomalies.length} Flags Detected`;
+                statusBadge.className = "inline-flex items-center gap-2 bg-[#E2A73A] text-[#2D2824] px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm";
                 
-                data.anomalies.forEach(anomaly => {
+                data.anomalies.forEach((anomaly, index) => {
+                    const rowClass = index !== data.anomalies.length - 1 ? "border-b-[3px] border-[#2D2824]" : "";
                     tableBody.innerHTML += `
-                        <tr class="hover:bg-slate-800/40 transition-colors group">
-                            <td class="py-5 px-6 font-mono text-slate-300 font-semibold group-hover:text-indigo-300 transition-colors">${anomaly.timecode || 'Audio'}</td>
-                            <td class="py-5 px-6"><span class="text-orange-300 bg-orange-500/10 px-2.5 py-1 rounded-md text-xs font-bold border border-orange-500/20 shadow-sm">${anomaly.type || 'Flag'}</span></td>
-                            <td class="py-5 px-6 text-slate-400 font-medium leading-relaxed">${anomaly.description || 'Issue detected.'}</td>
+                        <tr class="bg-[#FDFBF7] hover:bg-[#EAE3D2]/50 transition-colors ${rowClass}">
+                            <td class="py-6 px-6 font-typewriter text-[#2D2824] font-bold border-r-[3px] border-[#2D2824] align-top">${anomaly.timecode || 'Audio'}</td>
+                            <td class="py-6 px-6 border-r-[3px] border-[#2D2824] align-top">
+                                <span class="bg-[#C86B5E] text-[#FDFBF7] px-3 py-1.5 text-xs font-bold tracking-widest uppercase border-[2px] border-[#2D2824] shadow-hard-sm inline-block">${anomaly.type || 'Flag'}</span>
+                            </td>
+                            <td class="py-6 px-6 text-[#2D2824] font-medium leading-relaxed align-top">${anomaly.description || 'Issue detected.'}</td>
                         </tr>
                     `;
                 });
             } else {
-                statusBadge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Clean / Verified`;
-                statusBadge.className = "inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-4 py-2 rounded-xl text-sm font-bold border border-emerald-500/20 shadow-sm";
+                statusBadge.innerHTML = `🌟 Clean / Verified`;
+                statusBadge.className = "inline-flex items-center gap-2 bg-[#7A9E7E] text-[#FDFBF7] px-6 py-3 text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm";
                 
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="py-12 px-6 text-center text-slate-500 font-mono text-xs font-semibold tracking-wide">
-                            NO COMPLIANCE VIOLATIONS OR ABNORMALITIES DETECTED.
+                        <td colspan="3" class="py-16 px-6 text-center text-[#5C534A] font-typewriter text-sm font-bold tracking-widest uppercase bg-[#FDFBF7]">
+                            No compliance violations or abnormalities detected.
                         </td>
                     </tr>
                 `;
             }
 
-            // Reset and Reveal
             progressContainer.classList.add('hidden');
             inputWorkspace.classList.remove('hidden'); 
             
             resultsDashboard.classList.remove('hidden');
             
-            // Tiny delay to allow display:block to apply before animating opacity
             setTimeout(() => {
                 resultsDashboard.classList.remove('opacity-0', 'translate-y-4');
                 resultsDashboard.classList.add('opacity-100', 'translate-y-0');
