@@ -25,7 +25,6 @@
 </head>
 <body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
 
-    <!-- AUTHORIZATION SCREEN -->
     <div id="loginScreen" class="w-full max-w-lg mx-auto mt-20 z-20 transition-all duration-500">
         <div class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-10 shadow-hard relative overflow-hidden">
             <div class="text-center mb-8 border-b-[3px] border-[#2D2824] pb-6">
@@ -61,23 +60,19 @@
         </div>
     </div>
 
-    <!-- MAIN APPLICATION -->
     <div id="appScreen" class="w-full max-w-4xl mx-auto space-y-10 mt-12 relative z-10 hidden opacity-0 transition-opacity duration-700">
         
         <header class="text-center space-y-4 border-b-4 border-[#2D2824] pb-8 relative">
             
-            <!-- USERNAME BADGE (TOP LEFT, GREEN) -->
             <div class="absolute top-0 left-0 bg-[#7A9E7E] text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-2 shadow-hard-sm z-10 flex items-center">
                 <span class="text-[10px] font-bold tracking-[0.2em] uppercase opacity-80 mr-2">Operator:</span>
                 <span id="displayUsername" class="font-typewriter text-xs font-bold uppercase tracking-widest">UNKNOWN</span>
             </div>
 
-            <!-- LOGOUT BUTTON (TOP RIGHT) -->
             <button id="logoutBtn" class="absolute top-0 right-0 bg-[#EAE3D2] text-[#2D2824] hover:bg-[#C86B5E] hover:text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-2 text-[10px] font-bold tracking-[0.2em] uppercase shadow-hard-sm transition-colors z-10">
                 Log Out ⏏
             </button>
 
-            <!-- TITLE BLOCK -->
             <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm mt-12 sm:mt-0">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
                 <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
@@ -85,7 +80,6 @@
             <h1 class="text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
             <p class="text-[#5C534A] max-w-lg mx-auto text-base font-medium tracking-wide">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
             
-            <!-- USER GUIDE BUTTON -->
             <div class="pt-4">
                 <button id="guideBtn" class="bg-[#FDFBF7] text-[#2D2824] hover:bg-[#EAE3D2] border-[3px] border-[#2D2824] px-6 py-2 text-xs font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">
                     View User Guide 📖
@@ -96,12 +90,12 @@
         <main class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard relative overflow-hidden">
             <div id="inputWorkspace" class="space-y-10 transition-opacity duration-300">
                 <label for="fileInput" id="uploadZone" class="group block border-[3px] border-dashed border-[#2D2824] bg-[#EAE3D2]/50 hover:bg-[#E2A73A]/20 p-12 text-center cursor-pointer transition-colors duration-300">
-                    <input type="file" id="fileInput" class="hidden" accept=".xml,.edl,.mp4,.mp3,.wav,.m4a" />
+                    <input type="file" id="fileInput" class="hidden" accept=".xml,.fcpxml,.edl,.mp4" />
                     <div class="space-y-4 pointer-events-none flex flex-col items-center">
                         <div class="text-5xl mb-2 transition-transform duration-300 group-hover:scale-110">📂</div>
                         <div>
                             <div class="text-[#2D2824] font-bold text-xl uppercase tracking-wide">Select or drag timeline file</div>
-                            <div class="text-[#5C534A] text-sm font-typewriter mt-2 font-bold">Supports FCPXML, EDL, MP4, MP3</div>
+                            <div class="text-[#5C534A] text-sm font-typewriter mt-2 font-bold">Supports XML, FCPXML, EDL, MP4</div>
                         </div>
                     </div>
                 </label>
@@ -189,7 +183,6 @@
         </section>
     </div>
 
-    <!-- USER GUIDE MODAL -->
     <div id="guideModal" class="fixed inset-0 bg-[#2D2824]/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300">
         <div class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard max-w-3xl w-full max-h-[90vh] overflow-y-auto relative">
             <button id="closeGuideBtn" class="absolute top-4 right-5 text-3xl font-bold text-[#2D2824] hover:text-[#C86B5E] transition-colors focus:outline-none">&times;</button>
@@ -200,7 +193,6 @@
             </div>
             
             <div class="space-y-10 text-[#2D2824]">
-                <!-- WHY SECTION -->
                 <section>
                     <h3 class="inline-block bg-[#E2A73A] text-[#2D2824] border-[2px] border-[#2D2824] px-4 py-1.5 text-sm font-bold tracking-[0.2em] uppercase mb-4 shadow-hard-sm">Why DeepCut?</h3>
                     <div class="space-y-4">
@@ -209,7 +201,6 @@
                     </div>
                 </section>
                 
-                <!-- HOW TO SECTION -->
                 <section>
                     <h3 class="inline-block bg-[#52796F] text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-1.5 text-sm font-bold tracking-[0.2em] uppercase mb-4 shadow-hard-sm">How to operate</h3>
                     <div class="space-y-5">
@@ -217,7 +208,7 @@
                             <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-3 py-1 border border-[#2D2824]">1</span>
                             <div>
                                 <h4 class="font-bold text-lg uppercase tracking-wide">Input Timeline</h4>
-                                <p class="text-sm font-medium text-[#5C534A] mt-1">Drag and drop a supported file into the main workspace. DeepCut accepts structural timelines (FCPXML, EDL) or direct raw media (MP4, MP3, WAV, M4A). You may also paste a direct web media URL.</p>
+                                <p class="text-sm font-medium text-[#5C534A] mt-1">Drag and drop a supported file into the main workspace. DeepCut explicitly requires raw structural timelines (XML, FCPXML, EDL) or direct raw media (MP4). You may also paste a direct web media URL.</p>
                             </div>
                         </div>
 
@@ -233,7 +224,7 @@
                             <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-3 py-1 border border-[#2D2824]">3</span>
                             <div>
                                 <h4 class="font-bold text-lg uppercase tracking-wide">Review Findings</h4>
-                                <p class="text-sm font-medium text-[#5C534A] mt-1">Upon completion, the engine will generate an official Compliance Audit Log. If the engine detects flags (e.g., Drake's music detected, jump-cut noted), they will be timestamped and classified for immediate correction.</p>
+                                <p class="text-sm font-medium text-[#5C534A] mt-1">Upon completion, the engine will generate an official Compliance Audit Log. If the engine detects flags (e.g., unauthorized audio detected, jump-cut noted), they will be timestamped and classified for immediate correction.</p>
                             </div>
                         </div>
                     </div>
@@ -242,7 +233,6 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
     <script>
         // MODAL LOGIC
         const guideBtn = document.getElementById('guideBtn');
@@ -251,7 +241,6 @@
 
         guideBtn.addEventListener('click', () => {
             guideModal.classList.remove('hidden');
-            // Slight delay to allow display block to apply before transitioning opacity
             setTimeout(() => {
                 guideModal.classList.remove('opacity-0');
             }, 10);
@@ -335,7 +324,6 @@
                 const data = await response.json();
                 authToken = data.access_token;
                 
-                // Inject username into top left badge (fallback to typed username if backend payload is delayed)
                 displayUsername.textContent = data.username || username;
 
                 loginScreen.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
@@ -411,7 +399,18 @@
             }
         });
 
+        // UPDATED: JavaScript Hard Validation Check
         function handleFileSelection(file) {
+            const allowedExtensions = ['.xml', '.fcpxml', '.edl', '.mp4'];
+            const fileNameLower = file.name.toLowerCase();
+            const isValid = allowedExtensions.some(ext => fileNameLower.endsWith(ext));
+
+            if (!isValid) {
+                alert("SYSTEM ERROR: Invalid file format.\n\nAuthorized formats are XML, FCPXML, EDL, and MP4.");
+                fileInput.value = ''; 
+                return;
+            }
+
             selectedFiles = [file]; submittedUrl = null; urlInput.value = '';
             metaIconLink.classList.add('hidden'); metaIconFile.classList.remove('hidden');
             selectedFileName.textContent = file.name;
@@ -491,7 +490,7 @@
             document.getElementById('dashFileName').textContent = data.filename || "Source Media";
             const nameLower = (data.filename || "").toLowerCase();
             let formatType = "XML Timeline";
-            if (nameLower.endsWith('.mp4') || nameLower.endsWith('.mp3') || nameLower.endsWith('.wav') || nameLower.endsWith('.m4a')) formatType = "Audio / Video Stream";
+            if (nameLower.endsWith('.mp4')) formatType = "Video File";
             if (submittedUrl) formatType = "Web Stream";
             document.getElementById('dashFormat').textContent = formatType;
 
