@@ -210,7 +210,7 @@
             
             const nameLower = (data.filename || "").toLowerCase();
             let formatType = "XML Timeline";
-            if (nameLower.endswith('.mp4') || nameLower.endswith('.mp3') || nameLower.endswith('.wav') || nameLower.endswith('.m4a')) {
+            if (nameLower.endsWith('.mp4') || nameLower.endsWith('.mp3') || nameLower.endsWith('.wav') || nameLower.endsWith('.m4a')) {
                 formatType = "Audio/Video Stream";
             }
             document.getElementById('dashFormat').textContent = formatType;
