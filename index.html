@@ -63,18 +63,18 @@
 
     <div id="appScreen" class="w-full max-w-4xl mx-auto space-y-10 mt-12 relative z-10 hidden opacity-0 transition-opacity duration-700">
         
-        <header class="text-center space-y-4 border-b-4 border-[#2D2824] pb-8 relative">
-            <button id="logoutBtn" class="absolute top-0 right-0 bg-[#EAE3D2] text-[#2D2824] hover:bg-[#C86B5E] hover:text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-2 text-[10px] font-bold tracking-[0.2em] uppercase shadow-hard-sm transition-colors z-10">
-                Log Out ⏏
-            </button>
+<header class="text-center space-y-4 border-b-4 border-[#2D2824] pb-8 relative">
+    <!-- MOBILE-OPTIMIZED LOGOUT BUTTON -->
+    <button id="logoutBtn" class="absolute -top-2 right-0 sm:top-0 bg-[#E2A73A] text-[#2D2824] border-[3px] border-[#2D2824] px-6 py-3 text-[12px] font-bold tracking-[0.2em] uppercase shadow-hard-sm active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all z-20 touch-manipulation">
+        Log Out ⏏
+    </button>
 
-            <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
-                <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
-            </div>
-            <h1 class="text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
-            <p class="text-[#5C534A] max-w-lg mx-auto text-base font-medium tracking-wide">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
-        </header>
+    <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm mt-12 sm:mt-0">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
+        <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
+    </div>
+    <h1 class="text-4xl sm:text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
+</header>
 
         <main class="bg-[#FDFBF7] border-[4px] border-[#2D2824] p-8 sm:p-12 shadow-hard relative overflow-hidden">
             <div id="inputWorkspace" class="space-y-10 transition-opacity duration-300">
