@@ -6,101 +6,156 @@
     <title>DeepCut // AI Video Compliance Auditor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .progress-transition { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .progress-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Modern Shimmer Animation for Progress Bars */
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
+        .animate-shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            animation: shimmer 1.5s infinite;
+        }
+
+        /* Custom Scrollbar for the Table */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-start p-6 font-sans">
+<body class="bg-[#0B0F19] text-slate-200 min-h-screen flex flex-col items-center justify-start p-6 font-sans relative overflow-x-hidden selection:bg-indigo-500/30">
 
-    <div class="w-full max-w-4xl mx-auto space-y-8 mt-10">
+    <div class="fixed top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] right-[10%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[150px] pointer-events-none"></div>
+
+    <div class="w-full max-w-4xl mx-auto space-y-10 mt-12 relative z-10">
         
-        <header class="text-center space-y-2">
-            <h1 class="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent">
-                DeepCut Engine
+        <header class="text-center space-y-3">
+            <div class="inline-flex items-center justify-center space-x-2 bg-slate-800/50 border border-slate-700/50 px-3 py-1 rounded-full mb-2 backdrop-blur-md">
+                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                <span class="text-xs font-mono text-slate-300 uppercase tracking-widest">Engine Online</span>
+            </div>
+            <h1 class="text-5xl font-extrabold tracking-tight bg-gradient-to-br from-white via-slate-200 to-slate-500 bg-clip-text text-transparent">
+                DeepCut
             </h1>
-            <p class="text-slate-400 max-w-md mx-auto text-sm">
+            <p class="text-slate-400 max-w-md mx-auto text-sm font-medium">
                 Automated video timeline auditing for continuity, copyright compliance, and visual consistency.
             </p>
         </header>
 
-        <main class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+        <main class="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden">
             
-            <label for="fileInput" id="uploadZone" class="block border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-8 text-center cursor-pointer bg-slate-950/40 transition-colors">
-                <input type="file" id="fileInput" class="hidden" accept=".xml,.edl,.mp4,.mp3,.wav" />
-                <div class="space-y-3 pointer-events-none">
-                    <div class="text-4xl">📁</div>
-                    <div class="text-slate-200 font-medium text-base">Click to select or drag timeline file</div>
-                    <div class="text-slate-500 text-xs font-mono">Supports FCPXML, EDL, or video files</div>
-                </div>
-            </label>
+            <div id="inputWorkspace" class="space-y-8 transition-opacity duration-300">
+                
+                <label for="fileInput" id="uploadZone" class="group block border-2 border-dashed border-slate-700/70 hover:border-indigo-500/60 rounded-2xl p-10 text-center cursor-pointer bg-slate-950/30 hover:bg-indigo-500/5 transition-all duration-300">
+                    <input type="file" id="fileInput" class="hidden" accept=".xml,.edl,.mp4,.mp3,.wav,.m4a" />
+                    <div class="space-y-4 pointer-events-none flex flex-col items-center">
+                        <div class="w-16 h-16 rounded-2xl bg-slate-800/80 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 group-hover:scale-110 flex items-center justify-center text-slate-400 transition-all duration-300 shadow-lg border border-slate-700 group-hover:border-indigo-500/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                            </svg>                              
+                        </div>
+                        <div>
+                            <div class="text-slate-200 font-semibold text-lg">Select or drag timeline file</div>
+                            <div class="text-slate-500 text-xs font-mono mt-1">Supports FCPXML, EDL, MP4, MP3</div>
+                        </div>
+                    </div>
+                </label>
 
-            <div id="fileMetaRow" class="hidden flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 mt-4">
-                <div class="flex items-center gap-3">
-                    <span class="text-2xl">📄</span>
+                <div class="flex items-center justify-center space-x-4 opacity-60">
+                    <div class="h-px bg-gradient-to-r from-transparent to-slate-700 w-full"></div>
+                    <span class="text-slate-500 text-xs font-semibold tracking-widest uppercase">OR</span>
+                    <div class="h-px bg-gradient-to-l from-transparent to-slate-700 w-full"></div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                    </div>
+                    <input type="url" id="urlInput" placeholder="Paste a web media link here..." class="flex-1 bg-slate-950/50 border border-slate-700/80 text-slate-200 rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm font-mono placeholder:text-slate-600 shadow-inner">
+                    <button id="runUrlBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors border border-slate-700 shadow-sm whitespace-nowrap hover:shadow-md">
+                        Scan Link
+                    </button>
+                </div>
+            </div>
+
+            <div id="fileMetaRow" class="hidden flex items-center justify-between bg-slate-950/60 p-5 rounded-2xl border border-slate-800/80 mt-2 backdrop-blur-sm shadow-inner transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20" id="metaIconContainer">
+                        <svg id="metaIconFile" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                        <svg id="metaIconLink" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                    </div>
                     <div>
-                        <p id="selectedFileName" class="font-mono text-sm font-medium text-slate-200 truncate max-w-[200px] sm:max-w-xs">timeline.xml</p>
-                        <p id="selectedFileSize" class="text-xs text-slate-500">0.0 KB</p>
+                        <p id="selectedFileName" class="font-mono text-sm font-semibold text-slate-200 truncate max-w-[200px] sm:max-w-[300px]">timeline.xml</p>
+                        <p id="selectedFileSize" class="text-xs text-slate-500 font-medium mt-0.5">Ready for audit</p>
                     </div>
                 </div>
-                <button id="runAuditBtn" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium px-5 py-2 rounded-lg text-sm transition-all shadow-lg shadow-indigo-600/20 whitespace-nowrap">
-                    Run Smart Audit
+                <button id="runAuditBtn" class="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] hover:-translate-y-0.5 whitespace-nowrap">
+                    Initialize Audit
                 </button>
             </div>
 
-            <div id="progressContainer" class="hidden mt-6 space-y-6 bg-slate-950 p-6 rounded-xl border border-slate-800">
-                <div class="space-y-2">
+            <div id="progressContainer" class="hidden mt-2 space-y-8 bg-slate-950/40 p-8 rounded-2xl border border-slate-800/50 shadow-inner">
+                <div class="space-y-3">
                     <div class="flex justify-between text-xs font-mono">
-                        <span id="scanText" class="text-orange-400 font-medium">Pending structural safety check...</span>
-                        <span id="scanPercent" class="text-slate-500">0%</span>
+                        <span id="scanText" class="text-orange-400 font-semibold tracking-wide">Pending structural safety check...</span>
+                        <span id="scanPercent" class="text-slate-400 font-bold">0%</span>
                     </div>
-                    <div class="w-full bg-slate-900 rounded-full h-2.5 border border-slate-800 overflow-hidden">
-                        <div id="scanBar" class="bg-orange-500 h-full w-0 progress-transition shadow-[0_0_10px_rgba(249,115,22,0.3)]"></div>
+                    <div class="w-full bg-slate-900 rounded-full h-3 border border-slate-800 overflow-hidden relative">
+                        <div id="scanBar" class="bg-orange-500 h-full w-0 progress-transition animate-shimmer shadow-[0_0_15px_rgba(249,115,22,0.5)]"></div>
                     </div>
                 </div>
                 
-                <div class="space-y-2">
+                <div class="space-y-3">
                     <div class="flex justify-between text-xs font-mono">
-                        <span id="detectText" class="text-slate-500">Waiting for compliance engine...</span>
-                        <span id="detectPercent" class="text-slate-500">0%</span>
+                        <span id="detectText" class="text-slate-500 font-semibold tracking-wide">Waiting for compliance engine...</span>
+                        <span id="detectPercent" class="text-slate-400 font-bold">0%</span>
                     </div>
-                    <div class="w-full bg-slate-900 rounded-full h-2.5 border border-slate-800 overflow-hidden">
-                        <div id="detectBar" class="bg-blue-500 h-full w-0 progress-transition shadow-[0_0_10px_rgba(59,130,246,0.3)]"></div>
+                    <div class="w-full bg-slate-900 rounded-full h-3 border border-slate-800 overflow-hidden relative">
+                        <div id="detectBar" class="bg-indigo-500 h-full w-0 progress-transition animate-shimmer shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
                     </div>
                 </div>
             </div>
 
         </main>
 
-        <section id="resultsDashboard" class="hidden bg-slate-900 rounded-2xl border border-slate-800 p-8 shadow-2xl text-slate-200 mt-6 w-full opacity-100 transition-all duration-500">
+        <section id="resultsDashboard" class="hidden bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-800 p-8 sm:p-10 shadow-2xl text-slate-200 mt-6 w-full transition-all duration-500 transform translate-y-4 opacity-0">
             
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-8 border-b border-slate-800 pb-5 gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold tracking-tight text-white mb-1.5 truncate max-w-sm sm:max-w-md" id="dashFileName">timeline_v4_final.xml</h2>
-                    <p class="text-slate-400 text-xs flex items-center gap-2">
-                        <span class="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-[10px] font-mono tracking-wider uppercase border border-blue-500/20" id="dashFormat">Verified Format</span>
-                        Analysis Complete
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-8 border-b border-slate-800/80 pb-6 gap-5">
+                <div class="space-y-2">
+                    <p class="text-slate-400 text-xs flex items-center gap-2 font-semibold">
+                        <span class="bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-md text-[10px] font-mono tracking-widest uppercase border border-indigo-500/20 shadow-sm" id="dashFormat">Verified Format</span>
+                        ANALYSIS COMPLETE
                     </p>
+                    <h2 class="text-xl font-bold tracking-tight text-white truncate max-w-sm sm:max-w-md font-mono" id="dashFileName">timeline_v4_final.xml</h2>
                 </div>
                 <div>
-                    <div class="inline-block px-4 py-2 rounded-xl text-sm font-semibold tracking-wide" id="dashStatus">
+                    <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide shadow-sm" id="dashStatus">
                         Processing...
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-4">
-                <h3 class="text-base font-semibold text-white tracking-wide flex items-center gap-2">
-                    <span>📋</span> Compliance Engine Audit Log
+            <div class="space-y-5">
+                <h3 class="text-sm font-bold text-slate-300 tracking-widest uppercase flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-indigo-400"><path stroke-linecap="round" stroke-linejoin="round" d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a9 9 0 019 9v.375M10.125 2.25A3.375 3.375 0 0113.5 5.625v1.5c0 .621.504 1.125 1.125 1.125h1.5a3.375 3.375 0 013.375 3.375M9 15l2.25 2.25L15 12" /></svg>
+                    Compliance Audit Log
                 </h3>
-                <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/40">
+                <div class="overflow-x-auto rounded-2xl border border-slate-700/60 bg-slate-950/50 shadow-inner">
                     <table class="w-full text-left border-collapse" id="auditTable">
                         <thead>
-                            <tr class="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider font-semibold border-b border-slate-800">
-                                <th class="py-3.5 px-5 font-medium">Timecode Location</th>
-                                <th class="py-3.5 px-5 font-medium">Flag Classification</th>
-                                <th class="py-3.5 px-5 font-medium">AI Audit Description</th>
+                            <tr class="bg-slate-900/80 text-slate-400 text-[11px] uppercase tracking-widest font-bold border-b border-slate-700/60">
+                                <th class="py-4 px-6">Timecode</th>
+                                <th class="py-4 px-6">Classification</th>
+                                <th class="py-4 px-6">AI Insight</th>
                             </tr>
                         </thead>
-                        <tbody class="text-sm divide-y divide-slate-800/60" id="auditTableBody">
+                        <tbody class="text-sm divide-y divide-slate-800/80" id="auditTableBody">
                             </tbody>
                     </table>
                 </div>
@@ -112,24 +167,34 @@
     <script>
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
+        const inputWorkspace = document.getElementById('inputWorkspace');
         const fileMetaRow = document.getElementById('fileMetaRow');
+        
         const selectedFileName = document.getElementById('selectedFileName');
         const selectedFileSize = document.getElementById('selectedFileSize');
+        const metaIconFile = document.getElementById('metaIconFile');
+        const metaIconLink = document.getElementById('metaIconLink');
+        
+        const urlInput = document.getElementById('urlInput');
+        const runUrlBtn = document.getElementById('runUrlBtn');
         const runAuditBtn = document.getElementById('runAuditBtn');
+        
         const progressContainer = document.getElementById('progressContainer');
         const resultsDashboard = document.getElementById('resultsDashboard');
 
-        let selectedFile = null;
+        let selectedFiles = [];
+        let submittedUrl = null;
 
+        // Handle File Selection
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) handleFileSelection(e.target.files[0]);
         });
 
-        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('border-indigo-500'); });
-        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('border-indigo-500'));
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('border-indigo-500/60', 'bg-indigo-500/5'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('border-indigo-500/60', 'bg-indigo-500/5'));
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadZone.classList.remove('border-indigo-500');
+            uploadZone.classList.remove('border-indigo-500/60', 'bg-indigo-500/5');
             if (e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
                 handleFileSelection(e.dataTransfer.files[0]);
@@ -137,15 +202,47 @@
         });
 
         function handleFileSelection(file) {
-            selectedFile = file;
+            selectedFiles = [file];
+            submittedUrl = null; 
+            urlInput.value = '';
+            
+            metaIconLink.classList.add('hidden');
+            metaIconFile.classList.remove('hidden');
+            
             selectedFileName.textContent = file.name;
             selectedFileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
             
-            uploadZone.classList.add('hidden');
+            inputWorkspace.classList.add('hidden');
             fileMetaRow.classList.remove('hidden');
-            resultsDashboard.classList.add('hidden'); 
+            
+            // Hide dashboard smoothly
+            resultsDashboard.classList.remove('opacity-100', 'translate-y-0');
+            resultsDashboard.classList.add('opacity-0', 'translate-y-4');
+            setTimeout(() => resultsDashboard.classList.add('hidden'), 300);
         }
 
+        // Handle URL Selection
+        runUrlBtn.addEventListener('click', () => {
+            if (!urlInput.value.trim()) return;
+            
+            selectedFiles = []; 
+            submittedUrl = urlInput.value.trim();
+            
+            metaIconFile.classList.add('hidden');
+            metaIconLink.classList.remove('hidden');
+            
+            selectedFileName.textContent = submittedUrl;
+            selectedFileSize.textContent = "Web Media Source";
+            
+            inputWorkspace.classList.add('hidden');
+            fileMetaRow.classList.remove('hidden');
+            
+            resultsDashboard.classList.remove('opacity-100', 'translate-y-0');
+            resultsDashboard.classList.add('opacity-0', 'translate-y-4');
+            setTimeout(() => resultsDashboard.classList.add('hidden'), 300);
+        });
+
+        // Progress Bar Logic
         function updateBar(barId, percentId, textId, percent, text, stateClass = 'text-slate-400') {
             return new Promise((resolve) => {
                 const bar = document.getElementById(barId);
@@ -156,63 +253,80 @@
                 percentText.textContent = percent + '%';
                 statusText.textContent = text;
                 
-                if(stateClass) statusText.className = `text-xs font-mono font-medium ${stateClass}`;
+                if(stateClass) statusText.className = `text-xs font-mono font-bold tracking-wide ${stateClass}`;
                 setTimeout(resolve, 400);
             });
         }
 
+        // Main Engine Trigger
         runAuditBtn.addEventListener('click', async () => {
-            if (!selectedFile) return;
+            if (selectedFiles.length === 0 && !submittedUrl) return;
 
             fileMetaRow.classList.add('hidden');
             progressContainer.classList.remove('hidden');
 
-            await updateBar('detectBar', 'detectPercent', 'detectText', 0, "⏳ Awaiting previous pipeline completion...", 'text-slate-500');
-            await updateBar('scanBar', 'scanPercent', 'scanText', 10, "🔍 Uploading file to engine...", 'text-orange-400');
+            updateBar('detectBar', 'detectPercent', 'detectText', 0, "⏳ STANDBY...", 'text-slate-500');
+            
+            if (submittedUrl) {
+                await updateBar('scanBar', 'scanPercent', 'scanText', 10, "🌐 EXTRACTING MEDIA...", 'text-purple-400');
+            } else {
+                await updateBar('scanBar', 'scanPercent', 'scanText', 10, "🔍 UPLOADING TO ENGINE...", 'text-orange-400');
+            }
 
             try {
                 const formData = new FormData();
-                formData.append('file', selectedFile);
+                if (selectedFiles.length > 0) {
+                    formData.append('file', selectedFiles[0]);
+                } else if (submittedUrl) {
+                    formData.append('video_url', submittedUrl);
+                }
 
                 const fetchPromise = fetch('https://deepcut-app.onrender.com/api/audit/', {
                     method: 'POST',
                     body: formData
                 });
 
-                setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 45, "🔍 Hashing file signatures...", 'text-orange-400'), 1500);
-                setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 85, "⏳ Polling VirusTotal engines...", 'text-orange-400'), 3000);
+                if (submittedUrl) {
+                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 40, "🎧 PROCESSING AUDIO...", 'text-purple-400'), 2500);
+                } else {
+                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 45, "🔍 HASHING SIGNATURES...", 'text-orange-400'), 1500);
+                    setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 85, "⏳ POLLING SECURITY API...", 'text-orange-400'), 3000);
+                }
 
                 const response = await fetchPromise;
                 if (!response.ok) throw new Error("Server rejected request path.");
                 
                 const serverData = await response.json();
                 
-                await updateBar('scanBar', 'scanPercent', 'scanText', 100, "🛡️ Phase 1 Complete.", 'text-green-400');
-                await updateBar('detectBar', 'detectPercent', 'detectText', 40, "🧠 AI processing in progress...", 'text-blue-400');
-                await updateBar('detectBar', 'detectPercent', 'detectText', 100, "✅ AI Analysis Complete.", 'text-green-400');
+                await updateBar('scanBar', 'scanPercent', 'scanText', 100, "🛡️ SECURE. PHASE 1 COMPLETE.", 'text-green-400');
+                await updateBar('detectBar', 'detectPercent', 'detectText', 40, "🧠 AI PROCESSING...", 'text-indigo-400');
+                await updateBar('detectBar', 'detectPercent', 'detectText', 100, "✅ AUDIT COMPLETE.", 'text-green-400');
 
-                setTimeout(() => populateAndRevealDashboard(serverData), 500);
+                setTimeout(() => populateAndRevealDashboard(serverData), 600);
 
             } catch (error) {
                 console.error("Upload Error:", error);
-                updateBar('scanBar', 'scanPercent', 'scanText', 100, "❌ Network connection dropped.", 'text-red-500');
-                updateBar('detectBar', 'detectPercent', 'detectText', 100, "❌ Pipeline failed.", 'text-red-500');
+                updateBar('scanBar', 'scanPercent', 'scanText', 100, "❌ NETWORK DROPPED.", 'text-red-500');
+                updateBar('detectBar', 'detectPercent', 'detectText', 100, "❌ PIPELINE FAILED.", 'text-red-500');
                 
                 setTimeout(() => {
                     progressContainer.classList.add('hidden');
-                    uploadZone.classList.remove('hidden');
+                    inputWorkspace.classList.remove('hidden');
                 }, 3000);
             }
         });
 
+        // Dashboard Logic
         function populateAndRevealDashboard(data) {
-            document.getElementById('dashFileName').textContent = data.filename || "Uploaded File";
+            document.getElementById('dashFileName').textContent = data.filename || "Source Media";
             
             const nameLower = (data.filename || "").toLowerCase();
             let formatType = "XML Timeline";
             if (nameLower.endsWith('.mp4') || nameLower.endsWith('.mp3') || nameLower.endsWith('.wav') || nameLower.endsWith('.m4a')) {
-                formatType = "Audio/Video Stream";
+                formatType = "Audio / Video Stream";
             }
+            if (submittedUrl) formatType = "Web Stream";
+            
             document.getElementById('dashFormat').textContent = formatType;
 
             const statusBadge = document.getElementById('dashStatus');
@@ -220,48 +334,56 @@
             tableBody.innerHTML = '';
 
             if (data.status === "error" || data.error) {
-                statusBadge.textContent = `❌ Engine Error`;
-                statusBadge.className = "inline-block bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold border border-red-500/20";
+                statusBadge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg> Engine Error`;
+                statusBadge.className = "inline-flex items-center gap-2 bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-sm font-bold border border-red-500/20 shadow-sm";
                 
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="py-8 px-5 text-center">
-                            <p class="text-red-400 font-mono text-sm mb-2">Error processing input.</p>
+                        <td colspan="3" class="py-10 px-6 text-center">
+                            <p class="text-red-400 font-mono text-sm mb-2 font-bold tracking-wide">ERROR PROCESSING INPUT</p>
                             <p class="text-slate-500 text-xs">${data.error}</p>
                         </td>
                     </tr>
                 `;
             } 
             else if (data.anomalies && data.anomalies.length > 0) {
-                statusBadge.textContent = `⚠️ ${data.anomalies.length} Anomalies Found`;
-                statusBadge.className = "inline-block bg-orange-500/10 text-orange-400 px-4 py-2 rounded-xl text-sm font-semibold border border-orange-500/20";
+                statusBadge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg> ${data.anomalies.length} Flags Detected`;
+                statusBadge.className = "inline-flex items-center gap-2 bg-orange-500/10 text-orange-400 px-4 py-2 rounded-xl text-sm font-bold border border-orange-500/30 shadow-sm";
                 
                 data.anomalies.forEach(anomaly => {
                     tableBody.innerHTML += `
-                        <tr class="hover:bg-slate-900/40 transition-colors">
-                            <td class="py-4 px-5 font-mono text-slate-300">${anomaly.timecode || 'Spoken Audio'}</td>
-                            <td class="py-4 px-5"><span class="text-orange-400 bg-orange-400/10 px-2 py-1 rounded text-xs border border-orange-400/20">${anomaly.type || 'Flag'}</span></td>
-                            <td class="py-4 px-5 text-slate-400">${anomaly.description || 'Issue detected.'}</td>
+                        <tr class="hover:bg-slate-800/40 transition-colors group">
+                            <td class="py-5 px-6 font-mono text-slate-300 font-semibold group-hover:text-indigo-300 transition-colors">${anomaly.timecode || 'Audio'}</td>
+                            <td class="py-5 px-6"><span class="text-orange-300 bg-orange-500/10 px-2.5 py-1 rounded-md text-xs font-bold border border-orange-500/20 shadow-sm">${anomaly.type || 'Flag'}</span></td>
+                            <td class="py-5 px-6 text-slate-400 font-medium leading-relaxed">${anomaly.description || 'Issue detected.'}</td>
                         </tr>
                     `;
                 });
             } else {
-                statusBadge.textContent = `✅ Clean / Passed`;
-                statusBadge.className = "inline-block bg-green-500/10 text-green-400 px-4 py-2 rounded-xl text-sm font-semibold border border-green-500/20";
+                statusBadge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Clean / Verified`;
+                statusBadge.className = "inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-4 py-2 rounded-xl text-sm font-bold border border-emerald-500/20 shadow-sm";
                 
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="py-6 px-5 text-center text-slate-500 font-mono text-xs">
-                            No compliance violations or abnormalities detected in this source file.
+                        <td colspan="3" class="py-12 px-6 text-center text-slate-500 font-mono text-xs font-semibold tracking-wide">
+                            NO COMPLIANCE VIOLATIONS OR ABNORMALITIES DETECTED.
                         </td>
                     </tr>
                 `;
             }
 
+            // Reset and Reveal
             progressContainer.classList.add('hidden');
-            uploadZone.classList.remove('hidden'); 
+            inputWorkspace.classList.remove('hidden'); 
+            
             resultsDashboard.classList.remove('hidden');
-            resultsDashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Tiny delay to allow display:block to apply before animating opacity
+            setTimeout(() => {
+                resultsDashboard.classList.remove('opacity-0', 'translate-y-4');
+                resultsDashboard.classList.add('opacity-100', 'translate-y-0');
+                resultsDashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
         }
     </script>
 </body>
