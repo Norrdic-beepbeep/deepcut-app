@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,39 +13,67 @@
         body { font-family: 'Jost', sans-serif; }
         .font-typewriter { font-family: 'Courier Prime', monospace; }
         .progress-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Adaptive Hard Shadows */
         .shadow-hard { box-shadow: 4px 4px 0px #2D2824; }
-        @media (min-width: 640px) { .shadow-hard { box-shadow: 6px 6px 0px #2D2824; } }
+        @media (min-width: 640px) { .shadow-hard { box-shadow: 8px 8px 0px #2D2824; } }
         .shadow-hard-sm { box-shadow: 3px 3px 0px #2D2824; }
         .shadow-hard-hover:hover:not(:disabled) { box-shadow: 6px 6px 0px #2D2824; transform: translate(-2px, -2px); }
-        .shadow-hard-active:active:not(:disabled) { box-shadow: 2px 2px 0px #2D2824; transform: translate(4px, 4px); }
+        .shadow-hard-active:active:not(:disabled) { box-shadow: 2px 2px 0px #2D2824; transform: translate(2px, 2px); }
+        
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #EAE3D2; border-left: 2px solid #2D2824; }
         ::-webkit-scrollbar-thumb { background: #C86B5E; border: 2px solid #2D2824; }
         .req-met { color: #7A9E7E; text-decoration: line-through; text-decoration-thickness: 2px; }
         .req-unmet { color: #8C8273; }
         .fade-hidden { opacity: 0; pointer-events: none; position: absolute; transform: translateY(-10px); }
+
+        /* Fluid Typography */
+        .fluid-title { font-size: clamp(2rem, 6vw, 4rem); line-height: 1.1; }
+        .fluid-subtitle { font-size: clamp(0.875rem, 2vw, 1rem); }
+
+        /* Adaptive Mobile Table to Card View */
+        @media (max-width: 768px) {
+            .adaptive-table, .adaptive-table tbody, .adaptive-table tr, .adaptive-table td { display: block; width: 100%; }
+            .adaptive-table thead { display: none; } /* Hide headers on mobile */
+            .adaptive-table tr { margin-bottom: 1rem; border: 3px solid #2D2824; background: #FDFBF7; }
+            .adaptive-table td { position: relative; padding: 1rem !important; border: none !important; border-bottom: 2px dashed #EAE3D2 !important; }
+            .adaptive-table td:last-child { border-bottom: none !important; }
+            .adaptive-table td::before { 
+                content: attr(data-label); 
+                display: block; 
+                font-family: 'Courier Prime', monospace; 
+                font-size: 0.7rem; 
+                font-weight: 700; 
+                text-transform: uppercase; 
+                color: #8C8273; 
+                margin-bottom: 0.5rem; 
+            }
+        }
     </style>
 </head>
-<body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
+<body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-3 sm:p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
 
-    <div id="authContainer" class="w-full max-w-lg mx-auto mt-6 sm:mt-10 z-20 transition-all duration-500 relative">
+    <!-- AUTH CONTAINER -->
+    <div id="authContainer" class="w-full max-w-lg mx-auto mt-4 sm:mt-10 z-20 transition-all duration-500 relative px-2 sm:px-0">
         
-        <div id="loginScreen" class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-10 shadow-hard relative overflow-hidden transition-all duration-500 w-full">
+        <!-- LOGIN SCREEN -->
+        <div id="loginScreen" class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-10 shadow-hard relative overflow-hidden transition-all duration-500 w-full mb-3 sm:mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-6 sm:mb-8 border-b-[3px] border-[#2D2824] pb-4 sm:pb-6">
                 <span class="text-3xl sm:text-4xl mb-2 block">🔐</span>
                 <h1 class="text-2xl sm:text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Access</h1>
-                <p class="text-[#5C534A] text-[10px] sm:text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Authorized Personnel Only</p>
+                <p class="text-[#5C534A] text-[10px] sm:text-xs font-typewriter mt-2 uppercase tracking-widest font-bold">Authorized Personnel Only</p>
             </div>
 
             <div class="space-y-4 sm:space-y-6">
                 <div>
                     <label class="block text-[#2D2824] text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-2">Username or Email</label>
-                    <input type="text" id="loginUsername" placeholder="Enter username or email" class="w-full bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-3 sm:py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <input type="text" id="loginUsername" placeholder="Enter username or email" class="w-full bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
                 </div>
 
                 <div>
                     <label class="block text-[#2D2824] text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-2">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter password" class="w-full bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-3 sm:py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <input type="password" id="loginPassword" placeholder="Enter password" class="w-full bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
                 </div>
 
                 <button id="loginBtn" class="w-full bg-[#C86B5E] text-[#FDFBF7] font-bold px-6 py-4 uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all text-sm sm:text-base mt-2">
@@ -54,591 +82,160 @@
 
                 <div class="text-center mt-4 border-t-[2px] border-[#2D2824]/20 pt-4">
                     <p class="text-[10px] sm:text-xs font-bold text-[#5C534A] uppercase tracking-wide">No access?</p>
-                    <button id="showRegisterBtn" class="mt-2 text-xs sm:text-sm font-bold tracking-widest uppercase text-[#52796F] hover:text-[#C86B5E] transition-colors focus:outline-none">Register New Operator &rarr;</button>
+                    <button id="showRegisterBtn" class="mt-2 text-[11px] sm:text-sm font-bold tracking-widest uppercase text-[#52796F] hover:text-[#C86B5E] transition-colors focus:outline-none">Register New Operator &rarr;</button>
                 </div>
             </div>
         </div>
 
-        <div id="registerScreen" class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full">
-            <div class="text-center mb-6 border-b-[3px] border-[#2D2824] pb-4">
+        <!-- REGISTER SCREEN (Hidden by default) -->
+        <div id="registerScreen" class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-3 sm:mb-4 mr-2 sm:mr-3">
+            <div class="text-center mb-5 sm:mb-6 border-b-[3px] border-[#2D2824] pb-4">
                 <span class="text-3xl sm:text-4xl mb-2 block">🛡️</span>
                 <h1 class="text-2xl sm:text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">Engine Registration</h1>
-                <p class="text-[#5C534A] text-[10px] sm:text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Create Credentials</p>
+                <p class="text-[#5C534A] text-[10px] sm:text-xs font-typewriter mt-1 uppercase tracking-widest font-bold">Create Credentials</p>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-3 sm:space-y-4">
                 <div>
-                    <label class="block text-[#2D2824] text-[10px] font-bold tracking-widest uppercase mb-1">Full Name</label>
-                    <input type="text" id="regName" placeholder="e.g. John Doe" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-1">Full Name</label>
+                    <input type="text" id="regName" placeholder="e.g. John Doe" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-3 py-2.5 sm:px-4 sm:py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
                 <div>
-                    <label class="block text-[#2D2824] text-[10px] font-bold tracking-widest uppercase mb-1">Username</label>
-                    <input type="text" id="regUsername" placeholder="e.g. johndoe99" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-1">Username</label>
+                    <input type="text" id="regUsername" placeholder="e.g. johndoe99" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-3 py-2.5 sm:px-4 sm:py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
                 <div>
-                    <label class="block text-[#2D2824] text-[10px] font-bold tracking-widest uppercase mb-1">Email Address</label>
-                    <input type="email" id="regEmail" placeholder="operator@company.com" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-1">Email Address</label>
+                    <input type="email" id="regEmail" placeholder="operator@company.com" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-3 py-2.5 sm:px-4 sm:py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
                 <div>
-                    <label class="block text-[#2D2824] text-[10px] font-bold tracking-widest uppercase mb-1">Password</label>
-                    <input type="password" id="regPassword" placeholder="Create a secure password" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-1">Password</label>
+                    <input type="password" id="regPassword" placeholder="Create a secure password" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-3 py-2.5 sm:px-4 sm:py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
 
-                <div class="bg-[#EAE3D2]/30 border-[2px] border-[#2D2824] p-3 shadow-inner">
-                    <ul class="space-y-1 text-[10px] sm:text-xs font-typewriter font-bold" id="validationList">
-                        <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon">○</span> Min 12 characters</li>
-                        <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon">○</span> One uppercase letter</li>
-                        <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon">○</span> One special character</li>
+                <div class="bg-[#EAE3D2]/30 border-[2px] border-[#2D2824] p-2 sm:p-3 shadow-inner">
+                    <ul class="space-y-1 text-[9px] sm:text-xs font-typewriter font-bold" id="validationList">
+                        <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-1.5 sm:gap-2"><span class="status-icon">○</span> Min 12 characters</li>
+                        <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-1.5 sm:gap-2"><span class="status-icon">○</span> One uppercase letter</li>
+                        <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-1.5 sm:gap-2"><span class="status-icon">○</span> One special character</li>
                     </ul>
                 </div>
 
-                <button id="registerBtn" disabled class="w-full bg-[#52796F] disabled:bg-[#8C8273] disabled:cursor-not-allowed text-[#FDFBF7] font-bold px-6 py-4 uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-2 text-sm sm:text-base">
+                <button id="registerBtn" disabled class="w-full bg-[#52796F] disabled:bg-[#8C8273] disabled:cursor-not-allowed text-[#FDFBF7] font-bold px-4 py-3 sm:px-6 sm:py-4 uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-2 text-xs sm:text-sm">
                     Create Operator
                 </button>
 
-                <div class="text-center mt-4 border-t-[2px] border-[#2D2824]/20 pt-4">
-                    <button id="showLoginBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-[#C86B5E] hover:text-[#52796F] transition-colors focus:outline-none">&larr; Back to Login</button>
+                <div class="text-center mt-3 border-t-[2px] border-[#2D2824]/20 pt-3">
+                    <button id="showLoginBtn" class="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-[#C86B5E] hover:text-[#52796F] transition-colors focus:outline-none">&larr; Back to Login</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="appScreen" class="w-full max-w-4xl mx-auto space-y-8 sm:space-y-10 mt-6 sm:mt-12 relative z-10 hidden opacity-0 transition-opacity duration-700">
+    <!-- MAIN APPLICATION -->
+    <div id="appScreen" class="w-full max-w-5xl mx-auto space-y-6 sm:space-y-10 mt-4 sm:mt-10 relative z-10 hidden opacity-0 transition-opacity duration-700 px-2 sm:px-4">
         
-        <header class="w-full flex flex-col border-b-[3px] sm:border-b-4 border-[#2D2824] pb-6 mb-6 sm:mb-8 relative">
+        <header class="w-full flex flex-col border-b-[3px] sm:border-b-4 border-[#2D2824] pb-5 sm:pb-8 relative">
             
             <div class="text-center w-full">
                 <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] px-3 py-1 sm:px-4 sm:py-1.5 shadow-hard-sm mb-4 sm:mb-6">
                     <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
-                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
+                    <span class="text-[9px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
                 </div>
-                <h1 class="text-4xl sm:text-6xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
-                <p class="text-[#5C534A] max-w-lg mx-auto text-sm sm:text-base font-medium tracking-wide mt-2 sm:mt-4 px-2">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
+                <!-- Adaptive Fluid Title -->
+                <h1 class="fluid-title font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
+                <p class="text-[#5C534A] w-full max-w-2xl mx-auto fluid-subtitle font-medium tracking-wide mt-2 sm:mt-4 px-2">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
             </div>
 
-            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center w-full pt-6 sm:pt-8 gap-3 sm:gap-4">
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="h-10 sm:h-10 flex items-center justify-center sm:justify-start bg-[#7A9E7E] text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 shadow-hard-sm">
-                        <span class="text-[10px] font-bold tracking-[0.2em] uppercase opacity-80 mr-2">Operator:</span>
-                        <span id="displayUsername" class="font-typewriter text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate max-w-[150px] sm:max-w-none">UNKNOWN</span>
+            <!-- Adaptive Flex-Wrapping Controls -->
+            <div class="flex flex-wrap justify-between items-center w-full pt-5 sm:pt-8 gap-3 sm:gap-4">
+                
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3 flex-grow sm:flex-grow-0">
+                    <div class="h-9 sm:h-10 flex-grow sm:flex-grow-0 flex items-center justify-center sm:justify-start bg-[#7A9E7E] text-[#FDFBF7] border-[2px] border-[#2D2824] px-3 sm:px-4 shadow-hard-sm">
+                        <span class="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase opacity-80 mr-2">Operator:</span>
+                        <span id="displayUsername" class="font-typewriter text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate max-w-[120px] sm:max-w-[200px]">UNKNOWN</span>
                     </div>
-                    <button id="logoutBtn" class="h-10 sm:h-10 flex items-center justify-center bg-[#EAE3D2] text-[#2D2824] hover:bg-[#C86B5E] hover:text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 text-[10px] font-bold tracking-[0.2em] uppercase shadow-hard-sm transition-colors">
+                    <button id="logoutBtn" class="h-9 sm:h-10 flex-grow sm:flex-grow-0 flex items-center justify-center bg-[#EAE3D2] text-[#2D2824] hover:bg-[#C86B5E] hover:text-[#FDFBF7] border-[2px] border-[#2D2824] px-3 sm:px-4 text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase shadow-hard-sm transition-colors">
                         Log Out ⏏
                     </button>
                 </div>
-                <button id="guideBtn" class="h-10 sm:h-10 flex items-center justify-center bg-[#FDFBF7] text-[#2D2824] hover:bg-[#EAE3D2] border-[2px] sm:border-[3px] border-[#2D2824] px-6 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all w-full sm:w-auto">
+                
+                <button id="guideBtn" class="w-full sm:w-auto h-10 sm:h-10 flex items-center justify-center bg-[#FDFBF7] text-[#2D2824] hover:bg-[#EAE3D2] border-[2px] sm:border-[3px] border-[#2D2824] px-4 sm:px-6 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">
                     View User Guide 📖
                 </button>
+
             </div>
         </header>
 
-        <main class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-5 sm:p-12 shadow-hard relative overflow-hidden">
-            <div id="inputWorkspace" class="space-y-6 sm:space-y-10 transition-opacity duration-300">
-                <label for="fileInput" id="uploadZone" class="group block border-[2px] sm:border-[3px] border-dashed border-[#2D2824] bg-[#EAE3D2]/50 hover:bg-[#E2A73A]/20 p-8 sm:p-12 text-center cursor-pointer transition-colors duration-300">
+        <main class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-4 sm:p-12 shadow-hard relative overflow-hidden mb-3 sm:mb-4 mr-2 sm:mr-3">
+            <div id="inputWorkspace" class="space-y-5 sm:space-y-10 transition-opacity duration-300">
+                <label for="fileInput" id="uploadZone" class="group w-full block border-[2px] sm:border-[3px] border-dashed border-[#2D2824] bg-[#EAE3D2]/50 hover:bg-[#E2A73A]/20 p-6 sm:p-12 text-center cursor-pointer transition-colors duration-300">
                     <input type="file" id="fileInput" class="hidden" accept=".xml,.fcpxml,.edl,.mp4" />
-                    <div class="space-y-3 sm:space-y-4 pointer-events-none flex flex-col items-center">
+                    <div class="space-y-2 sm:space-y-4 pointer-events-none flex flex-col items-center">
                         <div class="text-4xl sm:text-5xl mb-1 sm:mb-2 transition-transform duration-300 group-hover:scale-110">📂</div>
                         <div>
-                            <div class="text-[#2D2824] font-bold text-lg sm:text-xl uppercase tracking-wide">Select or drag timeline</div>
-                            <div class="text-[#5C534A] text-xs sm:text-sm font-typewriter mt-1 sm:mt-2 font-bold">Supports XML, FCPXML, EDL, MP4</div>
+                            <div class="text-[#2D2824] font-bold text-base sm:text-xl uppercase tracking-wide">Select or drag timeline</div>
+                            <div class="text-[#5C534A] text-[10px] sm:text-sm font-typewriter mt-1 sm:mt-2 font-bold">Supports XML, FCPXML, EDL, MP4</div>
                         </div>
                     </div>
                 </label>
 
-                <div class="flex items-center justify-center space-x-4">
+                <div class="flex items-center justify-center space-x-2 sm:space-x-4">
                     <div class="h-[2px] sm:h-[3px] bg-[#2D2824] w-full"></div>
-                    <span class="text-[#2D2824] text-xs sm:text-sm font-bold tracking-[0.2em] uppercase px-4">OR</span>
+                    <span class="text-[#2D2824] text-[10px] sm:text-sm font-bold tracking-[0.2em] uppercase px-3 sm:px-4">OR</span>
                     <div class="h-[2px] sm:h-[3px] bg-[#2D2824] w-full"></div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 relative">
-                    <input type="url" id="urlInput" placeholder="Paste a web media link here..." class="flex-1 bg-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-3 sm:px-5 sm:py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
-                    <button id="runUrlBtn" class="bg-[#52796F] text-[#FDFBF7] font-bold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap w-full sm:w-auto">Scan Link</button>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full relative">
+                    <input type="url" id="urlInput" placeholder="Paste media link here..." class="w-full flex-1 bg-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-3 py-3 sm:px-5 sm:py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <button id="runUrlBtn" class="w-full sm:w-auto bg-[#52796F] text-[#FDFBF7] font-bold px-4 py-3 sm:px-8 sm:py-4 text-xs sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Scan Link</button>
                 </div>
             </div>
 
-            <div id="fileMetaRow" class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#E2A73A] p-4 sm:p-6 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all gap-4 sm:gap-0">
-                <div class="flex items-center gap-4 sm:gap-5 w-full sm:w-auto">
-                    <div class="text-3xl sm:text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-2 shadow-hard-sm shrink-0" id="metaIconContainer">
+            <div id="fileMetaRow" class="hidden flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-[#E2A73A] p-4 sm:p-6 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all gap-4 sm:gap-0">
+                <div class="flex items-center gap-3 sm:gap-5 w-full sm:w-auto overflow-hidden">
+                    <div class="text-2xl sm:text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-2 shadow-hard-sm shrink-0" id="metaIconContainer">
                         <span id="metaIconFile">📄</span>
                         <span id="metaIconLink" class="hidden">🔗</span>
                     </div>
-                    <div class="min-w-0 flex-1">
-                        <p id="selectedFileName" class="font-typewriter font-bold text-base sm:text-lg text-[#2D2824] truncate w-full sm:max-w-[350px]">timeline.xml</p>
-                        <p id="selectedFileSize" class="text-xs sm:text-sm text-[#2D2824] font-bold mt-1 uppercase tracking-wider">Ready for audit</p>
+                    <div class="min-w-0 flex-1 overflow-hidden">
+                        <p id="selectedFileName" class="font-typewriter font-bold text-sm sm:text-lg text-[#2D2824] truncate w-full">timeline.xml</p>
+                        <p id="selectedFileSize" class="text-[10px] sm:text-sm text-[#2D2824] font-bold mt-0.5 sm:mt-1 uppercase tracking-wider">Ready for audit</p>
                     </div>
                 </div>
-                <button id="runAuditBtn" class="bg-[#C86B5E] text-[#FDFBF7] font-bold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap w-full sm:w-auto">Initialize</button>
+                <button id="runAuditBtn" class="w-full sm:w-auto bg-[#C86B5E] text-[#FDFBF7] font-bold px-4 py-3 sm:px-8 sm:py-4 text-xs sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Initialize</button>
             </div>
 
-            <div id="progressContainer" class="hidden mt-2 space-y-6 sm:space-y-8 bg-[#FDFBF7] p-6 sm:p-8 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm">
-                <div class="space-y-2 sm:space-y-3">
-                    <div class="flex justify-between text-[10px] sm:text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
+            <div id="progressContainer" class="hidden mt-2 space-y-4 sm:space-y-8 bg-[#FDFBF7] p-4 sm:p-8 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm">
+                <div class="space-y-1.5 sm:space-y-3">
+                    <div class="flex justify-between text-[9px] sm:text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
                         <span id="scanText" class="truncate pr-2">Pending safety check...</span>
                         <span id="scanPercent">0%</span>
                     </div>
-                    <div class="w-full bg-[#EAE3D2] h-4 sm:h-6 border-[2px] sm:border-[3px] border-[#2D2824] relative">
+                    <div class="w-full bg-[#EAE3D2] h-3 sm:h-6 border-[2px] sm:border-[3px] border-[#2D2824] relative">
                         <div id="scanBar" class="bg-[#E2A73A] h-full w-0 progress-transition border-r-[2px] sm:border-r-[3px] border-[#2D2824]"></div>
                     </div>
                 </div>
                 
-                <div class="space-y-2 sm:space-y-3">
-                    <div class="flex justify-between text-[10px] sm:text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
+                <div class="space-y-1.5 sm:space-y-3">
+                    <div class="flex justify-between text-[9px] sm:text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
                         <span id="detectText" class="truncate pr-2">Waiting for engine...</span>
                         <span id="detectPercent">0%</span>
                     </div>
-                    <div class="w-full bg-[#EAE3D2] h-4 sm:h-6 border-[2px] sm:border-[3px] border-[#2D2824] relative">
+                    <div class="w-full bg-[#EAE3D2] h-3 sm:h-6 border-[2px] sm:border-[3px] border-[#2D2824] relative">
                         <div id="detectBar" class="bg-[#52796F] h-full w-0 progress-transition border-r-[2px] sm:border-r-[3px] border-[#2D2824]"></div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <section id="resultsDashboard" class="hidden bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-5 sm:p-12 shadow-hard mt-6 sm:mt-8 w-full transition-all duration-500 transform translate-y-4 opacity-0">
-            <div class="flex flex-col lg:flex-row lg:justify-between lg:items-end mb-6 sm:mb-10 border-b-[3px] sm:border-b-[4px] border-[#2D2824] pb-4 sm:pb-6 gap-4 sm:gap-5">
-                <div class="space-y-2 sm:space-y-3 overflow-hidden">
-                    <p class="text-[#2D2824] text-[10px] sm:text-xs flex items-center gap-2 sm:gap-3 font-bold">
-                        <span class="bg-[#EAE3D2] px-2 py-1 sm:px-3 sm:py-1.5 text-[9px] sm:text-[11px] font-typewriter tracking-widest uppercase border-[2px] border-[#2D2824] shadow-hard-sm" id="dashFormat">Verified Format</span>
+        <section id="resultsDashboard" class="hidden bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-4 sm:p-12 shadow-hard mt-6 sm:mt-8 w-full transition-all duration-500 transform translate-y-4 opacity-0 mb-3 sm:mb-4 mr-2 sm:mr-3">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-end mb-5 sm:mb-10 border-b-[2px] sm:border-b-[4px] border-[#2D2824] pb-4 sm:pb-6 gap-3 sm:gap-5">
+                <div class="space-y-1.5 sm:space-y-3 overflow-hidden w-full md:w-auto">
+                    <p class="text-[#2D2824] text-[9px] sm:text-xs flex items-center gap-2 sm:gap-3 font-bold">
+                        <span class="bg-[#EAE3D2] px-2 py-1 sm:px-3 sm:py-1.5 text-[8px] sm:text-[11px] font-typewriter tracking-widest uppercase border-[2px] border-[#2D2824] shadow-hard-sm" id="dashFormat">Verified Format</span>
                         <span class="truncate">ANALYSIS COMPLETE</span>
                     </p>
-                    <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-[#2D2824] truncate w-full font-typewriter uppercase" id="dashFileName">timeline_v4_final.xml</h2>
+                    <h2 class="text-lg sm:text-2xl font-bold tracking-tight text-[#2D2824] truncate w-full font-typewriter uppercase" id="dashFileName">timeline.xml</h2>
                 </div>
-                <div class="w-full lg:w-auto shrink-0">
-                    <div class="flex items-center justify-center gap-2 px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold tracking-widest uppercase border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm w-full lg:w-auto" id="dashStatus">Processing...</div>
-                </div>
-            </div>
-
-            <div id="geminiSummaryContainer" class="hidden mb-6 sm:mb-8 p-4 sm:p-6 bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm">
-                <p id="geminiSummaryText" class="text-xs sm:text-sm font-medium text-[#2D2824] leading-relaxed"></p>
-            </div>
-
-            <div class="space-y-4 sm:space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-                    <h3 class="text-sm sm:text-base font-bold text-[#2D2824] tracking-[0.1em] sm:tracking-[0.2em] uppercase flex items-center gap-2 sm:gap-3">
-                        <span class="text-xl sm:text-2xl">📋</span> Compliance Log
-                    </h3>
-                    <button id="geminiSummaryBtn" class="w-full sm:w-auto bg-[#2D2824] text-[#FDFBF7] px-4 py-2 sm:py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest hover:bg-[#E2A73A] hover:text-[#2D2824] border-[2px] border-[#2D2824] shadow-hard-sm transition-colors">
-                        ✨ Generate Exec Summary
-                    </button>
-                </div>
-                <div class="overflow-x-auto border-[2px] sm:border-[3px] border-[#2D2824] bg-[#FDFBF7] shadow-hard-sm">
-                    <table class="w-full text-left border-collapse whitespace-nowrap sm:whitespace-normal" id="auditTable">
-                        <thead>
-                            <tr class="bg-[#EAE3D2] text-[#2D2824] text-[10px] sm:text-[12px] uppercase tracking-widest font-bold border-b-[2px] sm:border-b-[3px] border-[#2D2824]">
-                                <th class="py-3 px-4 sm:py-5 sm:px-6 border-r-[2px] sm:border-r-[3px] border-[#2D2824]">Timecode</th>
-                                <th class="py-3 px-4 sm:py-5 sm:px-6 border-r-[2px] sm:border-r-[3px] border-[#2D2824]">Class</th>
-                                <th class="py-3 px-4 sm:py-5 sm:px-6">AI Insight</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-sm sm:text-base font-medium" id="auditTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <div id="guideModal" class="fixed inset-0 bg-[#2D2824]/90 z-50 hidden flex items-center justify-center p-3 sm:p-6 opacity-0 transition-opacity duration-300">
-        <div class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-12 shadow-hard max-w-3xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative">
-            <button id="closeGuideBtn" class="absolute top-2 right-4 sm:top-4 sm:right-5 text-3xl font-bold text-[#2D2824] hover:text-[#C86B5E] transition-colors focus:outline-none">&times;</button>
-            <div class="text-center mb-6 sm:mb-8 border-b-[3px] sm:border-b-[4px] border-[#2D2824] pb-4 sm:pb-6 mt-4 sm:mt-0">
-                <h2 class="text-2xl sm:text-4xl font-bold uppercase tracking-tight text-[#2D2824]">DeepCut Protocol</h2>
-                <p class="text-[#5C534A] text-[10px] sm:text-sm font-typewriter mt-1 sm:mt-2 uppercase tracking-widest font-bold">Official User Documentation</p>
-            </div>
-            
-            <div class="space-y-6 sm:space-y-10 text-[#2D2824]">
-                <section>
-                    <h3 class="inline-block bg-[#E2A73A] text-[#2D2824] border-[2px] border-[#2D2824] px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3 sm:mb-4 shadow-hard-sm">Why DeepCut?</h3>
-                    <div class="space-y-3 sm:space-y-4">
-                        <p class="font-medium leading-relaxed text-xs sm:text-base">DeepCut is designed to eliminate the costly human errors associated with manual cinematic auditing. Before media goes live to broadcast or streaming, it must pass rigorous standards.</p>
-                        <p class="font-medium leading-relaxed text-xs sm:text-base">Our proprietary engine leverages advanced AI to instantly detect unauthorized copyrighted material, glaring continuity errors, and broadcast standards violations (such as profanity or explicit competitor brand mentions). With military-grade JWT encryption and a secure cloud architecture, your pre-release media remains strictly confidential.</p>
-                    </div>
-                </section>
-                
-                <section>
-                    <h3 class="inline-block bg-[#52796F] text-[#FDFBF7] border-[2px] border-[#2D2824] px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-3 sm:mb-4 shadow-hard-sm">How to operate</h3>
-                    <div class="space-y-4 sm:space-y-5">
-                        <div class="flex gap-3 sm:gap-4 items-start">
-                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-base border border-[#2D2824]">1</span>
-                            <div>
-                                <h4 class="font-bold text-sm sm:text-lg uppercase tracking-wide">Input Timeline</h4>
-                                <p class="text-[11px] sm:text-sm font-medium text-[#5C534A] mt-1">Drag and drop a supported file into the main workspace. DeepCut explicitly requires raw structural timelines (XML, FCPXML, EDL) or direct raw media (MP4). You may also paste a direct web media URL.</p>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-3 sm:gap-4 items-start">
-                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-base border border-[#2D2824]">2</span>
-                            <div>
-                                <h4 class="font-bold text-sm sm:text-lg uppercase tracking-wide">Initialize Audit</h4>
-                                <p class="text-[11px] sm:text-sm font-medium text-[#5C534A] mt-1">Once media is verified, click the Initialize button. The system will securely hash signatures and poll security APIs before moving to the AI processing phase.</p>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-3 sm:gap-4 items-start">
-                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-base border border-[#2D2824]">3</span>
-                            <div>
-                                <h4 class="font-bold text-sm sm:text-lg uppercase tracking-wide">Review Findings</h4>
-                                <p class="text-[11px] sm:text-sm font-medium text-[#5C534A] mt-1">Upon completion, the engine will generate an official Compliance Audit Log. If the engine detects flags (e.g., unauthorized audio detected, jump-cut noted), they will be timestamped and classified for immediate correction.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const apiKey = ""; // Gemini API for summaries
-        
-        async function fetchGeminiConReintentos(prompt, isSummary = false, maxRetries = 5) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const sysInstruction = isSummary 
-                ? "You are a leading video post-production auditor. Write short, clear, and direct executive summaries (max 3 lines) based on the compliance report."
-                : "You are a video post-production expert. Provide a practical, short (1-2 sentences), and actionable strategy to fix the video or audio issue described.";
-            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: sysInstruction }] } };
-
-            let delay = 1000;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!response.ok) throw new Error(`HTTP error!`);
-                    const result = await response.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Error generating response.";
-                } catch (error) {
-                    if (i === maxRetries - 1) return "AI connection error.";
-                    await new Promise(res => setTimeout(res, delay)); delay *= 2; 
-                }
-            }
-        }
-
-        function showCustomMsg(msg, isSuccess = false) {
-            const color = isSuccess ? '#7A9E7E' : '#C86B5E';
-            const icon = isSuccess ? '✅' : '⚠️';
-            const title = isSuccess ? 'SUCCESS' : 'SYSTEM ERROR';
-            const modal = document.createElement('div');
-            modal.className = "fixed inset-0 bg-[#2D2824]/90 z-[100] flex items-center justify-center p-4";
-            modal.innerHTML = `
-                <div class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[${color}] p-6 sm:p-8 shadow-hard max-w-sm w-full text-center">
-                    <span class="text-3xl sm:text-4xl mb-3 sm:mb-4 block">${icon}</span>
-                    <h3 class="text-[#2D2824] font-bold uppercase tracking-widest mb-3 sm:mb-4 text-sm sm:text-base">${title}</h3>
-                    <p class="text-[#5C534A] text-xs sm:text-sm font-medium mb-5 sm:mb-6">${msg}</p>
-                    <button class="bg-[${color}] text-[#FDFBF7] font-bold px-4 py-2 sm:px-6 sm:py-2 text-xs sm:text-sm uppercase tracking-widest border-[2px] border-[#2D2824] hover:opacity-80 transition-opacity w-full sm:w-auto" onclick="this.parentElement.parentElement.remove()">Acknowledged</button>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-
-        // AUTH NAVIGATION LOGIC
-        const loginScreen = document.getElementById('loginScreen');
-        const registerScreen = document.getElementById('registerScreen');
-        const showRegisterBtn = document.getElementById('showRegisterBtn');
-        const showLoginBtn = document.getElementById('showLoginBtn');
-
-        showRegisterBtn.addEventListener('click', () => {
-            loginScreen.classList.add('fade-hidden');
-            setTimeout(() => {
-                loginScreen.style.position = 'absolute';
-                registerScreen.style.position = 'relative';
-                registerScreen.classList.remove('fade-hidden');
-            }, 500);
-        });
-
-        showLoginBtn.addEventListener('click', () => {
-            registerScreen.classList.add('fade-hidden');
-            setTimeout(() => {
-                registerScreen.style.position = 'absolute';
-                loginScreen.style.position = 'relative';
-                loginScreen.classList.remove('fade-hidden');
-            }, 500);
-        });
-
-        // REGISTRATION LOGIC
-        const regName = document.getElementById('regName');
-        const regUsername = document.getElementById('regUsername');
-        const regEmail = document.getElementById('regEmail');
-        const regPassword = document.getElementById('regPassword');
-        const registerBtn = document.getElementById('registerBtn');
-
-        const reqLength = document.getElementById('reqLength');
-        const reqUpper = document.getElementById('reqUpper');
-        const reqSpecial = document.getElementById('reqSpecial');
-
-        function updateRequirement(element, isMet) {
-            if (isMet) {
-                element.classList.remove('req-unmet'); element.classList.add('req-met');
-                element.querySelector('.status-icon').textContent = '●';
-            } else {
-                element.classList.remove('req-met'); element.classList.add('req-unmet');
-                element.querySelector('.status-icon').textContent = '○';
-            }
-        }
-
-        regPassword.addEventListener('input', (e) => {
-            const val = e.target.value;
-            const hasLength = val.length >= 12;
-            const hasUpper = /[A-Z]/.test(val);
-            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(val);
-
-            updateRequirement(reqLength, hasLength);
-            updateRequirement(reqUpper, hasUpper);
-            updateRequirement(reqSpecial, hasSpecial);
-
-            const isFormValid = regName.value.trim() && regUsername.value.trim() && regEmail.value.includes('@') && hasLength && hasUpper && hasSpecial;
-            registerBtn.disabled = !isFormValid;
-        });
-
-        [regName, regUsername, regEmail].forEach(input => {
-            input.addEventListener('input', () => regPassword.dispatchEvent(new Event('input')));
-        });
-
-        registerBtn.addEventListener('click', async () => {
-            registerBtn.disabled = true;
-            registerBtn.textContent = "CREATING...";
-
-            const formData = new URLSearchParams();
-            formData.append('name', regName.value.trim());
-            formData.append('username', regUsername.value.trim());
-            formData.append('email', regEmail.value.trim());
-            formData.append('password', regPassword.value);
-
-            try {
-                const response = await fetch('https://deepcut-app.onrender.com/api/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok) throw new Error(data.detail || "Registration failed");
-
-                showCustomMsg("Operator registered successfully. A confirmation email has been sent. You may now log in.", true);
-                
-                regName.value = ''; regUsername.value = ''; regEmail.value = ''; regPassword.value = '';
-                showLoginBtn.click();
-            } catch (error) {
-                showCustomMsg(error.message);
-            } finally {
-                registerBtn.textContent = "CREATE OPERATOR";
-                regPassword.dispatchEvent(new Event('input')); 
-            }
-        });
-
-        // LOGIN LOGIC
-        const loginUsername = document.getElementById('loginUsername');
-        const loginPassword = document.getElementById('loginPassword');
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const authContainer = document.getElementById('authContainer');
-        const appScreen = document.getElementById('appScreen');
-        const displayUsername = document.getElementById('displayUsername');
-
-        loginBtn.addEventListener('click', async () => {
-            const username = loginUsername.value.trim();
-            const password = loginPassword.value;
-            
-            if(!username || !password) return;
-
-            loginBtn.textContent = "VERIFYING...";
-            loginBtn.disabled = true;
-
-            const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('password', password);
-
-            try {
-                const response = await fetch('https://deepcut-app.onrender.com/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData
-                });
-
-                if (!response.ok) throw new Error("Access Denied");
-
-                const data = await response.json();
-                authToken = data.access_token;
-                displayUsername.textContent = data.username || username;
-
-                authContainer.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
-                setTimeout(() => {
-                    authContainer.classList.add('hidden');
-                    appScreen.classList.remove('hidden');
-                    setTimeout(() => appScreen.classList.remove('opacity-0'), 50);
-                }, 500);
-            } catch (error) {
-                showCustomMsg("Authorization Failed: Invalid Username, Email, or Password.");
-            } finally {
-                loginBtn.textContent = "AUTHORIZE";
-                loginBtn.disabled = false;
-            }
-        });
-
-        logoutBtn.addEventListener('click', () => {
-            authToken = null;
-            displayUsername.textContent = "UNKNOWN";
-            
-            loginPassword.value = '';
-            loginUsername.value = '';
-            
-            document.getElementById('resultsDashboard').classList.add('hidden', 'opacity-0', 'translate-y-4');
-            document.getElementById('inputWorkspace').classList.remove('hidden'); 
-            document.getElementById('fileMetaRow').classList.add('hidden');
-            document.getElementById('progressContainer').classList.add('hidden');
-            selectedFiles = [];
-            submittedUrl = null;
-            document.getElementById('urlInput').value = '';
-
-            appScreen.classList.add('opacity-0');
-            setTimeout(() => {
-                appScreen.classList.add('hidden');
-                authContainer.classList.remove('hidden');
-                setTimeout(() => {
-                    authContainer.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
-                }, 50);
-            }, 500);
-        });
-
-        // APP LOGIC
-        const guideBtn = document.getElementById('guideBtn');
-        const guideModal = document.getElementById('guideModal');
-        const closeGuideBtn = document.getElementById('closeGuideBtn');
-
-        guideBtn.addEventListener('click', () => { guideModal.classList.remove('hidden'); setTimeout(() => { guideModal.classList.remove('opacity-0'); }, 10); });
-        closeGuideBtn.addEventListener('click', () => { guideModal.classList.add('opacity-0'); setTimeout(() => { guideModal.classList.add('hidden'); }, 300); });
-        guideModal.addEventListener('click', (e) => { if (e.target === guideModal) closeGuideBtn.click(); });
-
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-        const inputWorkspace = document.getElementById('inputWorkspace');
-        const fileMetaRow = document.getElementById('fileMetaRow');
-        let selectedFiles = [];
-        let submittedUrl = null;
-
-        fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleFileSelection(e.target.files[0]); });
-        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('bg-[#E2A73A]/20'); });
-        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('bg-[#E2A73A]/20'));
-        uploadZone.addEventListener('drop', (e) => { e.preventDefault(); uploadZone.classList.remove('bg-[#E2A73A]/20'); if (e.dataTransfer.files.length > 0) handleFileSelection(e.dataTransfer.files[0]); });
-
-        function handleFileSelection(file) {
-            const isValid = ['.xml', '.fcpxml', '.edl', '.mp4'].some(ext => file.name.toLowerCase().endsWith(ext));
-            if (!isValid) { showCustomMsg("Invalid format. Authorized formats are XML, FCPXML, EDL, and MP4."); fileInput.value = ''; return; }
-            selectedFiles = [file]; submittedUrl = null; document.getElementById('urlInput').value = '';
-            document.getElementById('metaIconLink').classList.add('hidden'); document.getElementById('metaIconFile').classList.remove('hidden');
-            document.getElementById('selectedFileName').textContent = file.name;
-            document.getElementById('selectedFileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
-            inputWorkspace.classList.add('hidden'); fileMetaRow.classList.remove('hidden');
-        }
-
-        document.getElementById('runUrlBtn').addEventListener('click', () => {
-            const urlInput = document.getElementById('urlInput');
-            if (!urlInput.value.trim()) return;
-            selectedFiles = []; submittedUrl = urlInput.value.trim();
-            document.getElementById('metaIconFile').classList.add('hidden'); document.getElementById('metaIconLink').classList.remove('hidden');
-            document.getElementById('selectedFileName').textContent = submittedUrl;
-            document.getElementById('selectedFileSize').textContent = "Web Stream";
-            inputWorkspace.classList.add('hidden'); fileMetaRow.classList.remove('hidden');
-        });
-
-        function updateBar(barId, percentId, textId, percent, text) {
-            return new Promise((resolve) => {
-                document.getElementById(barId).style.width = percent + '%';
-                document.getElementById(percentId).textContent = percent + '%';
-                document.getElementById(textId).textContent = text;
-                setTimeout(resolve, 400);
-            });
-        }
-
-        document.getElementById('runAuditBtn').addEventListener('click', async () => {
-            if (selectedFiles.length === 0 && !submittedUrl) return;
-            if (!authToken) { showCustomMsg("Missing authorization token."); return; }
-
-            fileMetaRow.classList.add('hidden');
-            document.getElementById('progressContainer').classList.remove('hidden');
-            updateBar('detectBar', 'detectPercent', 'detectText', 0, "STANDBY...");
-            
-            if (submittedUrl) await updateBar('scanBar', 'scanPercent', 'scanText', 10, "EXTRACTING MEDIA...");
-            else await updateBar('scanBar', 'scanPercent', 'scanText', 10, "UPLOADING TO ENGINE...");
-
-            try {
-                const formData = new FormData();
-                if (selectedFiles.length > 0) formData.append('file', selectedFiles[0]);
-                else formData.append('video_url', submittedUrl);
-
-                const fetchPromise = fetch('https://deepcut-app.onrender.com/api/audit/', { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}` }, body: formData });
-                setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 45, "PROCESSING..."), 1500);
-                setTimeout(() => updateBar('scanBar', 'scanPercent', 'scanText', 85, "ANALYZING..."), 3000);
-
-                const response = await fetchPromise;
-                if (!response.ok) throw new Error("Server error.");
-                const data = await response.json();
-                
-                await updateBar('scanBar', 'scanPercent', 'scanText', 100, "COMPLETE.");
-                await updateBar('detectBar', 'detectPercent', 'detectText', 100, "AUDIT COMPLETE.");
-                setTimeout(() => populateAndRevealDashboard(data), 600);
-            } catch (error) {
-                updateBar('scanBar', 'scanPercent', 'scanText', 100, "ERROR.");
-                updateBar('detectBar', 'detectPercent', 'detectText', 100, "FAILED.");
-                setTimeout(() => { document.getElementById('progressContainer').classList.add('hidden'); inputWorkspace.classList.remove('hidden'); }, 3000);
-            }
-        });
-
-        document.getElementById('geminiSummaryBtn').addEventListener('click', async (e) => {
-            const btn = e.target; btn.disabled = true; btn.textContent = "✨ Analyzing...";
-            document.getElementById('geminiSummaryContainer').classList.remove('hidden');
-            document.getElementById('geminiSummaryText').textContent = "AI drafting executive summary...";
-            let reportData = ""; document.querySelectorAll('#auditTableBody tr').forEach(row => { reportData += row.innerText + "\n"; });
-            const summary = await fetchGeminiConReintentos(`Write a very short executive summary (max 3 lines). Report:\n${reportData}`, true);
-            document.getElementById('geminiSummaryText').innerHTML = `<span class="font-bold text-xs sm:text-sm text-[#52796F] block mb-2">✨ AI Executive Summary:</span> ${summary}`;
-            btn.textContent = "✨ Summary Generated";
-        });
-
-        function populateAndRevealDashboard(data) {
-            document.getElementById('dashFileName').textContent = data.filename || "File";
-            document.getElementById('dashFormat').textContent = submittedUrl ? "Web Stream" : "Media File";
-            const statusBadge = document.getElementById('dashStatus');
-            const tableBody = document.getElementById('auditTableBody');
-            tableBody.innerHTML = '';
-            document.getElementById('geminiSummaryBtn').disabled = false;
-            document.getElementById('geminiSummaryBtn').textContent = "✨ Generate Exec Summary";
-            document.getElementById('geminiSummaryContainer').classList.add('hidden');
-
-            if (data.status === "error" || data.error) {
-                statusBadge.innerHTML = `⚠️ Engine Error`; statusBadge.className = "flex items-center justify-center gap-2 bg-[#C86B5E] text-[#FDFBF7] px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm w-full lg:w-auto";
-                tableBody.innerHTML = `<tr><td colspan="3" class="p-4 sm:p-6 text-center text-[#C86B5E] font-bold text-sm sm:text-base">${data.error}</td></tr>`;
-            } else if (data.anomalies && data.anomalies.length > 0) {
-                statusBadge.innerHTML = `🚩 ${data.anomalies.length} Flags`; statusBadge.className = "flex items-center justify-center gap-2 bg-[#E2A73A] text-[#2D2824] px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm w-full lg:w-auto";
-                data.anomalies.forEach((a, i) => {
-                    tableBody.innerHTML += `
-                        <tr class="border-b-[2px] sm:border-b-[3px] border-[#2D2824] block sm:table-row">
-                            <td class="p-4 sm:p-6 font-bold border-b sm:border-b-0 sm:border-r-[3px] border-[#2D2824] block sm:table-cell w-full sm:w-auto">${a.timecode}</td>
-                            <td class="p-4 sm:p-6 border-b sm:border-b-0 sm:border-r-[3px] border-[#2D2824] block sm:table-cell w-full sm:w-auto"><span class="bg-[#C86B5E] text-white px-2 py-1 text-[10px] sm:text-xs font-bold">${a.type}</span></td>
-                            <td class="p-4 sm:p-6 block sm:table-cell w-full sm:w-auto">
-                                <span class="block whitespace-normal">${a.description}</span>
-                                <div class="mt-3 sm:mt-4">
-                                    <button class="btn-sugerir bg-[#2D2824] text-white px-3 py-1.5 sm:px-3 sm:py-1.5 text-[9px] sm:text-[10px] font-bold hover:bg-[#52796F] uppercase tracking-widest transition-colors w-full sm:w-auto" data-type="${a.type}" data-desc="${a.description}">✨ Suggest Fix</button>
-                                    <div class="sugerencia-out hidden mt-2 sm:mt-3 p-3 sm:p-4 bg-[#FDFBF7] border-[2px] border-dashed border-[#2D2824] text-xs sm:text-sm whitespace-normal"></div>
-                                </div>
-                            </td>
-                        </tr>`;
-                });
-            } else {
-                statusBadge.innerHTML = `🌟 Clean / Verified`; statusBadge.className = "flex items-center justify-center gap-2 bg-[#7A9E7E] text-white px-4 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm w-full lg:w-auto";
-                tableBody.innerHTML = `<tr><td colspan="3" class="p-6 sm:p-10 text-center font-bold text-[#5C534A] text-sm sm:text-base">No compliance violations or anomalies detected.</td></tr>`;
-            }
-
-            document.querySelectorAll('.btn-sugerir').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const t = e.target; t.disabled = true; t.textContent = "✨ Processing...";
-                    const out = t.nextElementSibling; out.classList.remove('hidden'); out.textContent = "Generating strategy...";
-                    const r = await fetchGeminiConReintentos(`Issue: ${t.getAttribute('data-type')}. Desc: ${t.getAttribute('data-desc')}. How to fix it in post-production in 2 sentences.`, false);
-                    t.style.display = 'none'; out.innerHTML = `<span class="font-bold text-[#52796F] text-[10px] sm:text-xs block mb-1 uppercase tracking-wider">✨ Recommended Strategy:</span> ${r}`;
-                });
-            });
-
-            document.getElementById('progressContainer').classList.add('hidden');
-            document.getElementById('inputWorkspace').classList.remove('hidden'); 
-            const d = document.getElementById('resultsDashboard'); d.classList.remove('hidden');
-            setTimeout(() => { d.classList.remove('opacity-0', 'translate-y-4'); d.scrollIntoView({ behavior: 'smooth' }); }, 50);
-        }
-    </script>
-</body>
-</html>
+                <div class="w-full md:w-auto shrink-0
