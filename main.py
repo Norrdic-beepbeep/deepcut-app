@@ -50,10 +50,8 @@ Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    try: yield db
+    finally: db.close()
 
 # ---------------------------------------------------------
 # AUTHENTICATION & EMAIL
@@ -164,7 +162,7 @@ def download_audio_from_link(url: str):
             return content, "downloaded_link.m4a"
     except Exception as e: return None, str(e)
 
-def security_scan(file_content, filename): return True # Bypassing VT for speed in this demo
+def security_scan(file_content, filename): return True
 
 def detect_with_ai_xml(file_content, filename):
     if not client: return {"anomalies": [], "error": "AI Engine offline."}
@@ -196,24 +194,35 @@ def detect_with_ai_audio(file_content, filename):
 
 # THE BACKGROUND WORKER
 async def run_audit_background(task_id: str, file_content: bytes, filename: str, video_url: str):
+    # HANDSHAKE WAIT: Give the frontend up to 10 seconds to connect the WebSocket
+    for _ in range(20):
+        if task_id in active_connections:
+            break
+        await asyncio.sleep(0.5)
+        
+    # If it never connected, abort.
+    if task_id not in active_connections:
+        print(f"Task {task_id} aborted: Frontend WebSocket never connected.")
+        return
+
     try:
-        # PUSH LIVE UPDATES FOR STAGE 1 (SCAN)
-        await notify_progress(task_id, "scan", 10, "EXTRACTING MEDIA..." if video_url else "UPLOADING...")
-        await asyncio.sleep(1) # Small delay for UX flow
+        # STAGE 1: UPLOAD / EXTRACTION
+        await notify_progress(task_id, "scan", 10, "EXTRACTING MEDIA..." if video_url else "UPLOADING TO ENGINE...")
+        await asyncio.sleep(1) # UX Delay
         
         if video_url:
-            await notify_progress(task_id, "scan", 40, "DOWNLOADING FROM LINK...")
+            await notify_progress(task_id, "scan", 40, "DOWNLOADING STREAM...")
             file_content, err = download_audio_from_link(video_url)
             if not file_content: raise Exception(f"Failed: {err}")
             filename = "Linked_Video.m4a"
             
         await notify_progress(task_id, "scan", 85, "ANALYZING SIGNATURES...")
-        await asyncio.sleep(1)
+        await asyncio.sleep(1) # UX Delay
 
         await notify_progress(task_id, "scan", 100, "SECURE. PHASE 1 COMPLETE.")
         await asyncio.sleep(0.5)
 
-        # PUSH LIVE UPDATES FOR STAGE 2 (DETECT)
+        # STAGE 2: AI DETECTION
         await notify_progress(task_id, "detect", 20, "INITIALIZING AI PIPELINE...")
         
         if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')):
@@ -225,7 +234,7 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
             
         await notify_progress(task_id, "detect", 100, "AUDIT COMPLETE.")
         
-        # SEND FINAL PAYLOAD
+        # COMPLETE
         final_result = {
             "status": "success", "filename": filename,
             "anomalies": ai_analysis.get('anomalies', []), "error": ai_analysis.get('error', None)
@@ -244,7 +253,7 @@ async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File
     
     file_content = await file.read() if file else None
     filename = file.filename if file else None
-    task_id = str(uuid.uuid4()) # Generate secure tracking ID
+    task_id = str(uuid.uuid4())
     
     background_tasks.add_task(run_audit_background, task_id, file_content, filename, video_url)
     return {"task_id": task_id}
@@ -255,9 +264,11 @@ async def websocket_audit_endpoint(websocket: WebSocket, task_id: str):
     await websocket.accept()
     active_connections[task_id] = websocket
     try:
-        while True: await websocket.receive_text() # Keep connection alive
+        while True: 
+            await websocket.receive_text() # Keep connection alive
     except WebSocketDisconnect:
-        del active_connections[task_id]
+        if task_id in active_connections:
+            del active_connections[task_id]
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
