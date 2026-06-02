@@ -124,7 +124,7 @@ def send_confirmation_email(user_email: str, user_name: str, username: str):
         msg['To'] = user_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15)
         server.starttls()
         server.login(SMTP_USERNAME, SMTP_PASSWORD)
         server.send_message(msg)
@@ -151,7 +151,7 @@ def send_reset_email(user_email: str, temp_password: str):
         msg['To'] = user_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15)
         server.starttls()
         server.login(SMTP_USERNAME, SMTP_PASSWORD)
         server.send_message(msg)
@@ -307,15 +307,17 @@ def secure_generate_summary(data: dict, current_user: User = Depends(get_current
 # OPERATOR ACCESS ENDPOINTS
 # ---------------------------------------------------------
 @app.get("/")
-def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.4.0-recovery"}
+def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.4.1-recovery"}
 
 @app.post("/api/register")
-def register_user(name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def register_user(background_tasks: BackgroundTasks, name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(or_(User.username == username, User.email == email)).first()
     if existing_user: raise HTTPException(status_code=400, detail="Username or email already registered")
     db.add(User(name=name, username=username, email=email, hashed_password=get_password_hash(password)))
     db.commit()
-    send_confirmation_email(email, name, username)
+    
+    # Hand off email execution to the background so the frontend resolves instantly
+    background_tasks.add_task(send_confirmation_email, email, name, username)
     return {"message": "Operator registered successfully."}
 
 @app.post("/api/login")
@@ -326,7 +328,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)), "token_type": "bearer", "username": user.username}
 
 @app.post("/api/forgot-password")
-def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
+def forgot_password(background_tasks: BackgroundTasks, email: str = Form(...), db: Session = Depends(get_db)):
     """Generates a secure temporary password and emails it to the operator."""
     user = db.query(User).filter(User.email == email).first()
     
@@ -338,7 +340,8 @@ def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
     user.hashed_password = get_password_hash(temp_pass)
     db.commit()
     
-    send_reset_email(user.email, temp_pass)
+    # Hand off email execution to the background so the frontend resolves instantly
+    background_tasks.add_task(send_reset_email, user.email, temp_pass)
     return {"message": "If an account matches that email, a reset email has been dispatched."}
 
 # ---------------------------------------------------------
