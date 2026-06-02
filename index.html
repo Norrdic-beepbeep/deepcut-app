@@ -342,6 +342,29 @@
             return function() { modalEl.removeEventListener('keydown', keyHandler); setTimeout(() => { triggerBtnEl.focus(); }, 100); };
         }
 
+        // --- GUIDE MODAL LOGIC ---
+        const guideBtn = document.getElementById('guideBtn');
+        const guideModal = document.getElementById('guideModal');
+        const closeGuideBtn = document.getElementById('closeGuideBtn');
+        let guideFocusCleanup = null;
+
+        guideBtn.addEventListener('click', () => {
+            guideModal.classList.remove('hidden');
+            setTimeout(() => { guideModal.classList.remove('opacity-0'); }, 10);
+            guideFocusCleanup = trapModalFocus(guideModal, closeGuideBtn, guideBtn);
+        });
+
+        const closeGuide = () => {
+            guideModal.classList.add('opacity-0');
+            setTimeout(() => { guideModal.classList.add('hidden'); }, 300);
+            if (guideFocusCleanup) { guideFocusCleanup(); guideFocusCleanup = null; }
+        };
+        closeGuideBtn.addEventListener('click', closeGuide);
+        guideModal.addEventListener('click', (e) => {
+            if (e.target === guideModal) closeGuide();
+        });
+
+
         vaultBtn.addEventListener('click', () => {
             loadHistory();
             vaultDrawer.classList.remove('-translate-x-full');
@@ -365,7 +388,8 @@
             vaultList.innerHTML = `<p class="text-center text-cMuted text-xs font-typewriter uppercase mt-10 animate-pulse">Syncing Vault Registry...</p>`;
             try {
                 const response = await fetch('https://deepcut-app.onrender.com/api/audits', { 
-                    headers: { 'Authorization': `Bearer ${authToken}` } 
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    cache: 'no-store' 
                 });
                 
                 if (!response.ok) {
@@ -419,8 +443,10 @@
 
         async function loadSingleAudit(auditId) {
             try {
+                // Fetching detail structure verified by the token security layer
                 const response = await fetch(`https://deepcut-app.onrender.com/api/audits/${auditId}`, { 
-                    headers: { 'Authorization': `Bearer ${authToken}` } 
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    cache: 'no-store'
                 });
                 const data = await response.json();
                 populateAndRevealDashboard(data);
