@@ -21,7 +21,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 
 # ---------------------------------------------------------
-# SECURITY & DATABASE CONFIGURATION
+# SECURITY & DATABASE CONFIGURATION (WITH AUTO-FALLBACK)
 # ---------------------------------------------------------
 SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-fallback-key-change-this")
 ALGORITHM = "HS256"
@@ -31,7 +31,24 @@ SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fallback.db")
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Robust database connection fallback handler
+try:
+    # Set a short connection timeout so cold starts or bad credentials don't hang the deployment
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL, 
+        connect_args={"connect_timeout": 10} if "postgresql" in SQLALCHEMY_DATABASE_URL else {}
+    )
+    # Ping the database immediately to test connection integrity
+    with engine.connect() as conn:
+        print("Successfully connected to primary database.")
+except Exception as e:
+    print(f"Database connection failed: {e}. Falling back to SQLite fallback.db.")
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./fallback.db"
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL, 
+        connect_args={"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
+    )
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
