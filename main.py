@@ -287,6 +287,14 @@ async def websocket_audit_endpoint(websocket: WebSocket, task_id: str):
     except WebSocketDisconnect:
         if task_id in active_connections:
             del active_connections[task_id]
+@app.get("/")
+def home_root():
+    """Simple health check route to confirm the backend is alive."""
+    return {
+        "status": "online",
+        "engine": "DeepCut Compliance API",
+        "version": "1.1.0-a11y"
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
