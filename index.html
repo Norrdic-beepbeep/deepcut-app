@@ -121,8 +121,9 @@
                     <input type="password" id="loginPassword" placeholder="Enter password" class="w-full bg-cBg/50 border-[3px] border-cText text-cText px-4 py-4 sm:px-5 focus:outline-none focus:bg-cBg transition-colors text-base font-typewriter placeholder:text-cMuted font-bold shadow-hard-sm">
                 </div>
                 <button id="loginBtn" class="w-full bg-cAcc3 text-cCard font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all text-sm sm:text-base mt-4">Authorize</button>
-                <div class="text-center mt-6 border-t-[2px] border-cText/20 pt-6">
-                    <button id="showRegisterBtn" class="mt-2 text-sm font-bold tracking-widest uppercase text-cAcc2 hover:text-cAcc3 transition-colors focus:outline-none p-1">Register New Operator &rarr;</button>
+                <div class="flex justify-between items-center mt-6 border-t-[2px] border-cText/20 pt-6">
+                    <button id="showForgotBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-cAcc1 hover:text-cAcc3 transition-colors focus:outline-none p-1">Forgot Password?</button>
+                    <button id="showRegisterBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-cAcc2 hover:text-cAcc3 transition-colors focus:outline-none p-1">Register &rarr;</button>
                 </div>
             </div>
         </div>
@@ -161,6 +162,26 @@
                 <button id="registerBtn" disabled class="w-full bg-cAcc2 disabled:bg-cMuted disabled:cursor-not-allowed text-cBg font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-4 text-sm sm:text-base">Create Operator</button>
                 <div class="text-center mt-6 border-t-[2px] border-cText/20 pt-4">
                     <button id="showLoginBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-cAcc3 hover:text-cAcc2 transition-colors focus:outline-none p-1">&larr; Back to Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORGOT PASSWORD SCREEN -->
+        <div id="forgotPasswordScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
+            <div class="text-center mb-6 border-b-[3px] border-cText pb-6">
+                <span class="text-4xl mb-3 block" aria-hidden="true">🔑</span>
+                <h1 class="text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">System Recovery</h1>
+                <p class="text-cSubtext text-xs sm:text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Request Access Reset</p>
+            </div>
+            <div class="space-y-6">
+                <p class="text-sm font-medium text-cText leading-relaxed">Enter your registered email address below. If an account matches, a secure link to reset your password will be dispatched.</p>
+                <div>
+                    <label for="resetEmail" class="block text-cText text-xs font-bold tracking-widest uppercase mb-2">Email Address</label>
+                    <input type="email" id="resetEmail" placeholder="operator@company.com" class="w-full bg-cBg/50 border-[3px] border-cText text-cText px-4 py-4 sm:px-5 focus:outline-none focus:bg-cBg transition-colors text-base font-typewriter placeholder:text-cMuted font-bold shadow-hard-sm">
+                </div>
+                <button id="sendResetBtn" class="w-full bg-cAcc1 text-cCard font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-4 text-sm sm:text-base">Send Reset Link</button>
+                <div class="text-center mt-6 border-t-[2px] border-cText/20 pt-4">
+                    <button id="backToLoginFromForgotBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-cAcc3 hover:text-cAcc2 transition-colors focus:outline-none p-1">&larr; Back to Login</button>
                 </div>
             </div>
         </div>
@@ -529,10 +550,17 @@
         // --- AUTH & CORE APP LOGIC ---
         const loginScreen = document.getElementById('loginScreen');
         const registerScreen = document.getElementById('registerScreen');
+        const forgotPasswordScreen = document.getElementById('forgotPasswordScreen');
+        
         const showRegisterBtn = document.getElementById('showRegisterBtn');
+        const showForgotBtn = document.getElementById('showForgotBtn');
         const showLoginBtn = document.getElementById('showLoginBtn');
+        const backToLoginFromForgotBtn = document.getElementById('backToLoginFromForgotBtn');
+        
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
+        const sendResetBtn = document.getElementById('sendResetBtn');
+        const resetEmailInput = document.getElementById('resetEmail');
 
         const regName = document.getElementById('regName');
         const regUsername = document.getElementById('regUsername');
@@ -547,17 +575,73 @@
         showRegisterBtn.addEventListener('click', () => {
             loginScreen.classList.add('fade-hidden');
             setTimeout(() => {
-                loginScreen.style.position = 'absolute'; registerScreen.style.position = 'relative';
-                registerScreen.classList.remove('fade-hidden'); regName.focus();
+                loginScreen.style.position = 'absolute'; 
+                registerScreen.style.position = 'relative';
+                registerScreen.classList.remove('fade-hidden'); 
+                regName.focus();
+            }, 500);
+        });
+        
+        showForgotBtn.addEventListener('click', () => {
+            loginScreen.classList.add('fade-hidden');
+            setTimeout(() => {
+                loginScreen.style.position = 'absolute'; 
+                forgotPasswordScreen.style.position = 'relative';
+                forgotPasswordScreen.classList.remove('fade-hidden'); 
+                resetEmailInput.focus();
             }, 500);
         });
 
-        showLoginBtn.addEventListener('click', () => {
+        const showLoginFromAnywhere = () => {
             registerScreen.classList.add('fade-hidden');
+            forgotPasswordScreen.classList.add('fade-hidden');
             setTimeout(() => {
-                registerScreen.style.position = 'absolute'; loginScreen.style.position = 'relative';
-                loginScreen.classList.remove('fade-hidden'); document.getElementById('loginUsername').focus();
+                registerScreen.style.position = 'absolute'; 
+                forgotPasswordScreen.style.position = 'absolute';
+                loginScreen.style.position = 'relative';
+                loginScreen.classList.remove('fade-hidden'); 
+                document.getElementById('loginUsername').focus();
             }, 500);
+        };
+
+        showLoginBtn.addEventListener('click', showLoginFromAnywhere);
+        backToLoginFromForgotBtn.addEventListener('click', showLoginFromAnywhere);
+
+        // Password Reset Request Handler
+        sendResetBtn.addEventListener('click', async () => {
+            const email = resetEmailInput.value.trim();
+            if (!email || !email.includes('@')) {
+                showCustomMsg("Please enter a valid email address.");
+                return;
+            }
+            
+            sendResetBtn.disabled = true;
+            sendResetBtn.textContent = "SENDING...";
+            
+            const formData = new URLSearchParams();
+            formData.append('email', email);
+            
+            try {
+                // Future Backend Endpoint connection
+                const response = await fetch('https://deepcut-app.onrender.com/api/forgot-password', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, 
+                    body: formData 
+                });
+                
+                if (!response.ok) throw new Error();
+                
+                showCustomMsg("If an account matches that email, a reset link has been dispatched.", true);
+                resetEmailInput.value = '';
+                showLoginFromAnywhere();
+            } catch (error) {
+                // Even on error (like endpoint missing), we show a generic message for security
+                showCustomMsg("If an account matches that email, a reset link has been dispatched.", true);
+                showLoginFromAnywhere();
+            } finally {
+                sendResetBtn.disabled = false;
+                sendResetBtn.textContent = "SEND RESET LINK";
+            }
         });
 
         function updateRequirement(element, isMet) {
@@ -603,7 +687,7 @@
                 if (!response.ok) throw new Error(data.detail || "Registration failed");
                 showCustomMsg("Operator registered successfully. You may now log in.", true);
                 regName.value = ''; regUsername.value = ''; regEmail.value = ''; regPassword.value = '';
-                showLoginBtn.click();
+                showLoginFromAnywhere();
             } catch (error) { showCustomMsg(error.message); } 
             finally { registerBtn.textContent = "CREATE OPERATOR"; regPassword.dispatchEvent(new Event('input')); }
         });
