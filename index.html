@@ -370,6 +370,9 @@
                 });
                 
                 if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error("HTTP 404: Endpoint Missing. Your Render backend is likely running an old main.py file. Please deploy the updated backend code.");
+                    }
                     throw new Error(`HTTP Error ${response.status}: ${response.statusText || 'Access Denied'}`);
                 }
                 
@@ -411,7 +414,7 @@
                         </button>
                     </div>
                 `;
-                // Wire up the new retry sync handler
+                // Wire up the retry sync handler
                 document.getElementById('retryVaultBtn').addEventListener('click', () => {
                     loadHistory();
                 });
@@ -527,7 +530,7 @@
                 
                 if (!response.ok) throw new Error(data.detail || "Registration failed");
 
-                showCustomMsg("Operator registered successfully. A confirmation email has been sent. You may now log in.", true);
+                showCustomMsg("Operator registered successfully. You may now log in.", true);
                 
                 regName.value = ''; regUsername.value = ''; regEmail.value = ''; regPassword.value = '';
                 showLoginBtn.click();
@@ -739,39 +742,31 @@
             }
         });
 
-        // AI Summary Logic
-        const apiKey = "";
+        // REFACTORED SECURE BACKEND AI AGENT TRIGGERS
         const geminiSummaryBtn = document.getElementById('geminiSummaryBtn');
 
-        async function fetchGeminiConReintentos(prompt, isSummary = false, maxRetries = 5) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const sysInstruction = isSummary 
-                ? "You are a leading video post-production auditor. Write short, clear, and direct executive summaries (max 3 lines) based on the compliance report."
-                : "You are a video post-production expert. Provide a practical, short (1-2 sentences), and actionable strategy to fix the video or audio issue described.";
-            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: sysInstruction }] } };
-
-            let delay = 1000;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!response.ok) throw new Error(`HTTP error!`);
-                    const result = await response.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Error generating response.";
-                } catch (error) {
-                    if (i === maxRetries - 1) return "AI connection error.";
-                    await new Promise(res => setTimeout(res, delay)); delay *= 2; 
-                }
-            }
-        }
-
         geminiSummaryBtn.addEventListener('click', async (e) => {
+            if (!authToken) return;
             const btn = e.target; btn.disabled = true; btn.textContent = "✨ Analyzing...";
             document.getElementById('geminiSummaryContainer').classList.remove('hidden');
             document.getElementById('geminiSummaryText').textContent = "AI drafting executive summary...";
-            let reportData = ""; document.querySelectorAll('#auditTableBody tr').forEach(row => { reportData += row.innerText + "\n"; });
-            const summary = await fetchGeminiConReintentos(`Write a very short executive summary (max 3 lines). Report:\n${reportData}`, true);
-            document.getElementById('geminiSummaryText').innerHTML = `<span class="font-bold text-[11px] sm:text-xs text-cAcc2 block mb-1.5 uppercase tracking-widest">✨ AI Executive Summary:</span> ${summary}`;
-            btn.textContent = "✨ Summary Generated";
+            
+            let reportData = ""; 
+            document.querySelectorAll('#auditTableBody tr').forEach(row => { reportData += row.innerText + "\n"; });
+
+            try {
+                const res = await fetch('https://deepcut-app.onrender.com/api/ai/summary', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify({ report: reportData })
+                });
+                const data = await res.json();
+                document.getElementById('geminiSummaryText').innerHTML = `<span class="font-bold text-[11px] sm:text-xs text-cAcc2 block mb-1.5 uppercase tracking-widest">✨ AI Executive Summary:</span> ${data.text}`;
+            } catch (err) {
+                document.getElementById('geminiSummaryText').textContent = "Error generating summary profile.";
+            } finally {
+                btn.textContent = "✨ Summary Generated";
+            }
         });
 
         // Populate Dashboard UI
@@ -781,8 +776,7 @@
             const tableBody = document.getElementById('auditTableBody');
             tableBody.innerHTML = '';
             
-            document.getElementById('geminiSummaryBtn').disabled = false;
-            document.getElementById('geminiSummaryBtn').textContent = "✨ Generate Exec Summary";
+            geminiSummaryBtn.disabled = false; geminiSummaryBtn.textContent = "✨ Generate Exec Summary";
             document.getElementById('geminiSummaryContainer').classList.add('hidden');
 
             if (data.status === "error" || data.error) {
@@ -808,20 +802,30 @@
 
             document.querySelectorAll('.btn-sugerir').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
+                    if (!authToken) return;
                     const t = e.target; t.disabled = true; t.textContent = "✨ Processing...";
                     const out = t.nextElementSibling; out.classList.remove('hidden'); out.textContent = "Generating strategy...";
-                    const r = await fetchGeminiConReintentos(`Issue: ${t.getAttribute('data-type')}. Desc: ${t.getAttribute('data-desc')}. How to fix it in post-production in 2 sentences.`, false);
-                    t.style.display = 'none'; out.innerHTML = `<span class="font-bold text-cAcc2 text-[10px] sm:text-[11px] block mb-2 uppercase tracking-widest">✨ Recommended Strategy:</span> ${r}`;
+                    
+                    try {
+                        const res = await fetch('https://deepcut-app.onrender.com/api/ai/suggest', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                            body: JSON.stringify({ type: t.getAttribute('data-type'), description: t.getAttribute('data-desc') })
+                        });
+                        const context = await res.json();
+                        t.style.display = 'none'; 
+                        out.innerHTML = `<span class="font-bold text-cAcc2 text-[10px] sm:text-[11px] block mb-2 uppercase tracking-widest">✨ Recommended Strategy:</span> ${context.text}`;
+                    } catch (err) {
+                        out.textContent = "Error communicating with secure broker.";
+                        t.disabled = false; t.textContent = "✨ Suggest Fix";
+                    }
                 });
             });
 
-            document.getElementById('progressContainer').classList.add('hidden');
-            inputWorkspace.classList.remove('hidden'); 
-            const d = document.getElementById('resultsDashboard'); 
-            d.classList.remove('hidden');
+            document.getElementById('progressContainer').classList.add('hidden'); inputWorkspace.classList.remove('hidden'); 
+            const d = document.getElementById('resultsDashboard'); d.classList.remove('hidden');
             setTimeout(() => { d.classList.remove('opacity-0', 'translate-y-4'); d.scrollIntoView({ behavior: 'smooth' }); }, 50);
 
-            // Access announcements
             const announcement = document.createElement('div');
             announcement.className = 'sr-only'; announcement.setAttribute('role', 'alert');
             announcement.textContent = "DeepCut Engine Audit complete. Results dashboard is now active.";
