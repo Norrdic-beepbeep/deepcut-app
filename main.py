@@ -5,18 +5,18 @@ import json
 import smtplib
 import uuid
 import asyncio
+from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import openai
 import tempfile
 import yt_dlp
 import uvicorn
-from datetime import datetime, timedelta
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy import create_engine, Column, Integer, String, or_
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, DateTime, JSON
+from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
@@ -38,6 +38,9 @@ Base = declarative_base()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
+# ---------------------------------------------------------
+# RELATIONAL DATABASE MODELS
+# ---------------------------------------------------------
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -45,16 +48,34 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    
+    # Relational link to past audits
+    audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
+
+class Audit(Base):
+    __tablename__ = "audits"
+    id = Column(String, primary_key=True, index=True)  # UUID
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    filename = Column(String, nullable=False)
+    format = Column(String, nullable=False)            # "XML", "Audio", "Web Stream"
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, nullable=False)            # "Running", "Clean", "Flagged", "Error"
+    anomalies = Column(JSON, nullable=True)            # Serialized JSON audit report
+
+    # Relationship back to User
+    owner = relationship("User", back_populates="audits")
 
 Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
-    try: yield db
-    finally: db.close()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # ---------------------------------------------------------
-# AUTHENTICATION & EMAIL
+# AUTHENTICATION & EMAIL NOTIFICATIONS
 # ---------------------------------------------------------
 def send_confirmation_email(user_email: str, user_name: str, username: str):
     SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -102,7 +123,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 # ---------------------------------------------------------
-# FASTAPI APP, WEBSOCKETS & POLLING fallbacks
+# FASTAPI APP, WEBSOCKETS & POLLING ROUTING
 # ---------------------------------------------------------
 app = FastAPI()
 
@@ -117,18 +138,13 @@ app.add_middleware(
 try: client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 except Exception: client = None
 
-# IN-MEMORY TASK STORE (Tracks audits for HTTP Polling fallbacks)
 task_statuses: dict[str, dict] = {}
 active_connections: dict[str, WebSocket] = {}
 
 async def notify_progress(task_id: str, stage: str, progress: int, message: str):
-    """Updates the task status store and broadcasts to active WebSockets if available."""
+    """Updates progress status cache and streams events to connected WebSockets."""
     task_statuses[task_id] = {
-        "status": "running",
-        "stage": stage,
-        "progress": progress,
-        "message": message,
-        "result": None
+        "status": "running", "stage": stage, "progress": progress, "message": message, "result": None
     }
     if task_id in active_connections:
         try:
@@ -137,6 +153,11 @@ async def notify_progress(task_id: str, stage: str, progress: int, message: str)
             })
         except Exception:
             pass
+
+@app.get("/")
+def home_root():
+    """Confirms server status for quick diagnostics."""
+    return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.2.0-vault"}
 
 @app.post("/api/register")
 def register_user(name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
@@ -155,7 +176,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)), "token_type": "bearer", "username": user.username}
 
 # ---------------------------------------------------------
-# AI & AUDIT PROCESSING (BACKGROUND TASK)
+# AI AUDITING SUB-PIPELINES
 # ---------------------------------------------------------
 def download_audio_from_link(url: str):
     temp_dir = tempfile.gettempdir()
@@ -169,8 +190,6 @@ def download_audio_from_link(url: str):
             os.remove(path)
             return content, "downloaded_link.m4a"
     except Exception as e: return None, str(e)
-
-def security_scan(file_content, filename): return True
 
 def detect_with_ai_xml(file_content, filename):
     if not client: return {"anomalies": [], "error": "AI Engine offline."}
@@ -200,10 +219,9 @@ def detect_with_ai_audio(file_content, filename):
         return json.loads(response.choices[0].message.content)
     except Exception as e: return {"anomalies": [], "error": str(e)}
 
-# THE BACKGROUND WORKER
+# THE BACKGROUND TASK WORKER
 async def run_audit_background(task_id: str, file_content: bytes, filename: str, video_url: str):
     try:
-        # STAGE 1: UPLOAD / EXTRACTION
         await notify_progress(task_id, "scan", 10, "EXTRACTING MEDIA..." if video_url else "UPLOADING TO ENGINE...")
         await asyncio.sleep(1)
         
@@ -219,7 +237,6 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
         await notify_progress(task_id, "scan", 100, "SECURE. PHASE 1 COMPLETE.")
         await asyncio.sleep(0.5)
 
-        # STAGE 2: AI DETECTION
         await notify_progress(task_id, "detect", 20, "INITIALIZING AI PIPELINE...")
         
         if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')):
@@ -231,18 +248,26 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
             
         await notify_progress(task_id, "detect", 100, "AUDIT COMPLETE.")
         
-        # FINAL PAYLOAD PREPARATION
         final_result = {
             "status": "success", "filename": filename,
             "anomalies": ai_analysis.get('anomalies', []), "error": ai_analysis.get('error', None)
         }
         
-        # Store finished state for the polling handler
         task_statuses[task_id] = {
             "status": "complete", "stage": "detect", "progress": 100, "message": "AUDIT COMPLETE.", "result": final_result
         }
 
-        # Broadcast final payload directly to active WebSockets
+        # Write result securely to DB
+        db = SessionLocal()
+        try:
+            db_audit = db.query(Audit).filter(Audit.id == task_id).first()
+            if db_audit:
+                db_audit.status = "Flagged" if len(ai_analysis.get('anomalies', [])) > 0 else "Clean"
+                db_audit.anomalies = ai_analysis.get('anomalies', [])
+                db.commit()
+        finally:
+            db.close()
+
         if task_id in active_connections:
             await active_connections[task_id].send_json({"status": "complete", "result": final_result})
 
@@ -250,36 +275,86 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
         task_statuses[task_id] = {
             "status": "error", "stage": "detect", "progress": 0, "message": str(e), "result": None
         }
+        
+        db = SessionLocal()
+        try:
+            db_audit = db.query(Audit).filter(Audit.id == task_id).first()
+            if db_audit:
+                db_audit.status = "Error"
+                db_audit.anomalies = [{"timecode": "N/A", "type": "Engine Error", "description": str(e)}]
+                db.commit()
+        finally:
+            db.close()
+
         if task_id in active_connections:
             await active_connections[task_id].send_json({"status": "error", "message": str(e)})
 
+# ---------------------------------------------------------
+# SECURE VAULT ENDPOINTS (USER-SPECIFIC)
+# ---------------------------------------------------------
 @app.post("/api/audit/start")
-async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user)):
-    """Triggers the background task, initializes trackers, and returns task ID."""
+async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not file and not video_url: raise HTTPException(status_code=400, detail="Must provide file or URL.")
     
     file_content = await file.read() if file else None
     filename = file.filename if file else None
     task_id = str(uuid.uuid4())
     
-    # Pre-populate trackers to prevent 404 errors during fast fallback polling
     task_statuses[task_id] = {
         "status": "running", "stage": "scan", "progress": 0, "message": "INITIALIZING...", "result": None
     }
+
+    format_label = "Web Stream" if video_url else ("Audio" if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')) else "XML")
+
+    # Insert relational record tied directly to user.id
+    db_audit = Audit(
+        id=task_id,
+        user_id=current_user.id,
+        filename=filename or "Web Stream",
+        format=format_label,
+        status="Running",
+        anomalies=[]
+    )
+    db.add(db_audit)
+    db.commit()
     
     background_tasks.add_task(run_audit_background, task_id, file_content, filename, video_url)
     return {"task_id": task_id}
 
+@app.get("/api/audits")
+def get_user_audits(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Exclusively retrieves audits owned by the authenticated operator."""
+    audits = db.query(Audit).filter(Audit.user_id == current_user.id).order_by(Audit.timestamp.desc()).all()
+    return [{
+        "id": a.id,
+        "filename": a.filename,
+        "format": a.format,
+        "timestamp": a.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+        "status": a.status,
+        "flag_count": len(a.anomalies) if a.anomalies else 0
+    } for a in audits]
+
+@app.get("/api/audits/{audit_id}")
+def get_single_audit(audit_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Verifies owner verification and fetches specific record details."""
+    audit = db.query(Audit).filter(Audit.id == audit_id, Audit.user_id == current_user.id).first()
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit log not found")
+    return {
+        "status": "success",
+        "filename": audit.filename,
+        "format": audit.format,
+        "anomalies": audit.anomalies
+    }
+
 @app.get("/api/audit/status/{task_id}")
 async def get_audit_status(task_id: str, current_user: User = Depends(get_current_user)):
-    """Status endpoint polled by frontend if WebSocket is unavailable or times out."""
     if task_id not in task_statuses:
         raise HTTPException(status_code=404, detail="Task not found")
     return task_statuses[task_id]
 
 @app.websocket("/ws/audit/{task_id}")
 async def websocket_audit_endpoint(websocket: WebSocket, task_id: str):
-    """Standard streaming endpoint using secure, raw WebSockets."""
     await websocket.accept()
     active_connections[task_id] = websocket
     try:
@@ -287,14 +362,6 @@ async def websocket_audit_endpoint(websocket: WebSocket, task_id: str):
     except WebSocketDisconnect:
         if task_id in active_connections:
             del active_connections[task_id]
-@app.get("/")
-def home_root():
-    """Simple health check route to confirm the backend is alive."""
-    return {
-        "status": "online",
-        "engine": "DeepCut Compliance API",
-        "version": "1.1.0-a11y"
-    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
