@@ -116,11 +116,81 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-try: client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-except Exception: client = None
+try: 
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+except Exception: 
+    client = None
 
 task_statuses: dict[str, dict] = {}
 active_connections: dict[str, WebSocket] = {}
+
+# ---------------------------------------------------------
+# AUDIO DOWNLOADER HELPER
+# ---------------------------------------------------------
+def download_audio_from_link(url: str):
+    temp_dir = tempfile.gettempdir()
+    out_tmpl = os.path.join(temp_dir, 'downloaded_audio.%(ext)s')
+    ydl_opts = {'format': 'm4a/bestaudio/best', 'outtmpl': out_tmpl, 'noplaylist': True, 'quiet': True}
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            path = ydl.prepare_filename(info)
+            with open(path, 'rb') as f: content = f.read()
+            os.remove(path)
+            return content, "downloaded_link.m4a"
+    except Exception as e: return None, str(e)
+
+# ---------------------------------------------------------
+# OPENAI COMPLIANCE ANALYSIS FUNCTIONS
+# ---------------------------------------------------------
+def detect_with_ai_xml(file_content, filename):
+    """Parses timelines (XML) securely and identifies compliance anomalies."""
+    if not client: 
+        return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
+    
+    text_content = file_content.decode('utf-8', errors='ignore')[:10000] 
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are a strict video compliance auditor. Look for copyrighted music and continuity errors in the XML. Return JSON: {\"anomalies\": [{\"timecode\": \"string\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"
+                },
+                {"role": "user", "content": f"Filename: {filename}\nXML: {text_content}"}
+            ], 
+            response_format={ "type": "json_object" }
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e: 
+        return {"anomalies": [], "error": str(e)}
+
+def detect_with_ai_audio(file_content, filename):
+    """Transcribes spoken audio tracks and flags broadcast violations."""
+    if not client: 
+        return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
+    
+    try:
+        # Perform transcription using OpenAI Whisper
+        transcript_response = client.audio.transcriptions.create(
+            model="whisper-1", 
+            file=(filename, file_content)
+        )
+        # Classify the transcribed content
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are a broadcast auditor. Flag profanity or explicit mentions of competitor brands. Return JSON: {\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"
+                },
+                {"role": "user", "content": f"Transcript:\n{transcript_response.text}"}
+            ], 
+            response_format={ "type": "json_object" }
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e: 
+        return {"anomalies": [], "error": str(e)}
 
 # ---------------------------------------------------------
 # HIDDEN SECURE GEMINI ENGINE PIPELINE
@@ -156,7 +226,7 @@ def call_secure_gemini_api(prompt: str, is_summary: bool = False):
     return "AI generation timeout. Please try syncing again."
 
 # ---------------------------------------------------------
-# NEW SECURE SERVER-SIDE PROXY ROUTING
+# SECURE SERVER-SIDE PROXY ROUTING
 # ---------------------------------------------------------
 @app.post("/api/ai/suggest")
 def secure_suggest_fix(data: dict, current_user: User = Depends(get_current_user)):
@@ -179,7 +249,7 @@ def secure_generate_summary(data: dict, current_user: User = Depends(get_current
 # OPERATOR ACCESS ENDPOINTS
 # ---------------------------------------------------------
 @app.get("/")
-def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.3.0-secure"}
+def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.3.1-secure"}
 
 @app.post("/api/register")
 def register_user(name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
