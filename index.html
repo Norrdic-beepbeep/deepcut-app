@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DeepCut // Video Compliance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,21 +28,21 @@
         .fade-hidden { opacity: 0; pointer-events: none; position: absolute; transform: translateY(-10px); }
 
         /* Fluid Typography */
-        .fluid-title { font-size: clamp(2rem, 6vw, 4rem); line-height: 1.1; }
-        .fluid-subtitle { font-size: clamp(0.875rem, 2vw, 1rem); }
+        .fluid-title { font-size: clamp(2.5rem, 6vw, 4rem); line-height: 1.1; }
+        .fluid-subtitle { font-size: clamp(1rem, 2vw, 1.125rem); }
 
         /* Adaptive Mobile Table to Card View */
         @media (max-width: 768px) {
             .adaptive-table, .adaptive-table tbody, .adaptive-table tr, .adaptive-table td { display: block; width: 100%; }
             .adaptive-table thead { display: none; }
-            .adaptive-table tr { margin-bottom: 1rem; border: 3px solid #2D2824; background: #FDFBF7; }
-            .adaptive-table td { position: relative; padding: 1rem !important; border: none !important; border-bottom: 2px dashed #EAE3D2 !important; }
+            .adaptive-table tr { margin-bottom: 1.5rem; border: 3px solid #2D2824; background: #FDFBF7; }
+            .adaptive-table td { position: relative; padding: 1.25rem !important; border: none !important; border-bottom: 2px dashed #EAE3D2 !important; }
             .adaptive-table td:last-child { border-bottom: none !important; }
             .adaptive-table td::before { 
                 content: attr(data-label); 
                 display: block; 
                 font-family: 'Courier Prime', monospace; 
-                font-size: 0.7rem; 
+                font-size: 0.75rem; 
                 font-weight: 700; 
                 text-transform: uppercase; 
                 color: #8C8273; 
@@ -51,197 +51,197 @@
         }
     </style>
 </head>
-<body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-3 sm:p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
+<body class="bg-[#EAE3D2] text-[#2D2824] min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 relative overflow-x-hidden selection:bg-[#E2A73A] selection:text-[#2D2824]">
 
-    <div id="authContainer" class="w-full max-w-lg mx-auto mt-4 sm:mt-10 z-20 transition-all duration-500 relative px-2 sm:px-0">
+    <div id="authContainer" class="w-full max-w-lg mx-auto mt-8 sm:mt-16 z-20 transition-all duration-500 relative">
         
-        <div id="loginScreen" class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-10 shadow-hard relative overflow-hidden transition-all duration-500 w-full mb-3 sm:mb-4 mr-2 sm:mr-3">
-            <div class="text-center mb-6 sm:mb-8 border-b-[3px] border-[#2D2824] pb-4 sm:pb-6">
-                <span class="text-3xl sm:text-4xl mb-2 block">🔐</span>
-                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Access</h1>
-                <p class="text-[#5C534A] text-[10px] sm:text-xs font-typewriter mt-2 uppercase tracking-widest font-bold">Authorized Personnel Only</p>
+        <div id="loginScreen" class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-8 sm:p-10 shadow-hard relative overflow-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
+            <div class="text-center mb-8 border-b-[3px] border-[#2D2824] pb-6">
+                <span class="text-4xl mb-3 block">🔐</span>
+                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Access</h1>
+                <p class="text-[#5C534A] text-xs sm:text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Authorized Personnel Only</p>
             </div>
 
-            <div class="space-y-4 sm:space-y-6">
+            <div class="space-y-6">
                 <div>
-                    <label class="block text-[#2D2824] text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-2">Username or Email</label>
-                    <input type="text" id="loginUsername" placeholder="Enter username or email" class="w-full bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">Username or Email</label>
+                    <input type="text" id="loginUsername" placeholder="Enter username or email" class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-4 sm:px-5 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
                 </div>
 
                 <div>
-                    <label class="block text-[#2D2824] text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-2">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter password" class="w-full bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-2">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password" class="w-full bg-[#EAE3D2]/50 border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-4 sm:px-5 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
                 </div>
 
-                <button id="loginBtn" class="w-full bg-[#C86B5E] text-[#FDFBF7] font-bold px-6 py-4 uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all text-sm sm:text-base mt-2">
+                <button id="loginBtn" class="w-full bg-[#C86B5E] text-[#FDFBF7] font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all text-sm sm:text-base mt-4">
                     Authorize
                 </button>
 
-                <div class="text-center mt-4 border-t-[2px] border-[#2D2824]/20 pt-4">
-                    <p class="text-[10px] sm:text-xs font-bold text-[#5C534A] uppercase tracking-wide">No access?</p>
-                    <button id="showRegisterBtn" class="mt-2 text-[11px] sm:text-sm font-bold tracking-widest uppercase text-[#52796F] hover:text-[#C86B5E] transition-colors focus:outline-none">Register New Operator &rarr;</button>
+                <div class="text-center mt-6 border-t-[2px] border-[#2D2824]/20 pt-6">
+                    <p class="text-xs font-bold text-[#5C534A] uppercase tracking-wide">No access?</p>
+                    <button id="showRegisterBtn" class="mt-2 text-sm font-bold tracking-widest uppercase text-[#52796F] hover:text-[#C86B5E] transition-colors focus:outline-none">Register New Operator &rarr;</button>
                 </div>
             </div>
         </div>
 
-        <div id="registerScreen" class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-3 sm:mb-4 mr-2 sm:mr-3">
-            <div class="text-center mb-5 sm:mb-6 border-b-[3px] border-[#2D2824] pb-4">
-                <span class="text-3xl sm:text-4xl mb-2 block">🛡️</span>
-                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">Engine Registration</h1>
-                <p class="text-[#5C534A] text-[10px] sm:text-xs font-typewriter mt-1 uppercase tracking-widest font-bold">Create Credentials</p>
+        <div id="registerScreen" class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
+            <div class="text-center mb-6 border-b-[3px] border-[#2D2824] pb-6">
+                <span class="text-4xl mb-3 block">🛡️</span>
+                <h1 class="text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">Engine Registration</h1>
+                <p class="text-[#5C534A] text-xs sm:text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Create Credentials</p>
             </div>
 
-            <div class="space-y-3 sm:space-y-4">
+            <div class="space-y-4">
                 <div>
-                    <label class="block text-[#2D2824] text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-1">Full Name</label>
-                    <input type="text" id="regName" placeholder="e.g. John Doe" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-3 py-2.5 sm:px-4 sm:py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-1">Full Name</label>
+                    <input type="text" id="regName" placeholder="e.g. John Doe" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
                 <div>
-                    <label class="block text-[#2D2824] text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-1">Username</label>
-                    <input type="text" id="regUsername" placeholder="e.g. johndoe99" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-3 py-2.5 sm:px-4 sm:py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-1">Username</label>
+                    <input type="text" id="regUsername" placeholder="e.g. johndoe99" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
                 <div>
-                    <label class="block text-[#2D2824] text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-1">Email Address</label>
-                    <input type="email" id="regEmail" placeholder="operator@company.com" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-3 py-2.5 sm:px-4 sm:py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-1">Email Address</label>
+                    <input type="email" id="regEmail" placeholder="operator@company.com" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
                 <div>
-                    <label class="block text-[#2D2824] text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mb-1">Password</label>
-                    <input type="password" id="regPassword" placeholder="Create a secure password" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-3 py-2.5 sm:px-4 sm:py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-sm font-typewriter font-bold shadow-hard-sm">
+                    <label class="block text-[#2D2824] text-xs font-bold tracking-widest uppercase mb-1">Password</label>
+                    <input type="password" id="regPassword" placeholder="Create a secure password" class="w-full bg-[#EAE3D2]/50 border-[2px] border-[#2D2824] text-[#2D2824] px-4 py-3 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
 
-                <div class="bg-[#EAE3D2]/30 border-[2px] border-[#2D2824] p-2 sm:p-3 shadow-inner">
-                    <ul class="space-y-1 text-[9px] sm:text-xs font-typewriter font-bold" id="validationList">
-                        <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-1.5 sm:gap-2"><span class="status-icon">○</span> Min 12 characters</li>
-                        <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-1.5 sm:gap-2"><span class="status-icon">○</span> One uppercase letter</li>
-                        <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-1.5 sm:gap-2"><span class="status-icon">○</span> One special character</li>
+                <div class="bg-[#EAE3D2]/30 border-[2px] border-[#2D2824] p-3 shadow-inner">
+                    <ul class="space-y-2 text-xs font-typewriter font-bold" id="validationList">
+                        <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon">○</span> Min 12 characters</li>
+                        <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon">○</span> One uppercase letter</li>
+                        <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon">○</span> One special character</li>
                     </ul>
                 </div>
 
-                <button id="registerBtn" disabled class="w-full bg-[#52796F] disabled:bg-[#8C8273] disabled:cursor-not-allowed text-[#FDFBF7] font-bold px-4 py-3 sm:px-6 sm:py-4 uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-2 text-xs sm:text-sm">
+                <button id="registerBtn" disabled class="w-full bg-[#52796F] disabled:bg-[#8C8273] disabled:cursor-not-allowed text-[#FDFBF7] font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-4 text-sm sm:text-base">
                     Create Operator
                 </button>
 
-                <div class="text-center mt-3 border-t-[2px] border-[#2D2824]/20 pt-3">
-                    <button id="showLoginBtn" class="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-[#C86B5E] hover:text-[#52796F] transition-colors focus:outline-none">&larr; Back to Login</button>
+                <div class="text-center mt-6 border-t-[2px] border-[#2D2824]/20 pt-4">
+                    <button id="showLoginBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-[#C86B5E] hover:text-[#52796F] transition-colors focus:outline-none">&larr; Back to Login</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="appScreen" class="w-full max-w-5xl mx-auto space-y-6 sm:space-y-10 mt-4 sm:mt-10 relative z-10 hidden opacity-0 transition-opacity duration-700 px-2 sm:px-4">
+    <div id="appScreen" class="w-full max-w-5xl mx-auto space-y-8 sm:space-y-12 mt-6 sm:mt-10 relative z-10 hidden opacity-0 transition-opacity duration-700 px-0 sm:px-4">
         
-        <header class="w-full flex flex-col border-b-[3px] sm:border-b-4 border-[#2D2824] pb-5 sm:pb-8 relative">
+        <header class="w-full flex flex-col border-b-[3px] sm:border-b-4 border-[#2D2824] pb-6 sm:pb-8 relative">
             <div class="text-center w-full">
-                <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] px-3 py-1 sm:px-4 sm:py-1.5 shadow-hard-sm mb-4 sm:mb-6">
-                    <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
-                    <span class="text-[9px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
+                <div class="inline-flex items-center justify-center space-x-2 bg-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] px-4 py-1.5 shadow-hard-sm mb-6">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#7A9E7E] animate-pulse border border-[#2D2824]"></span>
+                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#2D2824]">System Operational</span>
                 </div>
                 <h1 class="fluid-title font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
-                <p class="text-[#5C534A] w-full max-w-2xl mx-auto fluid-subtitle font-medium tracking-wide mt-2 sm:mt-4 px-2">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
+                <p class="text-[#5C534A] w-full max-w-2xl mx-auto fluid-subtitle font-medium tracking-wide mt-4 px-4">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
             </div>
 
-            <div class="flex flex-wrap justify-between items-center w-full pt-5 sm:pt-8 gap-3 sm:gap-4">
-                <div class="flex flex-wrap items-center gap-2 sm:gap-3 flex-grow sm:flex-grow-0">
-                    <div class="h-9 sm:h-10 flex-grow sm:flex-grow-0 flex items-center justify-center sm:justify-start bg-[#7A9E7E] text-[#FDFBF7] border-[2px] border-[#2D2824] px-3 sm:px-4 shadow-hard-sm">
-                        <span class="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase opacity-80 mr-2">Operator:</span>
-                        <span id="displayUsername" class="font-typewriter text-[10px] sm:text-xs font-bold uppercase tracking-widest truncate max-w-[120px] sm:max-w-[200px]">UNKNOWN</span>
+            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center w-full pt-8 gap-4 px-2 sm:px-0">
+                <div class="flex flex-row items-center gap-3">
+                    <div class="h-12 flex-1 sm:flex-none flex items-center justify-center sm:justify-start bg-[#7A9E7E] text-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] px-4 shadow-hard-sm">
+                        <span class="text-xs font-bold tracking-[0.2em] uppercase opacity-80 mr-2">Operator:</span>
+                        <span id="displayUsername" class="font-typewriter text-xs sm:text-sm font-bold uppercase tracking-widest truncate max-w-[120px] sm:max-w-[200px]">UNKNOWN</span>
                     </div>
-                    <button id="logoutBtn" class="h-9 sm:h-10 flex-grow sm:flex-grow-0 flex items-center justify-center bg-[#EAE3D2] text-[#2D2824] hover:bg-[#C86B5E] hover:text-[#FDFBF7] border-[2px] border-[#2D2824] px-3 sm:px-4 text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase shadow-hard-sm transition-colors">
+                    <button id="logoutBtn" class="h-12 flex items-center justify-center bg-[#EAE3D2] text-[#2D2824] hover:bg-[#C86B5E] hover:text-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] px-4 text-xs font-bold tracking-[0.2em] uppercase shadow-hard-sm transition-colors">
                         Log Out ⏏
                     </button>
                 </div>
-                <button id="guideBtn" class="w-full sm:w-auto h-10 sm:h-10 flex items-center justify-center bg-[#FDFBF7] text-[#2D2824] hover:bg-[#EAE3D2] border-[2px] sm:border-[3px] border-[#2D2824] px-4 sm:px-6 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">
+                <button id="guideBtn" class="h-12 w-full sm:w-auto flex items-center justify-center bg-[#FDFBF7] text-[#2D2824] hover:bg-[#EAE3D2] border-[2px] sm:border-[3px] border-[#2D2824] px-6 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">
                     View User Guide 📖
                 </button>
             </div>
         </header>
 
-        <main class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-4 sm:p-12 shadow-hard relative overflow-hidden mb-3 sm:mb-4 mr-2 sm:mr-3">
-            <div id="inputWorkspace" class="space-y-5 sm:space-y-10 transition-opacity duration-300">
-                <label for="fileInput" id="uploadZone" class="group w-full block border-[2px] sm:border-[3px] border-dashed border-[#2D2824] bg-[#EAE3D2]/50 hover:bg-[#E2A73A]/20 p-6 sm:p-12 text-center cursor-pointer transition-colors duration-300">
+        <main class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-12 shadow-hard relative overflow-hidden mb-4 mr-2 sm:mr-3">
+            <div id="inputWorkspace" class="space-y-6 sm:space-y-10 transition-opacity duration-300">
+                <label for="fileInput" id="uploadZone" class="group w-full block border-[2px] sm:border-[3px] border-dashed border-[#2D2824] bg-[#EAE3D2]/50 hover:bg-[#E2A73A]/20 p-8 sm:p-12 text-center cursor-pointer transition-colors duration-300">
                     <input type="file" id="fileInput" class="hidden" accept=".xml,.fcpxml,.edl,.mp4" />
-                    <div class="space-y-2 sm:space-y-4 pointer-events-none flex flex-col items-center">
-                        <div class="text-4xl sm:text-5xl mb-1 sm:mb-2 transition-transform duration-300 group-hover:scale-110">📂</div>
+                    <div class="space-y-4 pointer-events-none flex flex-col items-center">
+                        <div class="text-5xl sm:text-6xl mb-2 transition-transform duration-300 group-hover:scale-110">📂</div>
                         <div>
-                            <div class="text-[#2D2824] font-bold text-base sm:text-xl uppercase tracking-wide">Select or drag timeline</div>
-                            <div class="text-[#5C534A] text-[10px] sm:text-sm font-typewriter mt-1 sm:mt-2 font-bold">Supports XML, FCPXML, EDL, MP4</div>
+                            <div class="text-[#2D2824] font-bold text-lg sm:text-xl uppercase tracking-wide">Select or drag timeline</div>
+                            <div class="text-[#5C534A] text-xs sm:text-sm font-typewriter mt-2 font-bold">Supports XML, FCPXML, EDL, MP4</div>
                         </div>
                     </div>
                 </label>
 
-                <div class="flex items-center justify-center space-x-2 sm:space-x-4">
+                <div class="flex items-center justify-center space-x-4">
                     <div class="h-[2px] sm:h-[3px] bg-[#2D2824] w-full"></div>
-                    <span class="text-[#2D2824] text-[10px] sm:text-sm font-bold tracking-[0.2em] uppercase px-3 sm:px-4">OR</span>
+                    <span class="text-[#2D2824] text-xs sm:text-sm font-bold tracking-[0.2em] uppercase px-4">OR</span>
                     <div class="h-[2px] sm:h-[3px] bg-[#2D2824] w-full"></div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full relative">
-                    <input type="url" id="urlInput" placeholder="Paste media link here..." class="w-full flex-1 bg-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-3 py-3 sm:px-5 sm:py-4 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-xs sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
-                    <button id="runUrlBtn" class="w-full sm:w-auto bg-[#52796F] text-[#FDFBF7] font-bold px-4 py-3 sm:px-8 sm:py-4 text-xs sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Scan Link</button>
+                <div class="flex flex-col sm:flex-row gap-4 w-full relative">
+                    <input type="url" id="urlInput" placeholder="Paste media link here..." class="w-full flex-1 bg-[#FDFBF7] border-[2px] sm:border-[3px] border-[#2D2824] text-[#2D2824] px-4 py-4 sm:px-5 focus:outline-none focus:bg-[#EAE3D2] transition-colors text-sm sm:text-base font-typewriter placeholder:text-[#8C8273] font-bold shadow-hard-sm">
+                    <button id="runUrlBtn" class="w-full sm:w-auto bg-[#52796F] text-[#FDFBF7] font-bold px-6 py-4 sm:px-8 text-sm sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Scan Link</button>
                 </div>
             </div>
 
-            <div id="fileMetaRow" class="hidden flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-[#E2A73A] p-4 sm:p-6 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all gap-4 sm:gap-0">
-                <div class="flex items-center gap-3 sm:gap-5 w-full sm:w-auto overflow-hidden">
-                    <div class="text-2xl sm:text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-2 shadow-hard-sm shrink-0" id="metaIconContainer">
+            <div id="fileMetaRow" class="hidden flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-[#E2A73A] p-6 border-[3px] border-[#2D2824] shadow-hard-sm mt-2 transition-all gap-5 sm:gap-0">
+                <div class="flex items-center gap-4 sm:gap-5 w-full sm:w-auto overflow-hidden">
+                    <div class="text-4xl bg-[#FDFBF7] border-[2px] border-[#2D2824] p-3 shadow-hard-sm shrink-0" id="metaIconContainer">
                         <span id="metaIconFile">📄</span>
                         <span id="metaIconLink" class="hidden">🔗</span>
                     </div>
                     <div class="min-w-0 flex-1 overflow-hidden">
-                        <p id="selectedFileName" class="font-typewriter font-bold text-sm sm:text-lg text-[#2D2824] truncate w-full">timeline.xml</p>
-                        <p id="selectedFileSize" class="text-[10px] sm:text-sm text-[#2D2824] font-bold mt-0.5 sm:mt-1 uppercase tracking-wider">Ready for audit</p>
+                        <p id="selectedFileName" class="font-typewriter font-bold text-base sm:text-lg text-[#2D2824] truncate w-full">timeline.xml</p>
+                        <p id="selectedFileSize" class="text-xs sm:text-sm text-[#2D2824] font-bold mt-1 uppercase tracking-wider">Ready for audit</p>
                     </div>
                 </div>
-                <button id="runAuditBtn" class="w-full sm:w-auto bg-[#C86B5E] text-[#FDFBF7] font-bold px-4 py-3 sm:px-8 sm:py-4 text-xs sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Initialize</button>
+                <button id="runAuditBtn" class="w-full sm:w-auto bg-[#C86B5E] text-[#FDFBF7] font-bold px-6 py-4 sm:px-8 text-sm sm:text-base uppercase tracking-widest border-[3px] border-[#2D2824] shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Initialize</button>
             </div>
 
-            <div id="progressContainer" class="hidden mt-2 space-y-4 sm:space-y-8 bg-[#FDFBF7] p-4 sm:p-8 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm">
-                <div class="space-y-1.5 sm:space-y-3">
-                    <div class="flex justify-between text-[9px] sm:text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
+            <div id="progressContainer" class="hidden mt-2 space-y-6 sm:space-y-8 bg-[#FDFBF7] p-6 sm:p-8 border-[3px] border-[#2D2824] shadow-hard-sm">
+                <div class="space-y-2 sm:space-y-3">
+                    <div class="flex justify-between text-xs sm:text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
                         <span id="scanText" class="truncate pr-2">Pending safety check...</span>
                         <span id="scanPercent">0%</span>
                     </div>
-                    <div class="w-full bg-[#EAE3D2] h-3 sm:h-6 border-[2px] sm:border-[3px] border-[#2D2824] relative">
+                    <div class="w-full bg-[#EAE3D2] h-4 sm:h-6 border-[2px] sm:border-[3px] border-[#2D2824] relative">
                         <div id="scanBar" class="bg-[#E2A73A] h-full w-0 progress-transition border-r-[2px] sm:border-r-[3px] border-[#2D2824]"></div>
                     </div>
                 </div>
                 
-                <div class="space-y-1.5 sm:space-y-3">
-                    <div class="flex justify-between text-[9px] sm:text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
+                <div class="space-y-2 sm:space-y-3">
+                    <div class="flex justify-between text-xs sm:text-sm font-typewriter font-bold uppercase tracking-wider text-[#2D2824]">
                         <span id="detectText" class="truncate pr-2">Waiting for engine...</span>
                         <span id="detectPercent">0%</span>
                     </div>
-                    <div class="w-full bg-[#EAE3D2] h-3 sm:h-6 border-[2px] sm:border-[3px] border-[#2D2824] relative">
+                    <div class="w-full bg-[#EAE3D2] h-4 sm:h-6 border-[2px] sm:border-[3px] border-[#2D2824] relative">
                         <div id="detectBar" class="bg-[#52796F] h-full w-0 progress-transition border-r-[2px] sm:border-r-[3px] border-[#2D2824]"></div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <section id="resultsDashboard" class="hidden bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-4 sm:p-12 shadow-hard mt-6 sm:mt-8 w-full transition-all duration-500 transform translate-y-4 opacity-0 mb-3 sm:mb-4 mr-2 sm:mr-3">
-            <div class="flex flex-col md:flex-row md:justify-between md:items-end mb-5 sm:mb-10 border-b-[2px] sm:border-b-[4px] border-[#2D2824] pb-4 sm:pb-6 gap-3 sm:gap-5">
-                <div class="space-y-1.5 sm:space-y-3 overflow-hidden w-full md:w-auto">
-                    <p class="text-[#2D2824] text-[9px] sm:text-xs flex items-center gap-2 sm:gap-3 font-bold">
-                        <span class="bg-[#EAE3D2] px-2 py-1 sm:px-3 sm:py-1.5 text-[8px] sm:text-[11px] font-typewriter tracking-widest uppercase border-[2px] border-[#2D2824] shadow-hard-sm" id="dashFormat">Verified Format</span>
+        <section id="resultsDashboard" class="hidden bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-12 shadow-hard mt-6 sm:mt-8 w-full transition-all duration-500 transform translate-y-4 opacity-0 mb-4 mr-2 sm:mr-3">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-end mb-6 sm:mb-10 border-b-[3px] sm:border-b-[4px] border-[#2D2824] pb-6 gap-4 sm:gap-5">
+                <div class="space-y-3 overflow-hidden w-full md:w-auto">
+                    <p class="text-[#2D2824] text-xs flex items-center gap-3 font-bold">
+                        <span class="bg-[#EAE3D2] px-3 py-1.5 text-[10px] sm:text-[11px] font-typewriter tracking-widest uppercase border-[2px] border-[#2D2824] shadow-hard-sm" id="dashFormat">Verified Format</span>
                         <span class="truncate">ANALYSIS COMPLETE</span>
                     </p>
-                    <h2 class="text-lg sm:text-2xl font-bold tracking-tight text-[#2D2824] truncate w-full font-typewriter uppercase" id="dashFileName">timeline.xml</h2>
+                    <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-[#2D2824] truncate w-full font-typewriter uppercase" id="dashFileName">timeline.xml</h2>
                 </div>
-                <div class="w-full md:w-auto shrink-0">
-                    <div class="flex items-center justify-center w-full md:w-auto gap-2 px-3 py-2 sm:px-6 sm:py-3 text-[10px] sm:text-sm font-bold tracking-widest uppercase border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm" id="dashStatus">Processing...</div>
+                <div class="w-full md:w-auto shrink-0 mt-4 md:mt-0">
+                    <div class="flex items-center justify-center w-full md:w-auto gap-2 px-6 py-3 sm:py-4 text-xs sm:text-sm font-bold tracking-widest uppercase border-[3px] border-[#2D2824] shadow-hard-sm" id="dashStatus">Processing...</div>
                 </div>
             </div>
 
-            <div id="geminiSummaryContainer" class="hidden mb-5 sm:mb-8 p-3 sm:p-6 bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm">
-                <p id="geminiSummaryText" class="text-[11px] sm:text-sm font-medium text-[#2D2824] leading-relaxed"></p>
+            <div id="geminiSummaryContainer" class="hidden mb-6 sm:mb-8 p-4 sm:p-6 bg-[#EAE3D2]/50 border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm">
+                <p id="geminiSummaryText" class="text-xs sm:text-sm font-medium text-[#2D2824] leading-relaxed"></p>
             </div>
 
-            <div class="space-y-4 sm:space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-                    <h3 class="text-xs sm:text-base font-bold text-[#2D2824] tracking-[0.1em] sm:tracking-[0.2em] uppercase flex items-center gap-2 sm:gap-3">
-                        <span class="text-lg sm:text-2xl">📋</span> Compliance Log
+            <div class="space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h3 class="text-sm sm:text-base font-bold text-[#2D2824] tracking-[0.1em] sm:tracking-[0.2em] uppercase flex items-center gap-3">
+                        <span class="text-2xl">📋</span> Compliance Log
                     </h3>
-                    <button id="geminiSummaryBtn" class="w-full sm:w-auto bg-[#2D2824] text-[#FDFBF7] px-3 py-2 sm:px-4 sm:py-2 text-[9px] sm:text-xs font-bold uppercase tracking-widest hover:bg-[#E2A73A] hover:text-[#2D2824] border-[2px] border-[#2D2824] shadow-hard-sm transition-colors">
+                    <button id="geminiSummaryBtn" class="w-full sm:w-auto bg-[#2D2824] text-[#FDFBF7] px-4 py-3 sm:py-2 text-xs font-bold uppercase tracking-widest hover:bg-[#E2A73A] hover:text-[#2D2824] border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm transition-colors">
                         ✨ Generate Exec Summary
                     </button>
                 </div>
@@ -249,7 +249,7 @@
                 <div class="w-full">
                     <table class="adaptive-table w-full text-left border-collapse" id="auditTable">
                         <thead>
-                            <tr class="bg-[#EAE3D2] text-[#2D2824] text-[12px] uppercase tracking-widest font-bold border-[3px] border-[#2D2824]">
+                            <tr class="bg-[#EAE3D2] text-[#2D2824] text-xs uppercase tracking-widest font-bold border-[3px] border-[#2D2824]">
                                 <th class="py-4 px-5 border-r-[3px] border-[#2D2824] w-[15%]">Timecode</th>
                                 <th class="py-4 px-5 border-r-[3px] border-[#2D2824] w-[20%]">Class</th>
                                 <th class="py-4 px-5 w-[65%]">AI Insight</th>
@@ -262,47 +262,47 @@
         </section>
     </div>
 
-    <div id="guideModal" class="fixed inset-0 bg-[#2D2824]/90 z-50 hidden flex items-center justify-center p-3 sm:p-6 opacity-0 transition-opacity duration-300">
-        <div class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-5 sm:p-12 shadow-hard max-w-3xl w-full max-h-[90vh] overflow-y-auto relative">
-            <button id="closeGuideBtn" class="absolute top-2 right-4 sm:top-4 sm:right-5 text-2xl sm:text-3xl font-bold text-[#2D2824] hover:text-[#C86B5E] transition-colors focus:outline-none">&times;</button>
-            <div class="text-center mb-5 sm:mb-8 border-b-[2px] sm:border-b-[4px] border-[#2D2824] pb-3 sm:pb-6 mt-2 sm:mt-0">
-                <h2 class="text-xl sm:text-4xl font-bold uppercase tracking-tight text-[#2D2824]">DeepCut Protocol</h2>
-                <p class="text-[#5C534A] text-[9px] sm:text-sm font-typewriter mt-1 sm:mt-2 uppercase tracking-widest font-bold">Official User Documentation</p>
+    <div id="guideModal" class="fixed inset-0 bg-[#2D2824]/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300">
+        <div class="bg-[#FDFBF7] border-[3px] sm:border-[4px] border-[#2D2824] p-6 sm:p-12 shadow-hard max-w-3xl w-full max-h-[90vh] overflow-y-auto relative">
+            <button id="closeGuideBtn" class="absolute top-3 right-5 sm:top-4 sm:right-5 text-3xl font-bold text-[#2D2824] hover:text-[#C86B5E] transition-colors focus:outline-none">&times;</button>
+            <div class="text-center mb-6 sm:mb-8 border-b-[3px] sm:border-b-[4px] border-[#2D2824] pb-4 sm:pb-6 mt-4 sm:mt-0">
+                <h2 class="text-2xl sm:text-4xl font-bold uppercase tracking-tight text-[#2D2824]">DeepCut Protocol</h2>
+                <p class="text-[#5C534A] text-xs sm:text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Official User Documentation</p>
             </div>
             
-            <div class="space-y-6 sm:space-y-10 text-[#2D2824]">
+            <div class="space-y-8 sm:space-y-10 text-[#2D2824]">
                 <section>
-                    <h3 class="inline-block bg-[#E2A73A] text-[#2D2824] border-[2px] border-[#2D2824] px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-sm font-bold tracking-[0.2em] uppercase mb-2 sm:mb-4 shadow-hard-sm">Why DeepCut?</h3>
-                    <div class="space-y-2 sm:space-y-4">
-                        <p class="font-medium leading-relaxed text-[11px] sm:text-base">DeepCut is designed to eliminate the costly human errors associated with manual cinematic auditing. Before media goes live to broadcast or streaming, it must pass rigorous standards.</p>
-                        <p class="font-medium leading-relaxed text-[11px] sm:text-base">Our proprietary engine leverages advanced AI to instantly detect unauthorized copyrighted material, glaring continuity errors, and broadcast standards violations (such as profanity or explicit competitor brand mentions). With military-grade JWT encryption and a secure cloud architecture, your pre-release media remains strictly confidential.</p>
+                    <h3 class="inline-block bg-[#E2A73A] text-[#2D2824] border-[2px] border-[#2D2824] px-4 py-1.5 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-4 shadow-hard-sm">Why DeepCut?</h3>
+                    <div class="space-y-4">
+                        <p class="font-medium leading-relaxed text-sm sm:text-base">DeepCut is designed to eliminate the costly human errors associated with manual cinematic auditing. Before media goes live to broadcast or streaming, it must pass rigorous standards.</p>
+                        <p class="font-medium leading-relaxed text-sm sm:text-base">Our proprietary engine leverages advanced AI to instantly detect unauthorized copyrighted material, glaring continuity errors, and broadcast standards violations (such as profanity or explicit competitor brand mentions). With military-grade JWT encryption and a secure cloud architecture, your pre-release media remains strictly confidential.</p>
                     </div>
                 </section>
                 
                 <section>
-                    <h3 class="inline-block bg-[#52796F] text-[#FDFBF7] border-[2px] border-[#2D2824] px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-sm font-bold tracking-[0.2em] uppercase mb-2 sm:mb-4 shadow-hard-sm">How to operate</h3>
-                    <div class="space-y-3 sm:space-y-5">
-                        <div class="flex gap-2 sm:gap-4 items-start">
-                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-base border border-[#2D2824] shrink-0">1</span>
+                    <h3 class="inline-block bg-[#52796F] text-[#FDFBF7] border-[2px] border-[#2D2824] px-4 py-1.5 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase mb-4 shadow-hard-sm">How to operate</h3>
+                    <div class="space-y-6 sm:space-y-5">
+                        <div class="flex gap-4 items-start">
+                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-3 py-1 text-sm sm:text-base border border-[#2D2824] shrink-0">1</span>
                             <div>
-                                <h4 class="font-bold text-xs sm:text-lg uppercase tracking-wide">Input Timeline</h4>
-                                <p class="text-[10px] sm:text-sm font-medium text-[#5C534A] mt-0.5 sm:mt-1">Drag and drop a supported file into the main workspace. DeepCut explicitly requires raw structural timelines (XML, FCPXML, EDL) or direct raw media (MP4). You may also paste a direct web media URL.</p>
+                                <h4 class="font-bold text-base sm:text-lg uppercase tracking-wide">Input Timeline</h4>
+                                <p class="text-xs sm:text-sm font-medium text-[#5C534A] mt-1">Drag and drop a supported file into the main workspace. DeepCut explicitly requires raw structural timelines (XML, FCPXML, EDL) or direct raw media (MP4). You may also paste a direct web media URL.</p>
                             </div>
                         </div>
 
-                        <div class="flex gap-2 sm:gap-4 items-start">
-                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-base border border-[#2D2824] shrink-0">2</span>
+                        <div class="flex gap-4 items-start">
+                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-3 py-1 text-sm sm:text-base border border-[#2D2824] shrink-0">2</span>
                             <div>
-                                <h4 class="font-bold text-xs sm:text-lg uppercase tracking-wide">Initialize Audit</h4>
-                                <p class="text-[10px] sm:text-sm font-medium text-[#5C534A] mt-0.5 sm:mt-1">Once media is verified, click the Initialize button. The system will securely hash signatures and poll security APIs before moving to the AI processing phase.</p>
+                                <h4 class="font-bold text-base sm:text-lg uppercase tracking-wide">Initialize Audit</h4>
+                                <p class="text-xs sm:text-sm font-medium text-[#5C534A] mt-1">Once media is verified, click the Initialize button. The system will securely hash signatures and poll security APIs before moving to the AI processing phase.</p>
                             </div>
                         </div>
 
-                        <div class="flex gap-2 sm:gap-4 items-start">
-                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-base border border-[#2D2824] shrink-0">3</span>
+                        <div class="flex gap-4 items-start">
+                            <span class="bg-[#2D2824] text-[#FDFBF7] font-typewriter font-bold px-3 py-1 text-sm sm:text-base border border-[#2D2824] shrink-0">3</span>
                             <div>
-                                <h4 class="font-bold text-xs sm:text-lg uppercase tracking-wide">Review Findings</h4>
-                                <p class="text-[10px] sm:text-sm font-medium text-[#5C534A] mt-0.5 sm:mt-1">Upon completion, the engine will generate an official Compliance Audit Log. If the engine detects flags (e.g., unauthorized audio detected, jump-cut noted), they will be timestamped and classified for immediate correction.</p>
+                                <h4 class="font-bold text-base sm:text-lg uppercase tracking-wide">Review Findings</h4>
+                                <p class="text-xs sm:text-sm font-medium text-[#5C534A] mt-1">Upon completion, the engine will generate an official Compliance Audit Log. If the engine detects flags (e.g., unauthorized audio detected, jump-cut noted), they will be timestamped and classified for immediate correction.</p>
                             </div>
                         </div>
                     </div>
@@ -342,16 +342,15 @@
             const modal = document.createElement('div');
             modal.className = "fixed inset-0 bg-[#2D2824]/90 z-[100] flex items-center justify-center p-4 px-6";
             
-            // Using standard hex codes to ensure Tailwind picks up the styling without needing interpolation hacks
             const borderClass = isSuccess ? 'border-[#7A9E7E]' : 'border-[#C86B5E]';
             const bgClass = isSuccess ? 'bg-[#7A9E7E]' : 'bg-[#C86B5E]';
 
             modal.innerHTML = `
-                <div class="bg-[#FDFBF7] border-[3px] sm:border-[4px] ${borderClass} p-5 sm:p-8 shadow-hard max-w-sm w-full text-center mb-2 mr-2">
-                    <span class="text-3xl sm:text-4xl mb-2 sm:mb-4 block">${icon}</span>
-                    <h3 class="text-[#2D2824] font-bold uppercase tracking-widest mb-2 sm:mb-4 text-xs sm:text-base">${title}</h3>
-                    <p class="text-[#5C534A] text-[11px] sm:text-sm font-medium mb-4 sm:mb-6">${msg}</p>
-                    <button class="${bgClass} text-[#FDFBF7] font-bold px-4 py-2 sm:px-6 sm:py-2 text-[10px] sm:text-sm uppercase tracking-widest border-[2px] border-[#2D2824] hover:opacity-80 transition-opacity w-full sm:w-auto" onclick="this.parentElement.parentElement.remove()">Acknowledged</button>
+                <div class="bg-[#FDFBF7] border-[3px] sm:border-[4px] ${borderClass} p-6 sm:p-8 shadow-hard max-w-sm w-full text-center mb-2 mr-2">
+                    <span class="text-4xl sm:text-5xl mb-4 sm:mb-5 block">${icon}</span>
+                    <h3 class="text-[#2D2824] font-bold uppercase tracking-widest mb-3 sm:mb-4 text-sm sm:text-base">${title}</h3>
+                    <p class="text-[#5C534A] text-xs sm:text-sm font-medium mb-6 sm:mb-8">${msg}</p>
+                    <button class="${bgClass} text-[#FDFBF7] font-bold px-6 py-3 sm:px-8 sm:py-3 text-xs sm:text-sm uppercase tracking-widest border-[2px] sm:border-[3px] border-[#2D2824] hover:opacity-80 transition-opacity w-full" onclick="this.parentElement.parentElement.remove()">Acknowledged</button>
                 </div>
             `;
             document.body.appendChild(modal);
@@ -479,7 +478,6 @@
             const username = loginUsername.value.trim();
             const password = loginPassword.value;
             
-            // Re-added explicit warning if fields are empty
             if(!username || !password) {
                 loginBtn.textContent = "MISSING CREDENTIALS";
                 setTimeout(() => { loginBtn.textContent = "AUTHORIZE"; }, 2000);
@@ -603,8 +601,8 @@
             document.getElementById('progressContainer').classList.remove('hidden');
             updateBar('detectBar', 'detectPercent', 'detectText', 0, "STANDBY...");
             
-            if (submittedUrl) await updateBar('scanBar', 'scanPercent', 'scanText', 10, "EXTRACTING...");
-            else await updateBar('scanBar', 'scanPercent', 'scanText', 10, "UPLOADING...");
+            if (submittedUrl) await updateBar('scanBar', 'scanPercent', 'scanText', 10, "EXTRACTING MEDIA...");
+            else await updateBar('scanBar', 'scanPercent', 'scanText', 10, "UPLOADING TO ENGINE...");
 
             try {
                 const formData = new FormData();
@@ -650,27 +648,27 @@
             document.getElementById('geminiSummaryContainer').classList.add('hidden');
 
             if (data.status === "error" || data.error) {
-                statusBadge.innerHTML = `⚠️ Engine Error`; statusBadge.className = "flex items-center justify-center w-full md:w-auto gap-2 bg-[#C86B5E] text-[#FDFBF7] px-4 py-2 sm:px-6 sm:py-3 text-[10px] sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm uppercase tracking-widest";
-                tableBody.innerHTML = `<tr><td colspan="3" class="p-4 sm:p-6 text-center text-[#C86B5E] font-bold text-xs sm:text-sm">${data.error}</td></tr>`;
+                statusBadge.innerHTML = `⚠️ Engine Error`; statusBadge.className = "flex items-center justify-center w-full md:w-auto gap-2 bg-[#C86B5E] text-[#FDFBF7] px-4 py-3 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm uppercase tracking-widest";
+                tableBody.innerHTML = `<tr><td colspan="3" class="p-6 sm:p-6 text-center text-[#C86B5E] font-bold text-sm sm:text-base">${data.error}</td></tr>`;
             } else if (data.anomalies && data.anomalies.length > 0) {
-                statusBadge.innerHTML = `🚩 ${data.anomalies.length} Flags`; statusBadge.className = "flex items-center justify-center w-full md:w-auto gap-2 bg-[#E2A73A] text-[#2D2824] px-4 py-2 sm:px-6 sm:py-3 text-[10px] sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm uppercase tracking-widest";
+                statusBadge.innerHTML = `🚩 ${data.anomalies.length} Flags`; statusBadge.className = "flex items-center justify-center w-full md:w-auto gap-2 bg-[#E2A73A] text-[#2D2824] px-4 py-3 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm uppercase tracking-widest";
                 data.anomalies.forEach((a, i) => {
                     tableBody.innerHTML += `
                         <tr>
                             <td data-label="Timecode">${a.timecode}</td>
-                            <td data-label="Classification"><span class="bg-[#C86B5E] text-white px-2 py-1 text-[9px] sm:text-xs font-bold">${a.type}</span></td>
+                            <td data-label="Classification"><span class="bg-[#C86B5E] text-white px-2 py-1 text-xs font-bold">${a.type}</span></td>
                             <td data-label="AI Insight">
-                                <span class="block leading-relaxed">${a.description}</span>
-                                <div class="mt-3 sm:mt-4">
-                                    <button class="btn-sugerir w-full sm:w-auto bg-[#2D2824] text-white px-3 py-2 sm:py-1.5 text-[9px] sm:text-[10px] font-bold hover:bg-[#52796F] uppercase tracking-widest transition-colors" data-type="${a.type}" data-desc="${a.description}">✨ Suggest Fix</button>
-                                    <div class="sugerencia-out hidden mt-2 sm:mt-3 p-3 sm:p-4 bg-[#FDFBF7] border-[2px] border-dashed border-[#2D2824] text-xs sm:text-sm whitespace-normal leading-relaxed"></div>
+                                <span class="block leading-relaxed text-sm">${a.description}</span>
+                                <div class="mt-4">
+                                    <button class="btn-sugerir w-full sm:w-auto bg-[#2D2824] text-white px-4 py-3 sm:px-3 sm:py-2 text-xs sm:text-[10px] font-bold hover:bg-[#52796F] uppercase tracking-widest transition-colors" data-type="${a.type}" data-desc="${a.description}">✨ Suggest Fix</button>
+                                    <div class="sugerencia-out hidden mt-3 sm:mt-3 p-4 bg-[#FDFBF7] border-[2px] border-dashed border-[#2D2824] text-sm whitespace-normal leading-relaxed"></div>
                                 </div>
                             </td>
                         </tr>`;
                 });
             } else {
-                statusBadge.innerHTML = `🌟 Clean / Verified`; statusBadge.className = "flex items-center justify-center w-full md:w-auto gap-2 bg-[#7A9E7E] text-white px-4 py-2 sm:px-6 sm:py-3 text-[10px] sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm uppercase tracking-widest";
-                tableBody.innerHTML = `<tr><td colspan="3" class="p-6 sm:p-10 text-center font-bold text-[#5C534A] text-xs sm:text-sm">No compliance violations or anomalies detected.</td></tr>`;
+                statusBadge.innerHTML = `🌟 Clean / Verified`; statusBadge.className = "flex items-center justify-center w-full md:w-auto gap-2 bg-[#7A9E7E] text-white px-4 py-3 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold border-[2px] sm:border-[3px] border-[#2D2824] shadow-hard-sm uppercase tracking-widest";
+                tableBody.innerHTML = `<tr><td colspan="3" class="p-8 sm:p-10 text-center font-bold text-[#5C534A] text-sm sm:text-base">No compliance violations or anomalies detected.</td></tr>`;
             }
 
             document.querySelectorAll('.btn-sugerir').forEach(btn => {
@@ -678,7 +676,7 @@
                     const t = e.target; t.disabled = true; t.textContent = "✨ Processing...";
                     const out = t.nextElementSibling; out.classList.remove('hidden'); out.textContent = "Generating strategy...";
                     const r = await fetchGeminiConReintentos(`Issue: ${t.getAttribute('data-type')}. Desc: ${t.getAttribute('data-desc')}. How to fix it in post-production in 2 sentences.`, false);
-                    t.style.display = 'none'; out.innerHTML = `<span class="font-bold text-[#52796F] text-[9px] sm:text-[10px] block mb-1 sm:mb-2 uppercase tracking-widest">✨ Recommended Strategy:</span> ${r}`;
+                    t.style.display = 'none'; out.innerHTML = `<span class="font-bold text-[#52796F] text-[10px] sm:text-[11px] block mb-2 uppercase tracking-widest">✨ Recommended Strategy:</span> ${r}`;
                 });
             });
 
