@@ -102,7 +102,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 # ---------------------------------------------------------
-# FASTAPI APP, WEBSOCKETS & ROUTES
+# FASTAPI APP, WEBSOCKETS & POLLING fallbacks
 # ---------------------------------------------------------
 app = FastAPI()
 
@@ -117,11 +117,19 @@ app.add_middleware(
 try: client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 except Exception: client = None
 
-# WEBSOCKET CONNECTION MANAGER
+# IN-MEMORY TASK STORE (Tracks audits for HTTP Polling fallbacks)
+task_statuses: dict[str, dict] = {}
 active_connections: dict[str, WebSocket] = {}
 
 async def notify_progress(task_id: str, stage: str, progress: int, message: str):
-    """Sends a real-time JSON progress update to the connected frontend."""
+    """Updates the task status store and broadcasts to active WebSockets if available."""
+    task_statuses[task_id] = {
+        "status": "running",
+        "stage": stage,
+        "progress": progress,
+        "message": message,
+        "result": None
+    }
     if task_id in active_connections:
         try:
             await active_connections[task_id].send_json({
@@ -194,21 +202,10 @@ def detect_with_ai_audio(file_content, filename):
 
 # THE BACKGROUND WORKER
 async def run_audit_background(task_id: str, file_content: bytes, filename: str, video_url: str):
-    # HANDSHAKE WAIT: Give the frontend up to 10 seconds to connect the WebSocket
-    for _ in range(20):
-        if task_id in active_connections:
-            break
-        await asyncio.sleep(0.5)
-        
-    # If it never connected, abort.
-    if task_id not in active_connections:
-        print(f"Task {task_id} aborted: Frontend WebSocket never connected.")
-        return
-
     try:
         # STAGE 1: UPLOAD / EXTRACTION
         await notify_progress(task_id, "scan", 10, "EXTRACTING MEDIA..." if video_url else "UPLOADING TO ENGINE...")
-        await asyncio.sleep(1) # UX Delay
+        await asyncio.sleep(1)
         
         if video_url:
             await notify_progress(task_id, "scan", 40, "DOWNLOADING STREAM...")
@@ -217,7 +214,7 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
             filename = "Linked_Video.m4a"
             
         await notify_progress(task_id, "scan", 85, "ANALYZING SIGNATURES...")
-        await asyncio.sleep(1) # UX Delay
+        await asyncio.sleep(1)
 
         await notify_progress(task_id, "scan", 100, "SECURE. PHASE 1 COMPLETE.")
         await asyncio.sleep(0.5)
@@ -234,38 +231,59 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
             
         await notify_progress(task_id, "detect", 100, "AUDIT COMPLETE.")
         
-        # COMPLETE
+        # FINAL PAYLOAD PREPARATION
         final_result = {
             "status": "success", "filename": filename,
             "anomalies": ai_analysis.get('anomalies', []), "error": ai_analysis.get('error', None)
         }
+        
+        # Store finished state for the polling handler
+        task_statuses[task_id] = {
+            "status": "complete", "stage": "detect", "progress": 100, "message": "AUDIT COMPLETE.", "result": final_result
+        }
+
+        # Broadcast final payload directly to active WebSockets
         if task_id in active_connections:
             await active_connections[task_id].send_json({"status": "complete", "result": final_result})
 
     except Exception as e:
+        task_statuses[task_id] = {
+            "status": "error", "stage": "detect", "progress": 0, "message": str(e), "result": None
+        }
         if task_id in active_connections:
             await active_connections[task_id].send_json({"status": "error", "message": str(e)})
 
 @app.post("/api/audit/start")
 async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user)):
-    """Triggers the background task and returns the tracking ID to the frontend."""
+    """Triggers the background task, initializes trackers, and returns task ID."""
     if not file and not video_url: raise HTTPException(status_code=400, detail="Must provide file or URL.")
     
     file_content = await file.read() if file else None
     filename = file.filename if file else None
     task_id = str(uuid.uuid4())
     
+    # Pre-populate trackers to prevent 404 errors during fast fallback polling
+    task_statuses[task_id] = {
+        "status": "running", "stage": "scan", "progress": 0, "message": "INITIALIZING...", "result": None
+    }
+    
     background_tasks.add_task(run_audit_background, task_id, file_content, filename, video_url)
     return {"task_id": task_id}
 
+@app.get("/api/audit/status/{task_id}")
+async def get_audit_status(task_id: str, current_user: User = Depends(get_current_user)):
+    """Status endpoint polled by frontend if WebSocket is unavailable or times out."""
+    if task_id not in task_statuses:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task_statuses[task_id]
+
 @app.websocket("/ws/audit/{task_id}")
 async def websocket_audit_endpoint(websocket: WebSocket, task_id: str):
-    """Frontend connects here to listen for real-time progress events."""
+    """Standard streaming endpoint using secure, raw WebSockets."""
     await websocket.accept()
     active_connections[task_id] = websocket
     try:
-        while True: 
-            await websocket.receive_text() # Keep connection alive
+        while True: await websocket.receive_text()
     except WebSocketDisconnect:
         if task_id in active_connections:
             del active_connections[task_id]
