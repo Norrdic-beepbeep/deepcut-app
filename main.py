@@ -5,6 +5,8 @@ import json
 import smtplib
 import uuid
 import asyncio
+import random
+import string
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -83,7 +85,7 @@ def get_db():
     finally: db.close()
 
 # ---------------------------------------------------------
-# AUTHENTICATION FUNCTIONS
+# AUTHENTICATION & EMAIL FUNCTIONS
 # ---------------------------------------------------------
 def verify_password(plain_password, hashed_password): return pwd_context.verify(plain_password, hashed_password)
 def get_password_hash(password): return pwd_context.hash(password)
@@ -102,6 +104,65 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     user = db.query(User).filter(User.username == username).first()
     if user is None: raise HTTPException(status_code=401)
     return user
+
+def send_confirmation_email(user_email: str, user_name: str, username: str):
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME") 
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") 
+    SENDER_EMAIL = os.getenv("SENDER_EMAIL", SMTP_USERNAME)
+
+    subject = "DeepCut Engine // Access Confirmed"
+    body = f"OPERATOR ACCESS CONFIRMED\n-------------------------\nName: {user_name}\nOperator ID: {username}\n\nWelcome to the DeepCut Compliance Engine. You may now access the system."
+
+    if not SMTP_USERNAME or not SMTP_PASSWORD:
+        print(f"\n[MOCK EMAIL SENT TO {user_email}]\nSubject: {subject}\n{body}\n")
+        return
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = user_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+def send_reset_email(user_email: str, temp_password: str):
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME") 
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") 
+    SENDER_EMAIL = os.getenv("SENDER_EMAIL", SMTP_USERNAME)
+
+    subject = "DeepCut Engine // System Recovery"
+    body = f"SYSTEM RECOVERY DISPATCH\n-------------------------\n\nYour password has been successfully reset by the automated system.\n\nTemporary Access Code: {temp_password}\n\nPlease return to the DeepCut Engine to log in securely."
+
+    if not SMTP_USERNAME or not SMTP_PASSWORD:
+        print(f"\n[MOCK EMAIL SENT TO {user_email}]\nSubject: {subject}\n{body}\n")
+        return
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = user_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        print(f"Failed to send reset email: {e}")
+
+def generate_temp_password(length=12):
+    """Generates a highly secure temporary 12-character alphanumeric code."""
+    characters = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(random.choice(characters) for i in range(length))
 
 # ---------------------------------------------------------
 # CORE FASTAPI SETUP
@@ -171,12 +232,10 @@ def detect_with_ai_audio(file_content, filename):
         return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
     
     try:
-        # Perform transcription using OpenAI Whisper
         transcript_response = client.audio.transcriptions.create(
             model="whisper-1", 
             file=(filename, file_content)
         )
-        # Classify the transcribed content
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -213,7 +272,6 @@ def call_secure_gemini_api(prompt: str, is_summary: bool = False):
         "systemInstruction": {"parts": [{"text": sys_instruction}]}
     }
     
-    # Retry loop up to 3 times to manage network blips gracefully
     for _ in range(3):
         try:
             response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=12)
@@ -249,7 +307,7 @@ def secure_generate_summary(data: dict, current_user: User = Depends(get_current
 # OPERATOR ACCESS ENDPOINTS
 # ---------------------------------------------------------
 @app.get("/")
-def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.3.1-secure"}
+def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.4.0-recovery"}
 
 @app.post("/api/register")
 def register_user(name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
@@ -257,6 +315,7 @@ def register_user(name: str = Form(...), username: str = Form(...), email: str =
     if existing_user: raise HTTPException(status_code=400, detail="Username or email already registered")
     db.add(User(name=name, username=username, email=email, hashed_password=get_password_hash(password)))
     db.commit()
+    send_confirmation_email(email, name, username)
     return {"message": "Operator registered successfully."}
 
 @app.post("/api/login")
@@ -265,6 +324,22 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect credentials")
     return {"access_token": create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)), "token_type": "bearer", "username": user.username}
+
+@app.post("/api/forgot-password")
+def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
+    """Generates a secure temporary password and emails it to the operator."""
+    user = db.query(User).filter(User.email == email).first()
+    
+    # We return success even if the email isn't found to prevent malicious actors from checking which emails exist.
+    if not user:
+        return {"message": "If an account matches that email, a reset email has been dispatched."}
+    
+    temp_pass = generate_temp_password()
+    user.hashed_password = get_password_hash(temp_pass)
+    db.commit()
+    
+    send_reset_email(user.email, temp_pass)
+    return {"message": "If an account matches that email, a reset email has been dispatched."}
 
 # ---------------------------------------------------------
 # AI METADATA TRACKING WORKERS
