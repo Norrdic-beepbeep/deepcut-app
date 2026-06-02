@@ -359,15 +359,20 @@
         closeVaultBtn.addEventListener('click', closeVault);
         vaultOverlay.addEventListener('click', closeVault);
 
-        // SECURE MULTI-USER VAULT ARCHIVE RETRIEVAL
+        // SECURE MULTI-USER VAULT ARCHIVE RETRIEVAL WITH DIAGNOSTIC RETRY PIPELINE
         async function loadHistory() {
             if (!authToken) return;
+            vaultList.innerHTML = `<p class="text-center text-cMuted text-xs font-typewriter uppercase mt-10 animate-pulse">Syncing Vault Registry...</p>`;
             try {
                 // Requesting only the user's specific records using their unique secure JWT token
                 const response = await fetch('https://deepcut-app.onrender.com/api/audits', { 
                     headers: { 'Authorization': `Bearer ${authToken}` } 
                 });
-                if (!response.ok) throw new Error();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP Error ${response.status}: ${response.statusText || 'Access Denied'}`);
+                }
+                
                 const audits = await response.json();
                 if (audits.length === 0) { 
                     vaultList.innerHTML = `<p class="text-center text-cMuted text-xs font-typewriter uppercase mt-10">No past audits</p>`; 
@@ -394,7 +399,22 @@
                     vaultList.appendChild(card);
                 });
             } catch (err) { 
-                vaultList.innerHTML = `<p class="text-center text-cAcc3 text-xs font-typewriter uppercase mt-10">Sync failure</p>`; 
+                const errorDetail = err.message || err.toString() || "Unknown network connection failure";
+                vaultList.innerHTML = `
+                    <div class="text-center p-5 bg-cBg/20 border-2 border-cAcc3 shadow-hard-sm space-y-3">
+                        <span class="text-3xl block" aria-hidden="true">⚠️</span>
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-cAcc3 font-typewriter">Sync Failure</h4>
+                        <p class="text-[10px] text-cMuted leading-relaxed font-typewriter break-all bg-cBg/30 p-2 border border-cText/10" id="vaultErrorDetails">${errorDetail}</p>
+                        <p class="text-[11px] text-cSubtext font-medium leading-relaxed">This typically happens if the compliance server is cold-starting or offline. Give it a moment and try again.</p>
+                        <button id="retryVaultBtn" class="w-full bg-cAcc3 text-cCard font-bold py-2 px-3 text-xs uppercase tracking-widest border-2 border-cText shadow-hard hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-cText">
+                            🔄 Retry Sync
+                        </button>
+                    </div>
+                `;
+                // Wire up the new retry sync handler
+                document.getElementById('retryVaultBtn').addEventListener('click', () => {
+                    loadHistory();
+                });
             }
         }
 
