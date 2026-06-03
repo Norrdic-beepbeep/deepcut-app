@@ -35,6 +35,7 @@
         .fade-hidden { opacity: 0; pointer-events: none; position: absolute; transform: translateY(-10px); }
         .fluid-title { font-size: clamp(2.5rem, 6vw, 4rem); line-height: 1.1; }
         .fluid-subtitle { font-size: clamp(1rem, 2vw, 1.125rem); }
+        .row-highlight { transition: background-color 0.5s ease; }
 
         @media (max-width: 768px) {
             .adaptive-table, .adaptive-table tbody, .adaptive-table tr, .adaptive-table td { display: block; width: 100%; }
@@ -54,14 +55,12 @@
 
     <a href="#mainContent" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-cCard focus:text-cText focus:border-4 focus:border-cText focus:shadow-hard font-bold uppercase tracking-wider text-sm">Skip to main content</a>
 
-    <!-- HISTORIC VAULT DRAWER -->
     <div id="vaultDrawer" class="fixed inset-y-0 left-0 w-[290px] sm:w-[350px] bg-cCard border-r-[4px] border-cText z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-hard" role="dialog" aria-modal="true" aria-label="Vault Archive">
         <div class="p-6 border-b-[3px] border-cText flex justify-between items-center bg-cBg/30">
             <h3 class="text-lg font-bold tracking-widest uppercase font-typewriter">📁 Vault Archive</h3>
             <button id="closeVaultBtn" class="text-2xl font-bold text-cText hover:text-cAcc3 focus:outline-none p-2" aria-label="Close Vault Archive">&times;</button>
         </div>
         
-        <!-- NEW SORT FILTER -->
         <div class="p-3 px-4 border-b-[3px] border-cText bg-cBg/50 flex justify-between items-center">
             <label for="vaultSort" class="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-cText">Sort By:</label>
             <select id="vaultSort" class="bg-cCard border-[2px] border-cText text-[10px] sm:text-xs font-bold font-typewriter p-1.5 focus:outline-none focus:ring-2 focus:ring-cAcc1 cursor-pointer">
@@ -78,9 +77,7 @@
     </div>
     <div id="vaultOverlay" class="fixed inset-0 bg-cText/60 z-40 hidden transition-opacity duration-300 opacity-0" aria-hidden="true"></div>
 
-    <!-- AUTH CONTAINER -->
     <div id="authContainer" class="w-full max-w-lg mx-auto mt-8 sm:mt-16 z-20 transition-all duration-500 relative px-2 sm:px-0">
-        <!-- LOGIN SCREEN -->
         <div id="loginScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-8 border-b-[3px] border-cText pb-6">
                 <span class="text-4xl mb-3 block" aria-hidden="true">🔐</span>
@@ -104,7 +101,6 @@
             </div>
         </div>
 
-        <!-- REGISTER SCREEN -->
         <div id="registerScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-6 border-b-[3px] border-cText pb-6">
                 <span class="text-4xl mb-3 block" aria-hidden="true">🛡️</span>
@@ -142,7 +138,6 @@
             </div>
         </div>
 
-        <!-- FORGOT PASSWORD SCREEN -->
         <div id="forgotPasswordScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-6 border-b-[3px] border-cText pb-6">
                 <span class="text-4xl mb-3 block" aria-hidden="true">🔑</span>
@@ -163,7 +158,6 @@
         </div>
     </div>
 
-    <!-- MAIN APP INTERFACE -->
     <div id="appScreen" class="w-full max-w-5xl mx-auto space-y-8 sm:space-y-12 mt-6 sm:mt-10 relative z-10 hidden opacity-0 transition-opacity duration-700 px-0 sm:px-4">
         
         <header class="w-full flex flex-col border-b-[3px] sm:border-b-4 border-cText pb-6 sm:pb-8 relative z-30">
@@ -177,7 +171,6 @@
             </div>
             
             <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center w-full pt-8 gap-4 px-2 sm:px-0">
-                <!-- OPERATOR DROPDOWN MENU -->
                 <div class="flex flex-row items-center gap-3 w-full sm:w-auto z-20">
                     <div class="relative w-full sm:w-auto" id="userMenuContainer">
                         <button id="userMenuBtn" class="h-12 w-full flex items-center justify-between sm:justify-start bg-cSuccess text-cBg hover:bg-cSuccess/90 border-[2px] sm:border-[3px] border-cText px-4 shadow-hard-sm shadow-hard-hover transition-all focus:outline-none" aria-haspopup="true" aria-expanded="false">
@@ -188,7 +181,6 @@
                             <span class="ml-4 text-[10px] transition-transform duration-200" id="userMenuArrow">▼</span>
                         </button>
                         
-                        <!-- DROPDOWN CONTENT -->
                         <div id="userDropdown" class="absolute left-0 sm:right-0 mt-2 w-full sm:w-full min-w-[220px] bg-cCard border-[2px] sm:border-[3px] border-cText shadow-hard hidden z-50 transition-all duration-200 opacity-0 transform -translate-y-2">
                             <div class="flex flex-col" role="menu" aria-orientation="vertical" aria-labelledby="userMenuBtn">
                                 <button id="changePassBtn" class="w-full text-left px-4 py-4 text-xs font-bold tracking-[0.2em] uppercase text-cText hover:bg-cAcc1 hover:text-cBg transition-colors border-b-[2px] border-cText/20" role="menuitem">Change Code 🔑</button>
@@ -198,7 +190,6 @@
                     </div>
                 </div>
 
-                <!-- NAVIGATION BUTTONS -->
                 <div class="flex gap-3 w-full sm:w-auto z-10">
                     <button id="vaultBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">📁 Vault</button>
                     <button id="guideBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">Guide 📖</button>
@@ -282,9 +273,11 @@
                     <div class="flex items-center justify-center w-full md:w-auto gap-2 px-6 py-3 sm:py-4 text-xs sm:text-sm font-bold tracking-widest uppercase border-[3px] border-cText shadow-hard-sm" id="dashStatus">Processing...</div>
                 </div>
             </div>
+            
             <div id="geminiSummaryContainer" class="hidden mb-6 sm:mb-8 p-4 sm:p-6 bg-cBg/50 border-[2px] sm:border-[3px] border-cText shadow-hard-sm" aria-live="polite">
                 <p id="geminiSummaryText" class="text-xs sm:text-sm font-medium text-cText leading-relaxed"></p>
             </div>
+            
             <div class="space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h3 class="text-sm sm:text-base font-bold text-cText tracking-[0.1em] sm:tracking-[0.2em] uppercase flex items-center gap-3">
@@ -292,6 +285,16 @@
                     </h3>
                     <button id="geminiSummaryBtn" class="w-full sm:w-auto bg-cText text-cBg px-4 py-3 sm:py-2 text-xs font-bold uppercase tracking-widest hover:bg-cAcc1 hover:text-cText border-[2px] sm:border-[3px] border-cText shadow-hard-sm transition-colors">✨ Generate Exec Summary</button>
                 </div>
+
+                <div id="interactiveTimelineContainer" class="hidden mb-4">
+                    <div class="flex justify-between text-[10px] sm:text-xs font-typewriter text-cMuted mb-2 font-bold">
+                        <span>00:00:00</span>
+                        <span id="timelineDuration">End of Media</span>
+                    </div>
+                    <div id="interactiveTimeline" class="w-full h-8 sm:h-10 bg-cBg/50 border-[2px] sm:border-[3px] border-cText relative shadow-hard-sm overflow-hidden">
+                        </div>
+                </div>
+
                 <div class="w-full">
                     <table class="adaptive-table w-full text-left border-collapse" id="auditTable">
                         <thead>
@@ -308,7 +311,6 @@
         </section>
     </div>
 
-    <!-- GUIDE MODAL -->
     <div id="guideModal" class="fixed inset-0 bg-cText/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Official User Documentation">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-12 shadow-hard max-w-3xl w-full max-h-[90vh] overflow-y-auto relative" id="guideModalContainer">
             <button id="closeGuideBtn" class="absolute top-3 right-5 sm:top-4 sm:right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2" aria-label="Close User Guide Modal">&times;</button>
@@ -339,7 +341,7 @@
                             </li>
                             <li class="flex items-start gap-3">
                                 <span class="bg-cText text-cBg font-bold px-2 py-0.5 text-xs rounded-sm mt-0.5">3</span>
-                                <div><strong class="font-bold text-cText">Review:</strong> Examine the Compliance Log for detected anomalies, copyright warnings, or standards violations accurately mapped to their specific timecodes.</div>
+                                <div><strong class="font-bold text-cText">Review:</strong> Examine the Compliance Log for detected anomalies, copyright warnings, or standards violations accurately mapped to their specific timecodes. Use the Interactive Timeline bar to visually navigate through the file.</div>
                             </li>
                             <li class="flex items-start gap-3">
                                 <span class="bg-cText text-cBg font-bold px-2 py-0.5 text-xs rounded-sm mt-0.5">4</span>
@@ -360,7 +362,6 @@
         </div>
     </div>
 
-    <!-- CHANGE PASSWORD MODAL -->
     <div id="changePassModal" class="fixed inset-0 bg-cText/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Change Access Code">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard max-w-lg w-full relative">
             <button id="closeChangePassBtn" class="absolute top-3 right-5 sm:top-4 sm:right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2" aria-label="Close Change Password Modal">&times;</button>
@@ -1005,21 +1006,73 @@
             }
         });
 
+        // HELPER: Convert Timecode string (HH:MM:SS:FF or MM:SS) to total seconds
+        function tcToSeconds(tc) {
+            if (!tc || tc === "N/A" || tc === "Spoken Audio") return 0;
+            const parts = tc.split(':').map(Number);
+            if (parts.length >= 3) {
+                return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+            } else if (parts.length === 2) {
+                return (parts[0] * 60) + parts[1];
+            }
+            return 0;
+        }
+
         function populateAndRevealDashboard(data) {
             document.getElementById('dashFileName').textContent = data.filename;
             document.getElementById('dashStatus').textContent = data.anomalies && data.anomalies.length ? `🚩 ${data.anomalies.length} Flags` : "🌟 Clean";
             const tableBody = document.getElementById('auditTableBody');
             tableBody.innerHTML = '';
             
+            const timelineContainer = document.getElementById('interactiveTimelineContainer');
+            const timelineTrack = document.getElementById('interactiveTimeline');
+            timelineTrack.innerHTML = '';
+            
             geminiSummaryBtn.disabled = false; geminiSummaryBtn.textContent = "✨ Generate Exec Summary";
             document.getElementById('geminiSummaryContainer').classList.add('hidden');
 
             if (data.status === "error" || data.error) {
+                timelineContainer.classList.add('hidden');
                 tableBody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-cAcc3 font-bold text-sm">${data.error || "Compliance Engine Error."}</td></tr>`;
             } else if (data.anomalies && data.anomalies.length > 0) {
-                data.anomalies.forEach(a => {
+                
+                // 1. Process Timeline Visuals
+                timelineContainer.classList.remove('hidden');
+                let maxSeconds = 0;
+                
+                const processedAnomalies = data.anomalies.map((a, index) => {
+                    const sec = tcToSeconds(a.timecode);
+                    if (sec > maxSeconds) maxSeconds = sec;
+                    return { ...a, sec, index };
+                });
+                
+                // Add a 10% buffer so the last anomaly isn't right on the edge. Default to 60s if no valid timecodes found.
+                const totalDuration = maxSeconds > 0 ? maxSeconds * 1.1 : 60; 
+                
+                processedAnomalies.forEach(a => {
+                    if (a.sec > 0) {
+                        const pct = Math.min((a.sec / totalDuration) * 100, 98); // Cap at 98% for visual spacing
+                        const marker = document.createElement('div');
+                        marker.className = 'absolute top-0 bottom-0 w-1.5 sm:w-2 bg-cAcc3 cursor-pointer hover:scale-[2] transition-transform origin-center z-10 border-x border-cText/20';
+                        marker.style.left = `${pct}%`;
+                        marker.title = `Timecode: ${a.timecode} | Issue: ${a.type}`;
+                        
+                        marker.addEventListener('click', () => {
+                            const targetRow = document.getElementById(`row-anomaly-${a.index}`);
+                            if (targetRow) {
+                                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                targetRow.classList.add('bg-cAcc1/30');
+                                setTimeout(() => targetRow.classList.remove('bg-cAcc1/30'), 2000);
+                            }
+                        });
+                        timelineTrack.appendChild(marker);
+                    }
+                });
+
+                // 2. Populate Data Table
+                data.anomalies.forEach((a, index) => {
                     tableBody.innerHTML += `
-                        <tr class="border-b-[2px] sm:border-b-[3px] border-cText block sm:table-row">
+                        <tr id="row-anomaly-${index}" class="border-b-[2px] sm:border-b-[3px] border-cText block sm:table-row row-highlight">
                             <td class="p-4 sm:p-6 font-bold border-b sm:border-b-0 sm:border-r-[3px] border-cText block sm:table-cell w-full sm:w-auto" data-label="Timecode">${a.timecode}</td>
                             <td class="p-4 sm:p-6 border-b sm:border-b-0 sm:border-r-[3px] border-cText block sm:table-cell w-full sm:w-auto" data-label="Class"><span class="bg-cAcc3 text-cCard px-2 py-1 text-[9px] sm:text-xs font-bold">${a.type}</span></td>
                             <td class="p-4 sm:p-6 block sm:table-cell w-full sm:w-auto" data-label="AI Insight">
@@ -1032,6 +1085,7 @@
                         </tr>`;
                 });
             } else {
+                timelineContainer.classList.add('hidden');
                 tableBody.innerHTML = `<tr><td colspan="3" class="p-8 text-center font-bold text-cSubtext text-sm sm:text-base">No compliance violations or anomalies detected.</td></tr>`;
             }
 
