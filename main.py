@@ -260,7 +260,8 @@ def call_secure_gemini_api(prompt: str, is_summary: bool = False):
     if not gemini_key or not gemini_key.strip():
         return "System configuration error: Server side AI credentials missing."
         
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={gemini_key}"
+    # FIX: Pointing strictly to the stable 1.5 flash model endpoint
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
     sys_instruction = (
         "You are a leading video post-production auditor. Write short, clear, and direct executive summaries (max 3 lines) based on the compliance report."
         if is_summary else
@@ -272,22 +273,19 @@ def call_secure_gemini_api(prompt: str, is_summary: bool = False):
         "systemInstruction": {"parts": [{"text": sys_instruction}]}
     }
     
-    # Implement robust exponential backoff to prevent timeouts (1s, 2s, 4s, 8s, 16s)
     last_error = ""
     delays = [1, 2, 4, 8, 16]
     for delay in delays:
         try:
-            # Increased timeout to 30s to give Gemini enough processing time
             response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=30)
             if response.ok:
                 res_data = response.json()
                 return res_data['candidates'][0]['content']['parts'][0]['text']
             else:
-                # If Google rejects it, stop looping and return the exact error message!
                 return f"Google API Error {response.status_code}: {response.text}"
         except Exception as e:
             last_error = str(e)
-            pass # Silently catch network blips and proceed to backoff delay
+            pass 
             
         time.sleep(delay)
             
@@ -317,7 +315,7 @@ def secure_generate_summary(data: dict, current_user: User = Depends(get_current
 # OPERATOR ACCESS ENDPOINTS
 # ---------------------------------------------------------
 @app.get("/")
-def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.4.1-recovery"}
+def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.4.2-stable-ai"}
 
 @app.post("/api/register")
 def register_user(background_tasks: BackgroundTasks, name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
@@ -326,7 +324,6 @@ def register_user(background_tasks: BackgroundTasks, name: str = Form(...), user
     db.add(User(name=name, username=username, email=email, hashed_password=get_password_hash(password)))
     db.commit()
     
-    # Hand off email execution to the background so the frontend resolves instantly
     background_tasks.add_task(send_confirmation_email, email, name, username)
     return {"message": "Operator registered successfully."}
 
@@ -339,10 +336,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @app.post("/api/forgot-password")
 def forgot_password(background_tasks: BackgroundTasks, email: str = Form(...), db: Session = Depends(get_db)):
-    """Generates a secure temporary password and emails it to the operator."""
     user = db.query(User).filter(User.email == email).first()
     
-    # We return success even if the email isn't found to prevent malicious actors from checking which emails exist.
     if not user:
         return {"message": "If an account matches that email, a reset email has been dispatched."}
     
@@ -350,23 +345,18 @@ def forgot_password(background_tasks: BackgroundTasks, email: str = Form(...), d
     user.hashed_password = get_password_hash(temp_pass)
     db.commit()
     
-    # Hand off email execution to the background so the frontend resolves instantly
     background_tasks.add_task(send_reset_email, user.email, temp_pass)
     return {"message": "If an account matches that email, a reset email has been dispatched."}
 
 @app.post("/api/change-password")
 def change_password(current_password: str = Form(...), new_password: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Allows an authenticated user to change their password securely."""
-    # Verify the current password
     if not verify_password(current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect current access code.")
     
-    # Update to the new password
     current_user.hashed_password = get_password_hash(new_password)
     db.commit()
     
     return {"message": "Access code updated securely."}
-
 
 # ---------------------------------------------------------
 # AI METADATA TRACKING WORKERS
