@@ -311,7 +311,15 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = db.query(User).filter(or_(User.username == form_data.username, User.email == form_data.username)).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect credentials")
-    return {"access_token": create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)), "token_type": "bearer", "username": user.username}
+    
+    is_admin_flag = (user.username == ADMIN_USERNAME)
+
+    return {
+        "access_token": create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)), 
+        "token_type": "bearer", 
+        "username": user.username,
+        "is_admin": is_admin_flag
+    }
 
 @app.post("/api/forgot-password")
 def forgot_password(background_tasks: BackgroundTasks, email: str = Form(...), db: Session = Depends(get_db)):
