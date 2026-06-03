@@ -181,13 +181,19 @@ def generate_temp_password(length=12):
     return ''.join(random.choice(characters) for i in range(length))
 
 # ---------------------------------------------------------
-# CORE FASTAPI SETUP
+# CORE FASTAPI SETUP & CORS SECURITY
 # ---------------------------------------------------------
 app = FastAPI()
 
+# SECURITY: Lock down requests so only your specific websites can talk to the server.
+# By default, we use your render domain. If you add a custom domain later, 
+# just add an ALLOWED_ORIGINS environment variable in Render (comma separated).
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "https://deepcut-app.onrender.com")
+origins = [origin.strip() for origin in allowed_origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
