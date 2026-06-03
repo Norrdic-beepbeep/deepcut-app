@@ -22,30 +22,6 @@
             --c-subtext: 80 72 64;
         }
 
-        [data-theme="fox"] {
-            --c-bg: 227 211 181;
-            --c-text: 62 39 35;
-            --c-card: 245 239 230;
-            --c-acc1: 195 115 35;
-            --c-acc2: 110 80 70;
-            --c-acc3: 165 55 45;
-            --c-success: 85 115 85;
-            --c-muted: 115 95 85;
-            --c-subtext: 93 64 55;
-        }
-
-        [data-theme="silver"] {
-            --c-bg: 20 20 22;
-            --c-text: 235 235 240;
-            --c-card: 38 38 40;
-            --c-acc1: 160 160 165;
-            --c-acc2: 90 90 95;
-            --c-acc3: 220 220 225;
-            --c-success: 242 242 247;
-            --c-muted: 175 175 180;
-            --c-subtext: 210 210 215;
-        }
-
         body { font-family: 'Jost', sans-serif; transition: background-color 0.4s ease, color 0.4s ease; }
         .font-typewriter { font-family: 'Courier Prime', monospace; }
         .progress-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -225,7 +201,6 @@
                 <!-- NAVIGATION BUTTONS -->
                 <div class="flex gap-3 w-full sm:w-auto z-10">
                     <button id="vaultBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">📁 Vault</button>
-                    <button id="themeToggleBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">🎨 Standard</button>
                     <button id="guideBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">Guide 📖</button>
                 </div>
             </div>
@@ -415,11 +390,7 @@
     </div>
 
     <script>
-        // --- THEME & VAULT LOGIC ---
-        const themes = ['default', 'fox', 'silver'];
-        const themeLabels = ['🎨 Standard', '🦊 Fox Autumn', '🎞️ Silver Screen'];
-        let currentThemeIndex = 0;
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        // --- VAULT LOGIC ---
         const vaultBtn = document.getElementById('vaultBtn');
         const vaultDrawer = document.getElementById('vaultDrawer');
         const closeVaultBtn = document.getElementById('closeVaultBtn');
@@ -429,14 +400,6 @@
         let vaultFocusCleanup = null;
         let authToken = null;
         let currentAudits = [];
-
-        themeToggleBtn.addEventListener('click', () => {
-            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
-            const selectedTheme = themes[currentThemeIndex];
-            if (selectedTheme === 'default') document.body.removeAttribute('data-theme');
-            else document.body.setAttribute('data-theme', selectedTheme);
-            themeToggleBtn.textContent = themeLabels[currentThemeIndex];
-        });
 
         function trapModalFocus(modalEl, closeBtnEl, triggerBtnEl) {
             const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
