@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DeepCut // Video Compliance</title>
-    <script>
-        // --- FRONTEND ROUTER ---
-        // Forces the landing page to load first without renaming files.
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('portal') === 'secure') {
-            // User came from the landing page. Grant session access and clean the URL.
-            sessionStorage.setItem('portal_access', 'granted');
+<script>
+        // --- BULLETPROOF FRONTEND ROUTER ---
+        if (window.location.hash === '#secure') {
+            // User has the key. Grant access and hide the hash to keep the URL clean.
+            sessionStorage.setItem('deepcut_auth', 'true');
             window.history.replaceState(null, '', window.location.pathname);
-        } else if (!sessionStorage.getItem('portal_access')) {
-            // User just typed the URL. Instantly redirect them to the landing page.
+        } else if (!sessionStorage.getItem('deepcut_auth')) {
+            // No key and no active session. Kick back to landing page instantly.
             window.location.replace('landing.html');
         }
     </script>
