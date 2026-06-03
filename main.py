@@ -2,8 +2,8 @@ import os
 import uuid
 import asyncio
 import subprocess
-from datetime import datetime
-from typing import List, Dict, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional
 
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,45 +12,115 @@ from pydantic import BaseModel
 import aiofiles
 from pydub import AudioSegment
 from openai import AsyncOpenAI
+from sqlalchemy import create_engine, Column, String, Boolean, Integer, Text, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from passlib.context import CryptContext
+from jose import JWTError, jwt
 
 # ==========================================
-# 1. SYSTEM CONFIGURATION & ENVIRONMENT
+# 1. SYSTEM CONFIGURATION & SECURITY
 # ==========================================
 
 app = FastAPI(title="DeepCut API", version="2.0")
 
-# Configure CORS so your frontend can communicate securely
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to your specific frontend URL
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize OpenAI (Requires OPENAI_API_KEY environment variable on Render)
-openai_client = AsyncOpenAI()
+# Environment Variables (Set these in Render Dashboard)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./deepcut.db") # Fallback to local SQLite if Postgres isn't set
+SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-fallback-key-replace-in-production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 hours
 
-# Setup temporary workspace for the FFmpeg pipeline
+openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+
 TEMP_DIR = "temp_workspace"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-# Auth dependency
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
-
 # ==========================================
-# 2. IN-MEMORY STORES & MANAGERS (Replace with Postgres)
+# 2. DATABASE ARCHITECTURE (SQLAlchemy)
 # ==========================================
 
-# NOTE: For this complete script to run instantly, these use in-memory dictionaries.
-# In your final production version, wire these directly to your PostgreSQL SQLAlchemy models.
-MOCK_USERS = {} 
-MOCK_AUDITS = {}
-MOCK_TASKS = {} # Tracks progress for WebSockets
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String)
+    username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    consent_given = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+
+class AuditRecord(Base):
+    __tablename__ = "audits"
+    id = Column(String, primary_key=True, index=True)
+    operator_id = Column(String, ForeignKey("users.id"))
+    filename = Column(String)
+    status = Column(String)
+    flag_count = Column(Integer)
+    format = Column(String)
+    timestamp = Column(String)
+    raw_anomalies = Column(Text) # Store JSON string of anomalies
+
+Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# ==========================================
+# 3. AUTHENTICATION UTILITIES
+# ==========================================
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    user = db.query(User).filter(User.username == username).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+# ==========================================
+# 4. WEBSOCKET MANAGER & TRACKING
+# ==========================================
+
+ACTIVE_TASKS = {} # Tracks progress status
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
+        self.active_connections = {}
 
     async def connect(self, websocket: WebSocket, task_id: str):
         await websocket.accept()
@@ -62,21 +132,15 @@ class ConnectionManager:
 
     async def send_update(self, task_id: str, message: dict):
         if task_id in self.active_connections:
-            await self.active_connections[task_id].send_json(message)
+            try:
+                await self.active_connections[task_id].send_json(message)
+            except Exception:
+                self.disconnect(task_id)
 
 manager = ConnectionManager()
 
 # ==========================================
-# 3. PYDANTIC MODELS (Data Validation)
-# ==========================================
-
-class AIRequest(BaseModel):
-    report: Optional[str] = None
-    type: Optional[str] = None
-    description: Optional[str] = None
-
-# ==========================================
-# 4. HEAVY MEDIA PIPELINE
+# 5. HEAVY MEDIA PROCESSING PIPELINE
 # ==========================================
 
 async def process_massive_video(file: UploadFile, task_id: str):
@@ -89,14 +153,14 @@ async def process_massive_video(file: UploadFile, task_id: str):
     try:
         await manager.send_update(task_id, {"status": "progress", "stage": "scan", "progress": 10, "message": "Streaming file to secure node..."})
         
-        # 1. Stream to Disk
+        # 1. Stream to Disk Asynchronously
         async with aiofiles.open(video_path, 'wb') as out_file:
             while content := await file.read(1024 * 1024): 
                 await out_file.write(content)
         
         await manager.send_update(task_id, {"status": "progress", "stage": "scan", "progress": 40, "message": "Extracting audio footprint..."})
         
-        # 2. FFmpeg Extraction
+        # 2. FFmpeg Extraction (Mono, 64kbps MP3)
         subprocess.run([
             'ffmpeg', '-y', '-i', video_path,
             '-vn', '-acodec', 'libmp3lame', '-ac', '1', '-b:a', '64k', audio_path
@@ -121,116 +185,104 @@ async def process_massive_video(file: UploadFile, task_id: str):
     except Exception as e:
         raise Exception(f"Media failure: {str(e)}")
     finally:
-        # Cleanup massive files
         if os.path.exists(video_path): os.remove(video_path)
         if os.path.exists(audio_path): os.remove(audio_path)
 
-async def background_audit_worker(task_id: str, file: UploadFile):
-    """Background task that manages the pipeline and calls OpenAI."""
+async def background_audit_worker(task_id: str, file: UploadFile, user: User, db: Session):
+    """Manages the pipeline, calls OpenAI, and saves to PostgreSQL."""
     try:
-        # 1. Process the media
         audio_chunks = await process_massive_video(file, task_id)
         
-        await manager.send_update(task_id, {"status": "progress", "stage": "detect", "progress": 85, "message": "Analyzing structural anomalies..."})
+        await manager.send_update(task_id, {"status": "progress", "stage": "detect", "progress": 85, "message": "Transcribing audio chunks..."})
         
-        # 2. Transcribe chunks (Placeholder logic for Whisper)
-        # full_transcript = ""
-        # for chunk in audio_chunks:
-        #     with open(chunk, "rb") as af:
-        #         res = await openai_client.audio.transcriptions.create(model="whisper-1", file=af)
-        #         full_transcript += res.text + " "
-        #     os.remove(chunk)
-            
-        # 3. Cleanup chunks
+        full_transcript = ""
+        # 4. Process Chunks via OpenAI Whisper
         for chunk in audio_chunks:
-            if os.path.exists(chunk): os.remove(chunk)
+            with open(chunk, "rb") as af:
+                res = await openai_client.audio.transcriptions.create(model="whisper-1", file=af)
+                full_transcript += res.text + " "
+            os.remove(chunk) # Cleanup chunk immediately
             
-        # 4. Generate Mock Anomalies for Demonstration
-        await asyncio.sleep(2) # Simulate AI processing time
+        await manager.send_update(task_id, {"status": "progress", "stage": "detect", "progress": 95, "message": "Analyzing transcript for anomalies..."})
+        
+        # 5. Analyze Transcript (Replace this with your specific GPT-4 compliance prompt)
+        # For demonstration, we trigger a mock result so the frontend responds correctly
+        import json
+        mock_anomalies = [
+            {"timecode": "00:04:12:00", "type": "High - Copyright", "description": "Unlicensed commercial track detected in background."},
+            {"timecode": "00:15:30:12", "type": "Medium - Continuity", "description": "Visual jump cut detected without audio bridge."}
+        ]
+        
         result_data = {
+            "id": str(uuid.uuid4()),
             "filename": file.filename,
-            "status": "Flagged",
-            "flag_count": 3,
-            "format": "MP4/XML",
-            "anomalies": [
-                {"timecode": "00:04:12:00", "type": "High - Copyright", "description": "Unlicensed commercial track detected in background."},
-                {"timecode": "00:15:30:12", "type": "Medium - Continuity", "description": "Visual jump cut detected without audio bridge."},
-                {"timecode": "01:20:05:00", "type": "Low - Standard", "description": "Audio peak exceeds -6dB broadcast standard limit."}
-            ]
+            "status": "Flagged" if len(mock_anomalies) > 0 else "Clean",
+            "flag_count": len(mock_anomalies),
+            "format": "MP4/Audio",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "anomalies": mock_anomalies
         }
         
-        # Save to DB
-        audit_id = str(uuid.uuid4())
-        result_data["id"] = audit_id
-        result_data["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        MOCK_AUDITS[audit_id] = result_data
+        # 6. Save Record to Database Vault
+        db_audit = AuditRecord(
+            id=result_data["id"],
+            operator_id=user.id,
+            filename=result_data["filename"],
+            status=result_data["status"],
+            flag_count=result_data["flag_count"],
+            format=result_data["format"],
+            timestamp=result_data["timestamp"],
+            raw_anomalies=json.dumps(mock_anomalies)
+        )
+        db.add(db_audit)
+        db.commit()
         
-        MOCK_TASKS[task_id] = {"status": "complete", "result": result_data}
+        ACTIVE_TASKS[task_id] = {"status": "complete", "result": result_data}
         await manager.send_update(task_id, {"status": "complete", "result": result_data})
         
     except Exception as e:
-        MOCK_TASKS[task_id] = {"status": "error", "message": str(e)}
+        ACTIVE_TASKS[task_id] = {"status": "error", "message": str(e)}
         await manager.send_update(task_id, {"status": "error", "message": str(e)})
 
 # ==========================================
-# 5. AUTHENTICATION ENDPOINTS
+# 6. API ENDPOINTS
 # ==========================================
 
 @app.post("/api/register")
 async def register(
-    name: str = Form(...), 
-    username: str = Form(...), 
-    email: str = Form(...), 
-    password: str = Form(...)
+    name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)
 ):
-    if username in MOCK_USERS:
-        raise HTTPException(status_code=400, detail="Operator ID already registered.")
+    if db.query(User).filter(User.username == username).first():
+        raise HTTPException(status_code=400, detail="Username already taken.")
     
-    MOCK_USERS[username] = {
-        "id": str(uuid.uuid4()),
-        "username": username,
-        "name": name,
-        "email": email,
-        "password": password, # In production, use passlib to hash this!
-        "consent_given": True,
-        "is_admin": False
-    }
+    new_user = User(
+        id=str(uuid.uuid4()),
+        name=name,
+        username=username,
+        email=email,
+        hashed_password=get_password_hash(password)
+    )
+    db.add(new_user)
+    db.commit()
     return {"message": "Operator registered successfully"}
 
 @app.post("/api/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = MOCK_USERS.get(form_data.username)
-    if not user or user["password"] != form_data.password:
-        raise HTTPException(status_code=401, detail="Invalid Operator Credentials")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid Credentials")
     
-    # Return mock JWT
-    return {
-        "access_token": f"mock_token_{form_data.username}", 
-        "token_type": "bearer",
-        "username": user["username"],
-        "is_admin": user["is_admin"]
-    }
-
-# ==========================================
-# 6. ENGINE CORE ENDPOINTS
-# ==========================================
+    token = create_access_token(data={"sub": user.username})
+    return {"access_token": token, "token_type": "bearer", "username": user.username, "is_admin": user.is_admin}
 
 @app.post("/api/audit/start")
-async def start_audit(file: UploadFile = File(None), video_url: str = Form(None), token: str = Depends(oauth2_scheme)):
-    # Optional guardrail: Check user quotas here before proceeding
-    
+async def start_audit(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Check Quotas here in production
     task_id = str(uuid.uuid4())
-    MOCK_TASKS[task_id] = {"status": "running"}
+    ACTIVE_TASKS[task_id] = {"status": "running"}
     
-    if file:
-        # Fire and forget the background task
-        asyncio.create_task(background_audit_worker(task_id, file))
-    elif video_url:
-        # Handle URL extraction logic
-        MOCK_TASKS[task_id] = {"status": "error", "message": "URL streaming not implemented yet."}
-    else:
-        raise HTTPException(status_code=400, detail="No media provided")
-        
+    # Pass db session and user to background worker
+    asyncio.create_task(background_audit_worker(task_id, file, current_user, db))
     return {"task_id": task_id}
 
 @app.websocket("/ws/audit/{task_id}")
@@ -238,58 +290,45 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
     await manager.connect(websocket, task_id)
     try:
         while True:
-            # Keep connection alive
-            data = await websocket.receive_text()
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(task_id)
 
 @app.get("/api/audit/status/{task_id}")
-async def get_audit_status(task_id: str, token: str = Depends(oauth2_scheme)):
-    task = MOCK_TASKS.get(task_id)
+async def get_audit_status(task_id: str, current_user: User = Depends(get_current_user)):
+    task = ACTIVE_TASKS.get(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
-# ==========================================
-# 7. HISTORY VAULT ENDPOINTS
-# ==========================================
-
 @app.get("/api/audits")
-async def get_audits(token: str = Depends(oauth2_scheme)):
-    # Returns a list of past audits. In production, filter by user ID.
-    return list(MOCK_AUDITS.values())
+async def get_audits(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    import json
+    audits = db.query(AuditRecord).filter(AuditRecord.operator_id == current_user.id).order_by(AuditRecord.timestamp.desc()).all()
+    results = []
+    for a in audits:
+        results.append({
+            "id": a.id, "filename": a.filename, "status": a.status, "flag_count": a.flag_count, 
+            "format": a.format, "timestamp": a.timestamp, "anomalies": json.loads(a.raw_anomalies) if a.raw_anomalies else []
+        })
+    return results
 
-@app.get("/api/audits/{audit_id}")
-async def get_audit_detail(audit_id: str, token: str = Depends(oauth2_scheme)):
-    audit = MOCK_AUDITS.get(audit_id)
-    if not audit:
-        raise HTTPException(status_code=404, detail="Archive log not found")
-    return audit
-
-# ==========================================
-# 8. OPENAI REMEDIATION & SUMMARIES
-# ==========================================
+class AIRequest(BaseModel):
+    report: Optional[str] = None
+    type: Optional[str] = None
+    description: Optional[str] = None
 
 @app.post("/api/ai/summary")
-async def generate_summary(req: AIRequest, token: str = Depends(oauth2_scheme)):
-    # In production: Send req.report to openai_client.chat.completions.create()
+async def generate_summary(req: AIRequest, current_user: User = Depends(get_current_user)):
+    # Replace with real openai_client.chat.completions call
     await asyncio.sleep(1)
-    return {"text": "The timeline contains multiple flags requiring operator review. A high-severity copyright violation occurs at 00:04:12. Secondary issues include a continuity gap and an audio peak violation. Recommend resolving prior to final render."}
+    return {"text": "Executive Summary: The analyzed timeline presents 2 critical structural anomalies that mandate operator review prior to deployment."}
 
 @app.post("/api/ai/suggest")
-async def generate_suggestion(req: AIRequest, token: str = Depends(oauth2_scheme)):
-    # In production: Use req.type and req.description to ask OpenAI for a fix
+async def generate_suggestion(req: AIRequest, current_user: User = Depends(get_current_user)):
+    # Replace with real openai_client.chat.completions call
     await asyncio.sleep(1)
-    return {"text": f"To resolve the {req.type} anomaly, verify the structural integrity at the indicated timecode. Replace the identified segment with a licensed asset or apply a standard -3dB limiter to the audio channel to maintain broadcast compliance."}
-
-# ==========================================
-# 9. ADMINISTRATIVE ROUTES
-# ==========================================
-
-@app.get("/api/admin/users")
-async def get_admin_users(token: str = Depends(oauth2_scheme)):
-    # In production, verify the user token has is_admin=True before returning data
-    return list(MOCK_USERS.values())
+    return {"text": f"Remediation Strategy: Address the {req.type} by executing a timeline substitution or applying a limiter effect to the specified sub-channel."}
 
 if __name__ == "__main__":
     import uvicorn
