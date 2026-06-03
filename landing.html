@@ -13,7 +13,6 @@
     <title>DeepCut // Cinematic Compliance Engine</title>
     
     <!-- PINNED TAILWIND VERSION FOR SUPPLY CHAIN SECURITY -->
-    <!-- Production Note: Replace this JS compiler with a compiled static CSS file with an integrity="..." hash before final launch -->
     <script src="https://cdn.tailwindcss.com/3.4.5"></script>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     
@@ -37,9 +36,12 @@
 <body class="min-h-screen flex flex-col relative selection:bg-cAcc1 selection:text-cText">
     
     <!-- TOP NAVIGATION -->
-    <nav class="w-full flex justify-between items-center p-6 sm:p-12 shrink-0">
+    <nav class="w-full flex flex-col sm:flex-row justify-between items-center p-6 sm:p-12 gap-4 sm:gap-0 shrink-0">
         <div class="text-2xl font-bold tracking-tighter uppercase italic border-b-[3px] border-cText">DeepCut.io</div>
-        <a href="index.html#secure" class="bg-cText text-cBg px-6 py-3 font-bold uppercase tracking-widest hover:bg-cAcc2 transition-all whitespace-nowrap border-[3px] border-transparent hover:border-cText">Secure Portal</a>
+        <div class="flex items-center gap-6">
+            <a href="index.html" class="text-cText font-bold uppercase tracking-widest text-sm hover:text-cAcc2 transition-colors">Sign In</a>
+            <a href="index.html#register" class="bg-cText text-cBg px-6 py-3 text-sm font-bold uppercase tracking-widest hover:bg-cAcc2 transition-all whitespace-nowrap border-[3px] border-transparent hover:border-cText">Register Access</a>
+        </div>
     </nav>
 
     <!-- MAIN CONTENT AREA -->
@@ -54,7 +56,7 @@
         </p>
 
         <div class="flex flex-col sm:flex-row gap-6 pt-10">
-            <a href="index.html#secure" class="btn-hover bg-cAcc1 border-[3px] border-cText px-10 py-5 text-base sm:text-lg font-bold uppercase tracking-widest shadow-hard text-center whitespace-nowrap transition-transform">Request Access</a>
+            <a href="index.html#register" class="btn-hover bg-cAcc1 border-[3px] border-cText px-10 py-5 text-base sm:text-lg font-bold uppercase tracking-widest shadow-hard text-center whitespace-nowrap transition-transform">Register Access</a>
             <button id="openDocsBtn" type="button" class="btn-hover bg-cCard border-[3px] border-cText px-10 py-5 text-base sm:text-lg font-bold uppercase tracking-widest shadow-hard text-center hover:bg-white transition-colors whitespace-nowrap focus:outline-none">View Documentation</button>
         </div>
     </main>
@@ -66,10 +68,10 @@
     </footer>
 
     <!-- DOCUMENTATION MODAL -->
-    <div id="docsModal" class="fixed inset-0 bg-cText/95 z-50 hidden flex-col items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300">
+    <div id="docsModal" class="fixed inset-0 bg-cText/95 z-50 hidden flex-col items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="System Documentation">
         <div class="bg-cCard border-[4px] border-cText p-8 sm:p-12 shadow-hard max-w-3xl w-full max-h-[85vh] overflow-y-auto relative">
             
-            <button id="closeDocsBtn" type="button" class="absolute top-4 right-6 text-4xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none">&times;</button>
+            <button id="closeDocsBtn" type="button" class="absolute top-4 right-6 text-4xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none" aria-label="Close Documentation">&times;</button>
             
             <div class="border-b-[4px] border-cText pb-6 mb-8 mt-4">
                 <span class="text-cAcc2 font-typewriter font-bold uppercase tracking-[0.2em] text-xs">DeepCut Protocol 7.1.9</span>
