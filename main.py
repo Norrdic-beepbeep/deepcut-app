@@ -66,6 +66,8 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     consent_given = Column(Boolean, default=False)  # GDPR Legal Flag
+    tier = Column(String, default="free")           # Added: Billing Tier
+    audits_used = Column(Integer, default=0)        # Added: Usage Tracker
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
 class Audit(Base):
@@ -89,6 +91,14 @@ try:
         print("Successfully patched database with missing consent_given column!")
 except Exception:
     pass # Column already exists, safe to ignore!
+
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN tier VARCHAR DEFAULT 'free';"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN audits_used INTEGER DEFAULT 0;"))
+        print("Successfully patched database with billing columns!")
+except Exception:
+    pass
 # -------------------------------------
 
 def get_db():
@@ -432,6 +442,14 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
 
 @app.post("/api/audit/start")
 async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # --- QUOTA GUARDRAIL ---
+    if current_user.username != ADMIN_USERNAME:
+        if current_user.tier == "free" and current_user.audits_used >= 5:
+            raise HTTPException(status_code=403, detail="QUOTA_EXCEEDED")
+        current_user.audits_used += 1
+        db.commit()
+    # -----------------------
+
     if not file and not video_url: raise HTTPException(status_code=400, detail="Must provide file or URL.")
     file_content = await file.read() if file else None
     filename = file.filename if file else None
