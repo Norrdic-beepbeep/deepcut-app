@@ -402,7 +402,14 @@
                     <label for="newPass" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">New Password</label>
                     <input type="password" id="newPass" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                 </div>
-                <button id="submitChangePassBtn" class="w-full bg-cAcc2 text-cBg font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-4 text-sm sm:text-base">Update Access Code</button>
+                <div class="bg-cBg/30 border-[2px] border-cText p-3 shadow-inner">
+                    <ul class="space-y-2 text-xs font-typewriter font-bold" id="changePassValidationList">
+                        <li id="cpReqLength" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> Min 12 characters</li>
+                        <li id="cpReqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> One uppercase letter</li>
+                        <li id="cpReqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> One special character</li>
+                    </ul>
+                </div>
+                <button id="submitChangePassBtn" disabled class="w-full bg-cAcc2 disabled:bg-cMuted disabled:cursor-not-allowed text-cBg font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-4 text-sm sm:text-base">Update Access Code</button>
             </div>
         </div>
     </div>
@@ -514,6 +521,11 @@
         const submitChangePassBtn = document.getElementById('submitChangePassBtn');
         const currentPassInput = document.getElementById('currentPass');
         const newPassInput = document.getElementById('newPass');
+        
+        const cpReqLength = document.getElementById('cpReqLength');
+        const cpReqUpper = document.getElementById('cpReqUpper');
+        const cpReqSpecial = document.getElementById('cpReqSpecial');
+        
         let changePassFocusCleanup = null;
 
         changePassBtn.addEventListener('click', () => {
@@ -529,6 +541,7 @@
                 changePassModal.classList.add('hidden'); 
                 currentPassInput.value = '';
                 newPassInput.value = '';
+                newPassInput.dispatchEvent(new Event('input')); // Reset the validation UI
             }, 300);
             if (changePassFocusCleanup) { changePassFocusCleanup(); changePassFocusCleanup = null; }
         };
@@ -536,6 +549,26 @@
         closeChangePassBtn.addEventListener('click', closeChangePass);
         changePassModal.addEventListener('click', (e) => {
             if (e.target === changePassModal) closeChangePass();
+        });
+
+        newPassInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            const hasLength = val.length >= 12;
+            const hasUpper = /[A-Z]/.test(val);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+
+            if (typeof updateRequirement === 'function') {
+                updateRequirement(cpReqLength, hasLength);
+                updateRequirement(cpReqUpper, hasUpper);
+                updateRequirement(cpReqSpecial, hasSpecial);
+            }
+
+            const isFormValid = currentPassInput.value.trim() !== '' && hasLength && hasUpper && hasSpecial;
+            submitChangePassBtn.disabled = !isFormValid;
+        });
+
+        currentPassInput.addEventListener('input', () => {
+            newPassInput.dispatchEvent(new Event('input'));
         });
 
         submitChangePassBtn.addEventListener('click', async () => {
