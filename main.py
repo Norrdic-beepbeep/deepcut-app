@@ -17,7 +17,7 @@ import uvicorn
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, DateTime, JSON
+from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, DateTime, JSON, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -28,6 +28,7 @@ from jose import JWTError, jwt
 SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-fallback-key-change-this")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")  # Master Admin Username
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fallback.db")
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
@@ -64,6 +65,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    consent_given = Column(Boolean, default=False)  # GDPR Legal Flag
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
 class Audit(Base):
@@ -104,6 +106,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     user = db.query(User).filter(User.username == username).first()
     if user is None: raise HTTPException(status_code=401)
     return user
+
+def verify_admin_clearance(current_user: User):
+    """Verifies if the active user matches the master admin identity."""
+    if current_user.username != ADMIN_USERNAME:
+        raise HTTPException(status_code=403, detail="Access Denied: Administrative Clearance Required.")
 
 def send_confirmation_email(user_email: str, user_name: str, username: str):
     SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -160,7 +167,6 @@ def send_reset_email(user_email: str, temp_password: str):
         print(f"Failed to send reset email: {e}")
 
 def generate_temp_password(length=12):
-    """Generates a highly secure temporary 12-character alphanumeric code."""
     characters = string.ascii_letters + string.digits + "!@#$%^&*"
     return ''.join(random.choice(characters) for i in range(length))
 
@@ -205,84 +211,58 @@ def download_audio_from_link(url: str):
 # OPENAI COMPLIANCE ANALYSIS FUNCTIONS
 # ---------------------------------------------------------
 def detect_with_ai_xml(file_content, filename):
-    """Parses timelines (XML) securely and identifies compliance anomalies."""
-    if not client: 
-        return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
-    
+    if not client: return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
     text_content = file_content.decode('utf-8', errors='ignore')[:10000] 
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system", 
-                    "content": "You are a strict video compliance auditor. Look for copyrighted music and continuity errors in the XML. Return JSON: {\"anomalies\": [{\"timecode\": \"string\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"
-                },
+                {"role": "system", "content": "You are a strict video compliance auditor. Look for copyrighted music and continuity errors in the XML. Return JSON: {\"anomalies\": [{\"timecode\": \"string\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"},
                 {"role": "user", "content": f"Filename: {filename}\nXML: {text_content}"}
             ], 
             response_format={ "type": "json_object" }
         )
         return json.loads(response.choices[0].message.content)
-    except Exception as e: 
-        return {"anomalies": [], "error": str(e)}
+    except Exception as e: return {"anomalies": [], "error": str(e)}
 
 def detect_with_ai_audio(file_content, filename):
-    """Transcribes spoken audio tracks and flags broadcast violations."""
-    if not client: 
-        return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
-    
+    if not client: return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
     try:
-        transcript_response = client.audio.transcriptions.create(
-            model="whisper-1", 
-            file=(filename, file_content)
-        )
+        transcript_response = client.audio.transcriptions.create(model="whisper-1", file=(filename, file_content))
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system", 
-                    "content": "You are a broadcast auditor. Flag profanity or explicit mentions of competitor brands. Return JSON: {\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"
-                },
+                {"role": "system", "content": "You are a broadcast auditor. Flag profanity or explicit mentions of competitor brands. Return JSON: {\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"},
                 {"role": "user", "content": f"Transcript:\n{transcript_response.text}"}
             ], 
             response_format={ "type": "json_object" }
         )
         return json.loads(response.choices[0].message.content)
-    except Exception as e: 
-        return {"anomalies": [], "error": str(e)}
+    except Exception as e: return {"anomalies": [], "error": str(e)}
 
 # ---------------------------------------------------------
 # UNIFIED OPENAI TEXT GENERATION PIPELINE
 # ---------------------------------------------------------
 def generate_text_with_ai(prompt: str, is_summary: bool = False):
-    """Executes a secure server-side call to OpenAI to generate text."""
-    if not client:
-        return "System configuration error: Server side AI credentials missing (OpenAI API key not found)."
-        
+    if not client: return "System configuration error: Server side AI credentials missing (OpenAI API key not found)."
     sys_instruction = (
         "You are a leading video post-production auditor. Write short, clear, and direct executive summaries (max 3 lines) based on the compliance report."
         if is_summary else
         "You are a video post-production expert. Provide a practical, short (1-2 sentences), and actionable strategy to fix the video or audio issue described."
     )
-    
-    # We use a robust retry loop to handle any momentary network blips
     last_error = ""
     delays = [1, 2, 4]
     for delay in delays:
         try:
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": sys_instruction},
-                    {"role": "user", "content": prompt}
-                ],
+                messages=[{"role": "system", "content": sys_instruction}, {"role": "user", "content": prompt}],
                 timeout=30
             )
             return response.choices[0].message.content
         except Exception as e:
             last_error = str(e)
             time.sleep(delay)
-            
     return f"AI generation failed. Please try again. (Last Error: {last_error})"
 
 # ---------------------------------------------------------
@@ -290,34 +270,29 @@ def generate_text_with_ai(prompt: str, is_summary: bool = False):
 # ---------------------------------------------------------
 @app.post("/api/ai/suggest")
 def secure_suggest_fix(data: dict, current_user: User = Depends(get_current_user)):
-    """Proxies 'Suggest Fix' requests securely from the server backend."""
-    issue_type = data.get("type", "General Violation")
-    description = data.get("description", "No details provided")
-    prompt = f"Issue: {issue_type}. Desc: {description}. How to fix it in post-production in 2 sentences."
-    result = generate_text_with_ai(prompt, is_summary=False)
-    return {"text": result}
+    prompt = f"Issue: {data.get('type', 'General Violation')}. Desc: {data.get('description', 'No details provided')}. How to fix it in post-production in 2 sentences."
+    return {"text": generate_text_with_ai(prompt, is_summary=False)}
 
 @app.post("/api/ai/summary")
 def secure_generate_summary(data: dict, current_user: User = Depends(get_current_user)):
-    """Proxies executive summaries securely from the server backend."""
-    report_data = data.get("report", "")
-    prompt = f"Write a very short executive summary (max 3 lines). Report:\n{report_data}"
-    result = generate_text_with_ai(prompt, is_summary=True)
-    return {"text": result}
+    prompt = f"Write a very short executive summary (max 3 lines). Report:\n{data.get('report', '')}"
+    return {"text": generate_text_with_ai(prompt, is_summary=True)}
 
 # ---------------------------------------------------------
 # OPERATOR ACCESS ENDPOINTS
 # ---------------------------------------------------------
 @app.get("/")
-def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.4.3-openai-unified"}
+def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.5.0-admin-enabled"}
 
 @app.post("/api/register")
-def register_user(background_tasks: BackgroundTasks, name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def register_user(background_tasks: BackgroundTasks, name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), consent: bool = Form(...), db: Session = Depends(get_db)):
+    if not consent:
+        raise HTTPException(status_code=400, detail="You must accept the Terms and Conditions to complete setup.")
     existing_user = db.query(User).filter(or_(User.username == username, User.email == email)).first()
     if existing_user: raise HTTPException(status_code=400, detail="Username or email already registered")
-    db.add(User(name=name, username=username, email=email, hashed_password=get_password_hash(password)))
-    db.commit()
     
+    db.add(User(name=name, username=username, email=email, hashed_password=get_password_hash(password), consent_given=True))
+    db.commit()
     background_tasks.add_task(send_confirmation_email, email, name, username)
     return {"message": "Operator registered successfully."}
 
@@ -331,14 +306,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 @app.post("/api/forgot-password")
 def forgot_password(background_tasks: BackgroundTasks, email: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
-    
-    if not user:
-        return {"message": "If an account matches that email, a reset email has been dispatched."}
-    
+    if not user: return {"message": "If an account matches that email, a reset email has been dispatched."}
     temp_pass = generate_temp_password()
     user.hashed_password = get_password_hash(temp_pass)
     db.commit()
-    
     background_tasks.add_task(send_reset_email, user.email, temp_pass)
     return {"message": "If an account matches that email, a reset email has been dispatched."}
 
@@ -346,14 +317,41 @@ def forgot_password(background_tasks: BackgroundTasks, email: str = Form(...), d
 def change_password(current_password: str = Form(...), new_password: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not verify_password(current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect current access code.")
-    
     current_user.hashed_password = get_password_hash(new_password)
     db.commit()
-    
     return {"message": "Access code updated securely."}
 
 # ---------------------------------------------------------
-# AI METADATA TRACKING WORKERS
+# SECURE ADMINISTRATIVE ENDPOINTS
+# ---------------------------------------------------------
+@app.get("/api/admin/users")
+def admin_get_all_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    verify_admin_clearance(current_user)
+    users = db.query(User).all()
+    return [{"id": u.id, "name": u.name, "username": u.username, "email": u.email, "consent_given": getattr(u, 'consent_given', False)} for u in users]
+
+@app.post("/api/admin/users/{user_id}/reset-password")
+def admin_reset_user_password(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    verify_admin_clearance(current_user)
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user: raise HTTPException(status_code=404, detail="Operator account not found.")
+    temp_pass = generate_temp_password()
+    target_user.hashed_password = get_password_hash(temp_pass)
+    db.commit()
+    return {"message": "Password reset successful.", "temporary_code": temp_pass}
+
+@app.delete("/api/admin/users/{user_id}")
+def admin_delete_user(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    verify_admin_clearance(current_user)
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user: raise HTTPException(status_code=404, detail="Operator account not found.")
+    if target_user.id == current_user.id: raise HTTPException(status_code=400, detail="Administrative accounts cannot self-purge.")
+    db.delete(target_user)
+    db.commit()
+    return {"message": "Operator profile permanently purged."}
+
+# ---------------------------------------------------------
+# SYSTEM WORKERS & STREAM PIPELINE
 # ---------------------------------------------------------
 async def notify_progress(task_id: str, stage: str, progress: int, message: str):
     task_statuses[task_id] = {"status": "running", "stage": stage, "progress": progress, "message": message, "result": None}
@@ -395,7 +393,6 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
                 db_audit.anomalies = ai_analysis.get('anomalies', [])
                 db.commit()
         finally: db.close()
-
         if task_id in active_connections: await active_connections[task_id].send_json({"status": "complete", "result": final_result})
     except Exception as e:
         task_statuses[task_id] = {"status": "error", "stage": "detect", "progress": 0, "message": str(e), "result": None}
@@ -418,8 +415,7 @@ async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File
     task_statuses[task_id] = {"status": "running", "stage": "scan", "progress": 0, "message": "INITIALIZING...", "result": None}
     format_label = "Web Stream" if video_url else ("Audio" if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')) else "XML")
 
-    db_audit = Audit(id=task_id, user_id=current_user.id, filename=filename or "Web Stream", format=format_label, status="Running", anomalies=[])
-    db.add(db_audit)
+    db.add(Audit(id=task_id, user_id=current_user.id, filename=filename or "Web Stream", format=format_label, status="Running", anomalies=[]))
     db.commit()
     background_tasks.add_task(run_audit_background, task_id, file_content, filename, video_url)
     return {"task_id": task_id}
