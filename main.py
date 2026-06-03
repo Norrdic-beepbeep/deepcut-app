@@ -7,11 +7,14 @@ import uuid
 import asyncio
 import random
 import string
+import subprocess
+import tempfile
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import aiofiles
+from pydub import AudioSegment
 import openai
-import tempfile
 import yt_dlp
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, BackgroundTasks
@@ -21,7 +24,6 @@ from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, 
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from fastapi.responses import FileResponse
 
 # ---------------------------------------------------------
 # SECURITY & DATABASE CONFIGURATION
@@ -67,8 +69,8 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     consent_given = Column(Boolean, default=False)  # GDPR Legal Flag
-    tier = Column(String, default="free")           # Added: Billing Tier
-    audits_used = Column(Integer, default=0)        # Added: Usage Tracker
+    tier = Column(String, default="free")           # Billing Tier
+    audits_used = Column(Integer, default=0)        # Usage Tracker
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
 class Audit(Base):
@@ -85,7 +87,6 @@ class Audit(Base):
 Base.metadata.create_all(bind=engine)
 
 # --- THE MAGIC AUTO-MIGRATION HACK ---
-# This forces PostgreSQL to add the missing GDPR column without wiping your database
 try:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN consent_given BOOLEAN DEFAULT FALSE;"))
@@ -129,7 +130,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 def verify_admin_clearance(current_user: User):
-    """Verifies if the active user matches the master admin identity."""
     if current_user.username != ADMIN_USERNAME:
         raise HTTPException(status_code=403, detail="Access Denied: Administrative Clearance Required.")
 
@@ -196,9 +196,6 @@ def generate_temp_password(length=12):
 # ---------------------------------------------------------
 app = FastAPI()
 
-# SECURITY: Lock down requests so only your specific websites can talk to the server.
-# By default, we use your render domain. If you add a custom domain later, 
-# just add an ALLOWED_ORIGINS environment variable in Render (comma separated).
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "https://deepcut-app.onrender.com")
 origins = [origin.strip() for origin in allowed_origins_env.split(",")]
 
@@ -219,20 +216,47 @@ task_statuses: dict[str, dict] = {}
 active_connections: dict[str, WebSocket] = {}
 
 # ---------------------------------------------------------
-# AUDIO DOWNLOADER HELPER
+# MEDIA DOWNLOADER & HEAVY PROCESSING PIPELINE
 # ---------------------------------------------------------
-def download_audio_from_link(url: str):
+def download_audio_from_link(url: str, session_id: str):
+    """Downloads audio from a URL stream directly to disk."""
     temp_dir = tempfile.gettempdir()
-    out_tmpl = os.path.join(temp_dir, 'downloaded_audio.%(ext)s')
+    out_tmpl = os.path.join(temp_dir, f'{session_id}_downloaded.%(ext)s')
     ydl_opts = {'format': 'm4a/bestaudio/best', 'outtmpl': out_tmpl, 'noplaylist': True, 'quiet': True}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             path = ydl.prepare_filename(info)
-            with open(path, 'rb') as f: content = f.read()
-            os.remove(path)
-            return content, "downloaded_link.m4a"
-    except Exception as e: return None, str(e)
+            return path, None
+    except Exception as e: 
+        return None, str(e)
+
+def extract_and_chunk_audio(file_path: str, session_id: str):
+    """Uses FFmpeg to strip video, exports an MP3, and uses pydub to slice it into chunks."""
+    temp_dir = tempfile.gettempdir()
+    audio_path = os.path.join(temp_dir, f"{session_id}_extracted.mp3")
+    chunk_paths = []
+    
+    # Extract audio using FFmpeg
+    subprocess.run([
+        'ffmpeg', '-y', '-i', file_path,
+        '-vn', '-acodec', 'libmp3lame', '-ac', '1', '-b:a', '64k', audio_path
+    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # Slice the extracted audio into 15-minute chunks for OpenAI
+    audio = AudioSegment.from_mp3(audio_path)
+    chunk_length_ms = 15 * 60 * 1000 
+    chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
+
+    for i, chunk in enumerate(chunks):
+        chunk_file = os.path.join(temp_dir, f"{session_id}_chunk_{i}.mp3")
+        chunk.export(chunk_file, format="mp3")
+        chunk_paths.append(chunk_file)
+
+    if os.path.exists(audio_path):
+        os.remove(audio_path)
+        
+    return chunk_paths
 
 # ---------------------------------------------------------
 # OPENAI COMPLIANCE ANALYSIS FUNCTIONS
@@ -252,24 +276,32 @@ def detect_with_ai_xml(file_content, filename):
         return json.loads(response.choices[0].message.content)
     except Exception as e: return {"anomalies": [], "error": str(e)}
 
-def detect_with_ai_audio(file_content, filename):
+def detect_with_ai_audio_chunked(file_path: str, filename: str, task_id: str):
     if not client: return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
     try:
-        transcript_response = client.audio.transcriptions.create(model="whisper-1", file=(filename, file_content))
+        # Process the massive file via FFmpeg and slice it
+        chunk_paths = extract_and_chunk_audio(file_path, task_id)
+        
+        full_transcript = ""
+        # Process chunks sequentially through Whisper
+        for chunk_path in chunk_paths:
+            with open(chunk_path, "rb") as af:
+                transcript_response = client.audio.transcriptions.create(model="whisper-1", file=af)
+                full_transcript += transcript_response.text + " "
+            os.remove(chunk_path) # Instantly cleanup to save disk space
+            
+        # Send full assembled transcript to GPT for compliance check
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a broadcast auditor. Flag profanity or explicit mentions of competitor brands. Return JSON: {\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"},
-                {"role": "user", "content": f"Transcript:\n{transcript_response.text}"}
+                {"role": "user", "content": f"Transcript:\n{full_transcript}"}
             ], 
             response_format={ "type": "json_object" }
         )
         return json.loads(response.choices[0].message.content)
     except Exception as e: return {"anomalies": [], "error": str(e)}
 
-# ---------------------------------------------------------
-# UNIFIED OPENAI TEXT GENERATION PIPELINE
-# ---------------------------------------------------------
 def generate_text_with_ai(prompt: str, is_summary: bool = False):
     if not client: return "System configuration error: Server side AI credentials missing (OpenAI API key not found)."
     sys_instruction = (
@@ -394,32 +426,43 @@ async def notify_progress(task_id: str, stage: str, progress: int, message: str)
         try: await active_connections[task_id].send_json({"status": "progress", "stage": stage, "progress": progress, "message": message})
         except Exception: pass
 
-async def run_audit_background(task_id: str, file_content: bytes, filename: str, video_url: str):
+async def run_audit_background(task_id: str, file_path: str, filename: str, video_url: str):
     try:
-        await notify_progress(task_id, "scan", 10, "EXTRACTING MEDIA..." if video_url else "UPLOADING TO ENGINE...")
+        await notify_progress(task_id, "scan", 10, "EXTRACTING MEDIA..." if video_url else "STREAMING TO LOCAL STORAGE...")
         await asyncio.sleep(1)
+        
+        # Determine File Path Context
         if video_url:
-            await notify_progress(task_id, "scan", 40, "DOWNLOADING STREAM...")
-            file_content, err = download_audio_from_link(video_url)
-            if not file_content: raise Exception(f"Failed: {err}")
+            await notify_progress(task_id, "scan", 40, "DOWNLOADING STREAM TO DISK...")
+            file_path, err = download_audio_from_link(video_url, task_id)
+            if not file_path: raise Exception(f"Failed: {err}")
             filename = "Linked_Video.m4a"
+            
         await notify_progress(task_id, "scan", 85, "ANALYZING SIGNATURES...")
         await asyncio.sleep(1)
         await notify_progress(task_id, "scan", 100, "SECURE. PHASE 1 COMPLETE.")
         await asyncio.sleep(0.5)
 
         await notify_progress(task_id, "detect", 20, "INITIALIZING AI PIPELINE...")
-        if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')):
-            await notify_progress(task_id, "detect", 50, "TRANSCRIBING AUDIO VIA WHISPER...")
-            ai_analysis = detect_with_ai_audio(file_content, filename)
+        
+        # Audio / Video Processing Execution (The Heavy Lifter)
+        if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a', '.mov')):
+            await notify_progress(task_id, "detect", 50, "SLICING & TRANSCRIBING VIA WHISPER...")
+            # Route to the newly built FFmpeg/Pydub logic
+            ai_analysis = detect_with_ai_audio_chunked(file_path, filename, task_id)
         else:
             await notify_progress(task_id, "detect", 60, "ANALYZING XML STRUCTURAL DATA...")
+            # For lightweight XML files, safe to read straight into RAM
+            with open(file_path, 'rb') as f:
+                file_content = f.read()
             ai_analysis = detect_with_ai_xml(file_content, filename)
+            
         await notify_progress(task_id, "detect", 100, "AUDIT COMPLETE.")
         
         final_result = {"status": "success", "filename": filename, "anomalies": ai_analysis.get('anomalies', []), "error": ai_analysis.get('error', None)}
         task_statuses[task_id] = {"status": "complete", "stage": "detect", "progress": 100, "message": "AUDIT COMPLETE.", "result": final_result}
 
+        # Save to Database
         db = SessionLocal()
         try:
             db_audit = db.query(Audit).filter(Audit.id == task_id).first()
@@ -428,7 +471,9 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
                 db_audit.anomalies = ai_analysis.get('anomalies', [])
                 db.commit()
         finally: db.close()
+        
         if task_id in active_connections: await active_connections[task_id].send_json({"status": "complete", "result": final_result})
+        
     except Exception as e:
         task_statuses[task_id] = {"status": "error", "stage": "detect", "progress": 0, "message": str(e), "result": None}
         db = SessionLocal()
@@ -440,6 +485,14 @@ async def run_audit_background(task_id: str, file_content: bytes, filename: str,
                 db.commit()
         finally: db.close()
         if task_id in active_connections: await active_connections[task_id].send_json({"status": "error", "message": str(e)})
+        
+    finally:
+        # THE JANITOR: Always scrub massive video files from Render's disk
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
 
 @app.post("/api/audit/start")
 async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -452,15 +505,29 @@ async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File
     # -----------------------
 
     if not file and not video_url: raise HTTPException(status_code=400, detail="Must provide file or URL.")
-    file_content = await file.read() if file else None
-    filename = file.filename if file else None
+    
     task_id = str(uuid.uuid4())
     task_statuses[task_id] = {"status": "running", "stage": "scan", "progress": 0, "message": "INITIALIZING...", "result": None}
-    format_label = "Web Stream" if video_url else ("Audio" if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')) else "XML")
+    
+    filename = file.filename if file else None
+    format_label = "Web Stream" if video_url else ("Audio" if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a', '.mov')) else "XML")
+
+    # STREAM TO DISK FIRST: Save the file out of RAM before the route finishes
+    file_path = None
+    if file:
+        temp_dir = tempfile.gettempdir()
+        file_path = os.path.join(temp_dir, f"{task_id}_{file.filename}")
+        async with aiofiles.open(file_path, 'wb') as out_file:
+            # Streams the heavy video locally in ultra-light 1MB memory blocks
+            while content := await file.read(1024 * 1024):
+                await out_file.write(content)
 
     db.add(Audit(id=task_id, user_id=current_user.id, filename=filename or "Web Stream", format=format_label, status="Running", anomalies=[]))
     db.commit()
-    background_tasks.add_task(run_audit_background, task_id, file_content, filename, video_url)
+    
+    # Hand off the local path (not the heavy file object) to the worker
+    background_tasks.add_task(run_audit_background, task_id, file_path, filename, video_url)
+    
     return {"task_id": task_id}
 
 @app.get("/api/audits")
