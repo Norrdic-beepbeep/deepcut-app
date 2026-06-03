@@ -257,7 +257,7 @@ def detect_with_ai_audio(file_content, filename):
 def call_secure_gemini_api(prompt: str, is_summary: bool = False):
     """Executes a secure server-side call to Google Gemini using environment variables."""
     gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
+    if not gemini_key or not gemini_key.strip():
         return "System configuration error: Server side AI credentials missing."
         
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={gemini_key}"
@@ -273,6 +273,7 @@ def call_secure_gemini_api(prompt: str, is_summary: bool = False):
     }
     
     # Implement robust exponential backoff to prevent timeouts (1s, 2s, 4s, 8s, 16s)
+    last_error = ""
     delays = [1, 2, 4, 8, 16]
     for delay in delays:
         try:
@@ -284,12 +285,13 @@ def call_secure_gemini_api(prompt: str, is_summary: bool = False):
             else:
                 # If Google rejects it, stop looping and return the exact error message!
                 return f"Google API Error {response.status_code}: {response.text}"
-        except Exception:
+        except Exception as e:
+            last_error = str(e)
             pass # Silently catch network blips and proceed to backoff delay
             
         time.sleep(delay)
             
-    return "AI generation timeout. Please try syncing again."
+    return f"AI generation timeout. Please try syncing again. (Last Error: {last_error})"
 
 # ---------------------------------------------------------
 # SECURE SERVER-SIDE PROXY ROUTING
@@ -351,6 +353,20 @@ def forgot_password(background_tasks: BackgroundTasks, email: str = Form(...), d
     # Hand off email execution to the background so the frontend resolves instantly
     background_tasks.add_task(send_reset_email, user.email, temp_pass)
     return {"message": "If an account matches that email, a reset email has been dispatched."}
+
+@app.post("/api/change-password")
+def change_password(current_password: str = Form(...), new_password: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Allows an authenticated user to change their password securely."""
+    # Verify the current password
+    if not verify_password(current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current access code.")
+    
+    # Update to the new password
+    current_user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    
+    return {"message": "Access code updated securely."}
+
 
 # ---------------------------------------------------------
 # AI METADATA TRACKING WORKERS
