@@ -272,14 +272,19 @@ def call_secure_gemini_api(prompt: str, is_summary: bool = False):
         "systemInstruction": {"parts": [{"text": sys_instruction}]}
     }
     
-    for _ in range(3):
+    # Implement robust exponential backoff to prevent timeouts (1s, 2s, 4s, 8s, 16s)
+    delays = [1, 2, 4, 8, 16]
+    for delay in delays:
         try:
-            response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=12)
+            # Increased timeout to 30s to give Gemini enough processing time
+            response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=30)
             if response.ok:
                 res_data = response.json()
                 return res_data['candidates'][0]['content']['parts'][0]['text']
         except Exception:
-            time.sleep(1)
+            pass # Silently catch network blips and proceed to backoff delay
+            
+        time.sleep(delay)
             
     return "AI generation timeout. Please try syncing again."
 
