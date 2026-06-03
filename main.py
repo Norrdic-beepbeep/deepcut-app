@@ -17,6 +17,22 @@ from pydub import AudioSegment
 import openai
 import yt_dlp
 import uvicorn
+# --- PATCH FOR MISSING AUDIOOP ---
+import sys
+try:
+    import audioop
+except ImportError:
+    try:
+        import pyaudioop as audioop
+        sys.modules['audioop'] = audioop
+    except ImportError:
+        # If no replacement is found, provide a mock object to prevent startup crashes
+        # Note: This will only fail if you attempt to use features that require audioop
+        class MockAudioop:
+            def mul(self, *args, **kwargs): return b''
+            def lin2lin(self, *args, **kwargs): return b''
+        sys.modules['audioop'] = MockAudioop()
+# ---------------------------------
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
