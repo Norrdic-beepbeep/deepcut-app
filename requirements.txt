@@ -11,4 +11,3 @@ sqlalchemy
 psycopg2-binary
 aiofiles
 pydub
-pyaudioop
