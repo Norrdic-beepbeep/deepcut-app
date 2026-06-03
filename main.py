@@ -17,13 +17,13 @@ import uvicorn
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, DateTime, JSON, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, DateTime, JSON, Boolean, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
 # ---------------------------------------------------------
-# SECURITY & DATABASE CONFIGURATION (WITH AUTO-FALLBACK)
+# SECURITY & DATABASE CONFIGURATION
 # ---------------------------------------------------------
 SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-fallback-key-change-this")
 ALGORITHM = "HS256"
@@ -80,6 +80,16 @@ class Audit(Base):
     owner = relationship("User", back_populates="audits")
 
 Base.metadata.create_all(bind=engine)
+
+# --- THE MAGIC AUTO-MIGRATION HACK ---
+# This forces PostgreSQL to add the missing GDPR column without wiping your database
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN consent_given BOOLEAN DEFAULT FALSE;"))
+        print("Successfully patched database with missing consent_given column!")
+except Exception:
+    pass # Column already exists, safe to ignore!
+# -------------------------------------
 
 def get_db():
     db = SessionLocal()
