@@ -252,44 +252,38 @@ def detect_with_ai_audio(file_content, filename):
         return {"anomalies": [], "error": str(e)}
 
 # ---------------------------------------------------------
-# HIDDEN SECURE GEMINI ENGINE PIPELINE
+# UNIFIED OPENAI TEXT GENERATION PIPELINE
 # ---------------------------------------------------------
-def call_secure_gemini_api(prompt: str, is_summary: bool = False):
-    """Executes a secure server-side call to Google Gemini using environment variables."""
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key or not gemini_key.strip():
-        return "System configuration error: Server side AI credentials missing."
+def generate_text_with_ai(prompt: str, is_summary: bool = False):
+    """Executes a secure server-side call to OpenAI to generate text."""
+    if not client:
+        return "System configuration error: Server side AI credentials missing (OpenAI API key not found)."
         
-    # FIX: Pointing to the explicit "-latest" alias to prevent 404 Not Found errors
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key}"
     sys_instruction = (
         "You are a leading video post-production auditor. Write short, clear, and direct executive summaries (max 3 lines) based on the compliance report."
         if is_summary else
         "You are a video post-production expert. Provide a practical, short (1-2 sentences), and actionable strategy to fix the video or audio issue described."
     )
     
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "systemInstruction": {"parts": [{"text": sys_instruction}]}
-    }
-    
+    # We use a robust retry loop to handle any momentary network blips
     last_error = ""
-    delays = [1, 2, 4, 8, 16]
+    delays = [1, 2, 4]
     for delay in delays:
         try:
-            response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=30)
-            if response.ok:
-                res_data = response.json()
-                return res_data['candidates'][0]['content']['parts'][0]['text']
-            else:
-                return f"Google API Error {response.status_code}: {response.text}"
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": sys_instruction},
+                    {"role": "user", "content": prompt}
+                ],
+                timeout=30
+            )
+            return response.choices[0].message.content
         except Exception as e:
             last_error = str(e)
-            pass 
+            time.sleep(delay)
             
-        time.sleep(delay)
-            
-    return f"AI generation timeout. Please try syncing again. (Last Error: {last_error})"
+    return f"AI generation failed. Please try again. (Last Error: {last_error})"
 
 # ---------------------------------------------------------
 # SECURE SERVER-SIDE PROXY ROUTING
@@ -300,7 +294,7 @@ def secure_suggest_fix(data: dict, current_user: User = Depends(get_current_user
     issue_type = data.get("type", "General Violation")
     description = data.get("description", "No details provided")
     prompt = f"Issue: {issue_type}. Desc: {description}. How to fix it in post-production in 2 sentences."
-    result = call_secure_gemini_api(prompt, is_summary=False)
+    result = generate_text_with_ai(prompt, is_summary=False)
     return {"text": result}
 
 @app.post("/api/ai/summary")
@@ -308,14 +302,14 @@ def secure_generate_summary(data: dict, current_user: User = Depends(get_current
     """Proxies executive summaries securely from the server backend."""
     report_data = data.get("report", "")
     prompt = f"Write a very short executive summary (max 3 lines). Report:\n{report_data}"
-    result = call_secure_gemini_api(prompt, is_summary=True)
+    result = generate_text_with_ai(prompt, is_summary=True)
     return {"text": result}
 
 # ---------------------------------------------------------
 # OPERATOR ACCESS ENDPOINTS
 # ---------------------------------------------------------
 @app.get("/")
-def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.4.2-stable-ai"}
+def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.4.3-openai-unified"}
 
 @app.post("/api/register")
 def register_user(background_tasks: BackgroundTasks, name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
