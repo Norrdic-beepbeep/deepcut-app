@@ -844,9 +844,9 @@
                 authToken = data.access_token;
                 
                 // Toggle admin button display visibility if master parameters match
-                if (data.username === "admin" || data.username === "Admin") { 
-                    adminPortalBtn.classList.remove('hidden');
-                }
+                if (data.is_admin === true) { 
+    adminPortalBtn.classList.remove('hidden');
+}
 
                 document.getElementById('displayUsername').textContent = data.username || username;
                 document.getElementById('authContainer').classList.add('hidden');
