@@ -47,7 +47,7 @@
         button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid rgb(var(--c-acc1)) !important; outline-offset: 2px !important; }
     </style>
     <script>
-        tailwind.config = { theme: { extend: { colors: { cBg: 'rgb(var(--c-bg) / <alpha-value>)', cText: 'rgb(var(--c-text) / <alpha-value>)', cCard: 'rgb(var(--c-card) / <alpha-value>)', cAcc1: 'rgb(var(--c-acc1) / <alpha-value>)', cAcc2: 'rgb(var(--c-acc2) / <alpha-value>)', cAcc3: 'rgb(var(--c-acc3) / <alpha-value>)', cSuccess: 'rgb(var(--c-success) / <alpha-value>)', cMuted: 'rgb(var(--c-muted) / <alpha-value>)', cSubtext: 'rgb(var(--c-subtext) / <alpha-value>)' } } } }
+        tailwind.config = { theme: { extend: { colors: { cBg: 'rgb(var(--c-bg) / <alpha-value>)', cText: 'rgb(var(--var(--c-text)) / <alpha-value>)', cCard: 'rgb(var(--c-card) / <alpha-value>)', cAcc1: 'rgb(var(--c-acc1) / <alpha-value>)', cAcc2: 'rgb(var(--c-acc2) / <alpha-value>)', cAcc3: 'rgb(var(--c-acc3) / <alpha-value>)', cSuccess: 'rgb(var(--c-success) / <alpha-value>)', cMuted: 'rgb(var(--c-muted) / <alpha-value>)', cSubtext: 'rgb(var(--c-subtext) / <alpha-value>)' } } } }
     </script>
 </head>
 <body class="bg-cBg text-cText min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 relative overflow-x-hidden selection:bg-cAcc1 selection:text-cText transition-colors duration-300">
@@ -778,17 +778,46 @@
         const reqUpper = document.getElementById('reqUpper');
         const reqSpecial = document.getElementById('reqSpecial');
 
+        // --- DEEP LINK HASH ROUTER ---
+        function handleHashRoute() {
+            const hash = window.location.hash;
+            if (hash === '#register') {
+                loginScreen.classList.add('fade-hidden');
+                forgotPasswordScreen.classList.add('fade-hidden');
+                loginScreen.style.position = 'absolute';
+                forgotPasswordScreen.style.position = 'absolute';
+                registerScreen.style.position = 'relative';
+                registerScreen.classList.remove('fade-hidden');
+                regName.focus();
+            } else if (hash === '#forgot') {
+                loginScreen.classList.add('fade-hidden');
+                registerScreen.classList.add('fade-hidden');
+                loginScreen.style.position = 'absolute';
+                registerScreen.style.position = 'absolute';
+                forgotPasswordScreen.style.position = 'relative';
+                forgotPasswordScreen.classList.remove('fade-hidden');
+                resetEmailInput.focus();
+            } else {
+                registerScreen.classList.add('fade-hidden');
+                forgotPasswordScreen.classList.add('fade-hidden');
+                registerScreen.style.position = 'absolute';
+                forgotPasswordScreen.style.position = 'absolute';
+                loginScreen.style.position = 'relative';
+                loginScreen.classList.remove('fade-hidden');
+            }
+        }
+
+        window.addEventListener('hashchange', handleHashRoute);
+        window.addEventListener('DOMContentLoaded', handleHashRoute);
+
         showRegisterBtn.addEventListener('click', () => {
-            loginScreen.classList.add('fade-hidden');
-            setTimeout(() => { loginScreen.style.position = 'absolute'; registerScreen.style.position = 'relative'; registerScreen.classList.remove('fade-hidden'); regName.focus(); }, 500);
+            window.location.hash = '#register';
         });
         showForgotBtn.addEventListener('click', () => {
-            loginScreen.classList.add('fade-hidden');
-            setTimeout(() => { loginScreen.style.position = 'absolute'; forgotPasswordScreen.style.position = 'relative'; forgotPasswordScreen.classList.remove('fade-hidden'); resetEmailInput.focus(); }, 500);
+            window.location.hash = '#forgot';
         });
         const showLoginFromAnywhere = () => {
-            registerScreen.classList.add('fade-hidden'); forgotPasswordScreen.classList.add('fade-hidden');
-            setTimeout(() => { registerScreen.style.position = 'absolute'; forgotPasswordScreen.style.position = 'absolute'; loginScreen.style.position = 'relative'; loginScreen.classList.remove('fade-hidden'); document.getElementById('loginUsername').focus(); }, 500);
+            window.location.hash = '';
         };
         showLoginBtn.addEventListener('click', showLoginFromAnywhere);
         backToLoginFromForgotBtn.addEventListener('click', showLoginFromAnywhere);
