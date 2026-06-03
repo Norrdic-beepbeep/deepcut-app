@@ -1,100 +1,120 @@
 import os
+import time
+import requests
+import json
+import smtplib
 import uuid
 import asyncio
-import subprocess
+import random
+import string
 from datetime import datetime, timedelta
-from typing import List, Optional
-
-from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import openai
+import tempfile
+import yt_dlp
+import uvicorn
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
-import aiofiles
-from pydub import AudioSegment
-from openai import AsyncOpenAI
-from sqlalchemy import create_engine, Column, String, Boolean, Integer, Text, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, DateTime, JSON, Boolean, text
+from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from fastapi.responses import FileResponse
 
-# ==========================================
-# 1. SYSTEM CONFIGURATION & SECURITY
-# ==========================================
-
-app = FastAPI(title="DeepCut API", version="2.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Environment Variables (Set these in Render Dashboard)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./deepcut.db") # Fallback to local SQLite if Postgres isn't set
-SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-fallback-key-replace-in-production")
+# ---------------------------------------------------------
+# SECURITY & DATABASE CONFIGURATION
+# ---------------------------------------------------------
+SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-fallback-key-change-this")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")  # Master Admin Username
 
-openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fallback.db")
+if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-TEMP_DIR = "temp_workspace"
-os.makedirs(TEMP_DIR, exist_ok=True)
+try:
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL, 
+        connect_args={"connect_timeout": 10} if "postgresql" in SQLALCHEMY_DATABASE_URL else {}
+    )
+    with engine.connect() as conn:
+        print("Successfully connected to primary database.")
+except Exception as e:
+    print(f"Database connection failed: {e}. Falling back to SQLite fallback.db.")
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./fallback.db"
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL, 
+        connect_args={"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
+    )
 
-# ==========================================
-# 2. DATABASE ARCHITECTURE (SQLAlchemy)
-# ==========================================
-
-engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
+
+# ---------------------------------------------------------
+# RELATIONAL DATABASE MODELS
+# ---------------------------------------------------------
 class User(Base):
     __tablename__ = "users"
-    id = Column(String, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
-    consent_given = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=False)
+    consent_given = Column(Boolean, default=False)  # GDPR Legal Flag
+    tier = Column(String, default="free")           # Added: Billing Tier
+    audits_used = Column(Integer, default=0)        # Added: Usage Tracker
+    audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
-class AuditRecord(Base):
+class Audit(Base):
     __tablename__ = "audits"
     id = Column(String, primary_key=True, index=True)
-    operator_id = Column(String, ForeignKey("users.id"))
-    filename = Column(String)
-    status = Column(String)
-    flag_count = Column(Integer)
-    format = Column(String)
-    timestamp = Column(String)
-    raw_anomalies = Column(Text) # Store JSON string of anomalies
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    filename = Column(String, nullable=False)
+    format = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, nullable=False)
+    anomalies = Column(JSON, nullable=True)
+    owner = relationship("User", back_populates="audits")
 
 Base.metadata.create_all(bind=engine)
 
+# --- THE MAGIC AUTO-MIGRATION HACK ---
+# This forces PostgreSQL to add the missing GDPR column without wiping your database
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN consent_given BOOLEAN DEFAULT FALSE;"))
+        print("Successfully patched database with missing consent_given column!")
+except Exception:
+    pass # Column already exists, safe to ignore!
+
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN tier VARCHAR DEFAULT 'free';"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN audits_used INTEGER DEFAULT 0;"))
+        print("Successfully patched database with billing columns!")
+except Exception:
+    pass
+# -------------------------------------
+
 def get_db():
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    try: yield db
+    finally: db.close()
 
-# ==========================================
-# 3. AUTHENTICATION UTILITIES
-# ==========================================
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict):
+# ---------------------------------------------------------
+# AUTHENTICATION & EMAIL FUNCTIONS
+# ---------------------------------------------------------
+def verify_password(plain_password, hashed_password): return pwd_context.verify(plain_password, hashed_password)
+def get_password_hash(password): return pwd_context.hash(password)
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -102,234 +122,371 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+        if username is None: raise HTTPException(status_code=401)
+    except JWTError: raise HTTPException(status_code=401)
     user = db.query(User).filter(User.username == username).first()
-    if user is None:
-        raise HTTPException(status_code=401, detail="User not found")
+    if user is None: raise HTTPException(status_code=401)
     return user
 
-# ==========================================
-# 4. WEBSOCKET MANAGER & TRACKING
-# ==========================================
+def verify_admin_clearance(current_user: User):
+    """Verifies if the active user matches the master admin identity."""
+    if current_user.username != ADMIN_USERNAME:
+        raise HTTPException(status_code=403, detail="Access Denied: Administrative Clearance Required.")
 
-ACTIVE_TASKS = {} # Tracks progress status
+def send_confirmation_email(user_email: str, user_name: str, username: str):
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME") 
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") 
+    SENDER_EMAIL = os.getenv("SENDER_EMAIL", SMTP_USERNAME)
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections = {}
+    subject = "DeepCut Engine // Access Confirmed"
+    body = f"OPERATOR ACCESS CONFIRMED\n-------------------------\nName: {user_name}\nOperator ID: {username}\n\nWelcome to the DeepCut Compliance Engine. You may now access the system."
 
-    async def connect(self, websocket: WebSocket, task_id: str):
-        await websocket.accept()
-        self.active_connections[task_id] = websocket
-
-    def disconnect(self, task_id: str):
-        if task_id in self.active_connections:
-            del self.active_connections[task_id]
-
-    async def send_update(self, task_id: str, message: dict):
-        if task_id in self.active_connections:
-            try:
-                await self.active_connections[task_id].send_json(message)
-            except Exception:
-                self.disconnect(task_id)
-
-manager = ConnectionManager()
-
-# ==========================================
-# 5. HEAVY MEDIA PROCESSING PIPELINE
-# ==========================================
-
-async def process_massive_video(file: UploadFile, task_id: str):
-    """Streams video to disk, extracts audio via FFmpeg, and slices it for OpenAI."""
-    session_id = str(uuid.uuid4())
-    video_path = os.path.join(TEMP_DIR, f"{session_id}_{file.filename}")
-    audio_path = os.path.join(TEMP_DIR, f"{session_id}_extracted.mp3")
-    chunk_paths = []
-    
+    if not SMTP_USERNAME or not SMTP_PASSWORD:
+        print(f"\n[MOCK EMAIL SENT TO {user_email}]\nSubject: {subject}\n{body}\n")
+        return
     try:
-        await manager.send_update(task_id, {"status": "progress", "stage": "scan", "progress": 10, "message": "Streaming file to secure node..."})
-        
-        # 1. Stream to Disk Asynchronously
-        async with aiofiles.open(video_path, 'wb') as out_file:
-            while content := await file.read(1024 * 1024): 
-                await out_file.write(content)
-        
-        await manager.send_update(task_id, {"status": "progress", "stage": "scan", "progress": 40, "message": "Extracting audio footprint..."})
-        
-        # 2. FFmpeg Extraction (Mono, 64kbps MP3)
-        subprocess.run([
-            'ffmpeg', '-y', '-i', video_path,
-            '-vn', '-acodec', 'libmp3lame', '-ac', '1', '-b:a', '64k', audio_path
-        ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
-        await manager.send_update(task_id, {"status": "progress", "stage": "scan", "progress": 70, "message": "Slicing for AI ingestion..."})
-        
-        # 3. Chunking for OpenAI limit (15 mins)
-        audio = AudioSegment.from_mp3(audio_path)
-        chunk_length_ms = 15 * 60 * 1000 
-        chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
-        
-        for i, chunk in enumerate(chunks):
-            chunk_file = os.path.join(TEMP_DIR, f"{session_id}_chunk_{i}.mp3")
-            chunk.export(chunk_file, format="mp3")
-            chunk_paths.append(chunk_file)
-            
-        return chunk_paths
-        
-    except subprocess.CalledProcessError:
-        raise Exception("FFmpeg extraction failed. Corrupt timeline.")
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = user_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15)
+        server.starttls()
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
     except Exception as e:
-        raise Exception(f"Media failure: {str(e)}")
-    finally:
-        if os.path.exists(video_path): os.remove(video_path)
-        if os.path.exists(audio_path): os.remove(audio_path)
+        print(f"Failed to send email: {e}")
 
-async def background_audit_worker(task_id: str, file: UploadFile, user: User, db: Session):
-    """Manages the pipeline, calls OpenAI, and saves to PostgreSQL."""
+def send_reset_email(user_email: str, temp_password: str):
+    SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME") 
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") 
+    SENDER_EMAIL = os.getenv("SENDER_EMAIL", SMTP_USERNAME)
+
+    subject = "DeepCut Engine // System Recovery"
+    body = f"SYSTEM RECOVERY DISPATCH\n-------------------------\n\nYour password has been successfully reset by the automated system.\n\nTemporary Access Code: {temp_password}\n\nPlease return to the DeepCut Engine to log in securely."
+
+    if not SMTP_USERNAME or not SMTP_PASSWORD:
+        print(f"\n[MOCK EMAIL SENT TO {user_email}]\nSubject: {subject}\n{body}\n")
+        return
     try:
-        audio_chunks = await process_massive_video(file, task_id)
-        
-        await manager.send_update(task_id, {"status": "progress", "stage": "detect", "progress": 85, "message": "Transcribing audio chunks..."})
-        
-        full_transcript = ""
-        # 4. Process Chunks via OpenAI Whisper
-        for chunk in audio_chunks:
-            with open(chunk, "rb") as af:
-                res = await openai_client.audio.transcriptions.create(model="whisper-1", file=af)
-                full_transcript += res.text + " "
-            os.remove(chunk) # Cleanup chunk immediately
-            
-        await manager.send_update(task_id, {"status": "progress", "stage": "detect", "progress": 95, "message": "Analyzing transcript for anomalies..."})
-        
-        # 5. Analyze Transcript (Replace this with your specific GPT-4 compliance prompt)
-        # For demonstration, we trigger a mock result so the frontend responds correctly
-        import json
-        mock_anomalies = [
-            {"timecode": "00:04:12:00", "type": "High - Copyright", "description": "Unlicensed commercial track detected in background."},
-            {"timecode": "00:15:30:12", "type": "Medium - Continuity", "description": "Visual jump cut detected without audio bridge."}
-        ]
-        
-        result_data = {
-            "id": str(uuid.uuid4()),
-            "filename": file.filename,
-            "status": "Flagged" if len(mock_anomalies) > 0 else "Clean",
-            "flag_count": len(mock_anomalies),
-            "format": "MP4/Audio",
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "anomalies": mock_anomalies
-        }
-        
-        # 6. Save Record to Database Vault
-        db_audit = AuditRecord(
-            id=result_data["id"],
-            operator_id=user.id,
-            filename=result_data["filename"],
-            status=result_data["status"],
-            flag_count=result_data["flag_count"],
-            format=result_data["format"],
-            timestamp=result_data["timestamp"],
-            raw_anomalies=json.dumps(mock_anomalies)
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = user_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=15)
+        server.starttls()
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        print(f"Failed to send reset email: {e}")
+
+def generate_temp_password(length=12):
+    characters = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(random.choice(characters) for i in range(length))
+
+# ---------------------------------------------------------
+# CORE FASTAPI SETUP & CORS SECURITY
+# ---------------------------------------------------------
+app = FastAPI()
+
+# SECURITY: Lock down requests so only your specific websites can talk to the server.
+# By default, we use your render domain. If you add a custom domain later, 
+# just add an ALLOWED_ORIGINS environment variable in Render (comma separated).
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "https://deepcut-app.onrender.com")
+origins = [origin.strip() for origin in allowed_origins_env.split(",")]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins, 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+try: 
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+except Exception: 
+    client = None
+
+task_statuses: dict[str, dict] = {}
+active_connections: dict[str, WebSocket] = {}
+
+# ---------------------------------------------------------
+# AUDIO DOWNLOADER HELPER
+# ---------------------------------------------------------
+def download_audio_from_link(url: str):
+    temp_dir = tempfile.gettempdir()
+    out_tmpl = os.path.join(temp_dir, 'downloaded_audio.%(ext)s')
+    ydl_opts = {'format': 'm4a/bestaudio/best', 'outtmpl': out_tmpl, 'noplaylist': True, 'quiet': True}
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            path = ydl.prepare_filename(info)
+            with open(path, 'rb') as f: content = f.read()
+            os.remove(path)
+            return content, "downloaded_link.m4a"
+    except Exception as e: return None, str(e)
+
+# ---------------------------------------------------------
+# OPENAI COMPLIANCE ANALYSIS FUNCTIONS
+# ---------------------------------------------------------
+def detect_with_ai_xml(file_content, filename):
+    if not client: return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
+    text_content = file_content.decode('utf-8', errors='ignore')[:10000] 
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a strict video compliance auditor. Look for copyrighted music and continuity errors in the XML. Return JSON: {\"anomalies\": [{\"timecode\": \"string\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"},
+                {"role": "user", "content": f"Filename: {filename}\nXML: {text_content}"}
+            ], 
+            response_format={ "type": "json_object" }
         )
-        db.add(db_audit)
-        db.commit()
-        
-        ACTIVE_TASKS[task_id] = {"status": "complete", "result": result_data}
-        await manager.send_update(task_id, {"status": "complete", "result": result_data})
-        
-    except Exception as e:
-        ACTIVE_TASKS[task_id] = {"status": "error", "message": str(e)}
-        await manager.send_update(task_id, {"status": "error", "message": str(e)})
+        return json.loads(response.choices[0].message.content)
+    except Exception as e: return {"anomalies": [], "error": str(e)}
 
-# ==========================================
-# 6. API ENDPOINTS
-# ==========================================
+def detect_with_ai_audio(file_content, filename):
+    if not client: return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
+    try:
+        transcript_response = client.audio.transcriptions.create(model="whisper-1", file=(filename, file_content))
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a broadcast auditor. Flag profanity or explicit mentions of competitor brands. Return JSON: {\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"},
+                {"role": "user", "content": f"Transcript:\n{transcript_response.text}"}
+            ], 
+            response_format={ "type": "json_object" }
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e: return {"anomalies": [], "error": str(e)}
+
+# ---------------------------------------------------------
+# UNIFIED OPENAI TEXT GENERATION PIPELINE
+# ---------------------------------------------------------
+def generate_text_with_ai(prompt: str, is_summary: bool = False):
+    if not client: return "System configuration error: Server side AI credentials missing (OpenAI API key not found)."
+    sys_instruction = (
+        "You are a leading video post-production auditor. Write short, clear, and direct executive summaries (max 3 lines) based on the compliance report."
+        if is_summary else
+        "You are a video post-production expert. Provide a practical, short (1-2 sentences), and actionable strategy to fix the video or audio issue described."
+    )
+    last_error = ""
+    delays = [1, 2, 4]
+    for delay in delays:
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "system", "content": sys_instruction}, {"role": "user", "content": prompt}],
+                timeout=30
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            last_error = str(e)
+            time.sleep(delay)
+    return f"AI generation failed. Please try again. (Last Error: {last_error})"
+
+# ---------------------------------------------------------
+# SECURE SERVER-SIDE PROXY ROUTING
+# ---------------------------------------------------------
+@app.post("/api/ai/suggest")
+def secure_suggest_fix(data: dict, current_user: User = Depends(get_current_user)):
+    prompt = f"Issue: {data.get('type', 'General Violation')}. Desc: {data.get('description', 'No details provided')}. How to fix it in post-production in 2 sentences."
+    return {"text": generate_text_with_ai(prompt, is_summary=False)}
+
+@app.post("/api/ai/summary")
+def secure_generate_summary(data: dict, current_user: User = Depends(get_current_user)):
+    prompt = f"Write a very short executive summary (max 3 lines). Report:\n{data.get('report', '')}"
+    return {"text": generate_text_with_ai(prompt, is_summary=True)}
+
+# ---------------------------------------------------------
+# OPERATOR ACCESS ENDPOINTS
+# ---------------------------------------------------------
+@app.get("/")
+def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.5.0-admin-enabled"}
 
 @app.post("/api/register")
-async def register(
-    name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)
-):
-    if db.query(User).filter(User.username == username).first():
-        raise HTTPException(status_code=400, detail="Username already taken.")
+def register_user(background_tasks: BackgroundTasks, name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), consent: bool = Form(...), db: Session = Depends(get_db)):
+    if not consent:
+        raise HTTPException(status_code=400, detail="You must accept the Terms and Conditions to complete setup.")
+    existing_user = db.query(User).filter(or_(User.username == username, User.email == email)).first()
+    if existing_user: raise HTTPException(status_code=400, detail="Username or email already registered")
     
-    new_user = User(
-        id=str(uuid.uuid4()),
-        name=name,
-        username=username,
-        email=email,
-        hashed_password=get_password_hash(password)
-    )
-    db.add(new_user)
+    db.add(User(name=name, username=username, email=email, hashed_password=get_password_hash(password), consent_given=True))
     db.commit()
-    return {"message": "Operator registered successfully"}
+    background_tasks.add_task(send_confirmation_email, email, name, username)
+    return {"message": "Operator registered successfully."}
 
 @app.post("/api/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == form_data.username).first()
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(or_(User.username == form_data.username, User.email == form_data.username)).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid Credentials")
+        raise HTTPException(status_code=401, detail="Incorrect credentials")
     
-    token = create_access_token(data={"sub": user.username})
-    return {"access_token": token, "token_type": "bearer", "username": user.username, "is_admin": user.is_admin}
+    is_admin_flag = (user.username == ADMIN_USERNAME)
+
+    return {
+        "access_token": create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)), 
+        "token_type": "bearer", 
+        "username": user.username,
+        "is_admin": is_admin_flag
+    }
+
+@app.post("/api/forgot-password")
+def forgot_password(background_tasks: BackgroundTasks, email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user: return {"message": "If an account matches that email, a reset email has been dispatched."}
+    temp_pass = generate_temp_password()
+    user.hashed_password = get_password_hash(temp_pass)
+    db.commit()
+    background_tasks.add_task(send_reset_email, user.email, temp_pass)
+    return {"message": "If an account matches that email, a reset email has been dispatched."}
+
+@app.post("/api/change-password")
+def change_password(current_password: str = Form(...), new_password: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current access code.")
+    current_user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    return {"message": "Access code updated securely."}
+
+# ---------------------------------------------------------
+# SECURE ADMINISTRATIVE ENDPOINTS
+# ---------------------------------------------------------
+@app.get("/api/admin/users")
+def admin_get_all_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    verify_admin_clearance(current_user)
+    users = db.query(User).all()
+    return [{"id": u.id, "name": u.name, "username": u.username, "email": u.email, "consent_given": getattr(u, 'consent_given', False)} for u in users]
+
+@app.post("/api/admin/users/{user_id}/reset-password")
+def admin_reset_user_password(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    verify_admin_clearance(current_user)
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user: raise HTTPException(status_code=404, detail="Operator account not found.")
+    temp_pass = generate_temp_password()
+    target_user.hashed_password = get_password_hash(temp_pass)
+    db.commit()
+    return {"message": "Password reset successful.", "temporary_code": temp_pass}
+
+@app.delete("/api/admin/users/{user_id}")
+def admin_delete_user(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    verify_admin_clearance(current_user)
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user: raise HTTPException(status_code=404, detail="Operator account not found.")
+    if target_user.id == current_user.id: raise HTTPException(status_code=400, detail="Administrative accounts cannot self-purge.")
+    db.delete(target_user)
+    db.commit()
+    return {"message": "Operator profile permanently purged."}
+
+# ---------------------------------------------------------
+# SYSTEM WORKERS & STREAM PIPELINE
+# ---------------------------------------------------------
+async def notify_progress(task_id: str, stage: str, progress: int, message: str):
+    task_statuses[task_id] = {"status": "running", "stage": stage, "progress": progress, "message": message, "result": None}
+    if task_id in active_connections:
+        try: await active_connections[task_id].send_json({"status": "progress", "stage": stage, "progress": progress, "message": message})
+        except Exception: pass
+
+async def run_audit_background(task_id: str, file_content: bytes, filename: str, video_url: str):
+    try:
+        await notify_progress(task_id, "scan", 10, "EXTRACTING MEDIA..." if video_url else "UPLOADING TO ENGINE...")
+        await asyncio.sleep(1)
+        if video_url:
+            await notify_progress(task_id, "scan", 40, "DOWNLOADING STREAM...")
+            file_content, err = download_audio_from_link(video_url)
+            if not file_content: raise Exception(f"Failed: {err}")
+            filename = "Linked_Video.m4a"
+        await notify_progress(task_id, "scan", 85, "ANALYZING SIGNATURES...")
+        await asyncio.sleep(1)
+        await notify_progress(task_id, "scan", 100, "SECURE. PHASE 1 COMPLETE.")
+        await asyncio.sleep(0.5)
+
+        await notify_progress(task_id, "detect", 20, "INITIALIZING AI PIPELINE...")
+        if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')):
+            await notify_progress(task_id, "detect", 50, "TRANSCRIBING AUDIO VIA WHISPER...")
+            ai_analysis = detect_with_ai_audio(file_content, filename)
+        else:
+            await notify_progress(task_id, "detect", 60, "ANALYZING XML STRUCTURAL DATA...")
+            ai_analysis = detect_with_ai_xml(file_content, filename)
+        await notify_progress(task_id, "detect", 100, "AUDIT COMPLETE.")
+        
+        final_result = {"status": "success", "filename": filename, "anomalies": ai_analysis.get('anomalies', []), "error": ai_analysis.get('error', None)}
+        task_statuses[task_id] = {"status": "complete", "stage": "detect", "progress": 100, "message": "AUDIT COMPLETE.", "result": final_result}
+
+        db = SessionLocal()
+        try:
+            db_audit = db.query(Audit).filter(Audit.id == task_id).first()
+            if db_audit:
+                db_audit.status = "Flagged" if len(ai_analysis.get('anomalies', [])) > 0 else "Clean"
+                db_audit.anomalies = ai_analysis.get('anomalies', [])
+                db.commit()
+        finally: db.close()
+        if task_id in active_connections: await active_connections[task_id].send_json({"status": "complete", "result": final_result})
+    except Exception as e:
+        task_statuses[task_id] = {"status": "error", "stage": "detect", "progress": 0, "message": str(e), "result": None}
+        db = SessionLocal()
+        try:
+            db_audit = db.query(Audit).filter(Audit.id == task_id).first()
+            if db_audit:
+                db_audit.status = "Error"
+                db_audit.anomalies = [{"timecode": "N/A", "type": "Engine Error", "description": str(e)}]
+                db.commit()
+        finally: db.close()
+        if task_id in active_connections: await active_connections[task_id].send_json({"status": "error", "message": str(e)})
 
 @app.post("/api/audit/start")
-async def start_audit(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Check Quotas here in production
+async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # --- QUOTA GUARDRAIL ---
+    if current_user.username != ADMIN_USERNAME:
+        if current_user.tier == "free" and current_user.audits_used >= 5:
+            raise HTTPException(status_code=403, detail="QUOTA_EXCEEDED")
+        current_user.audits_used += 1
+        db.commit()
+    # -----------------------
+
+    if not file and not video_url: raise HTTPException(status_code=400, detail="Must provide file or URL.")
+    file_content = await file.read() if file else None
+    filename = file.filename if file else None
     task_id = str(uuid.uuid4())
-    ACTIVE_TASKS[task_id] = {"status": "running"}
-    
-    # Pass db session and user to background worker
-    asyncio.create_task(background_audit_worker(task_id, file, current_user, db))
+    task_statuses[task_id] = {"status": "running", "stage": "scan", "progress": 0, "message": "INITIALIZING...", "result": None}
+    format_label = "Web Stream" if video_url else ("Audio" if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a')) else "XML")
+
+    db.add(Audit(id=task_id, user_id=current_user.id, filename=filename or "Web Stream", format=format_label, status="Running", anomalies=[]))
+    db.commit()
+    background_tasks.add_task(run_audit_background, task_id, file_content, filename, video_url)
     return {"task_id": task_id}
 
-@app.websocket("/ws/audit/{task_id}")
-async def websocket_endpoint(websocket: WebSocket, task_id: str):
-    await manager.connect(websocket, task_id)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(task_id)
+@app.get("/api/audits")
+def get_user_audits(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    audits = db.query(Audit).filter(Audit.user_id == current_user.id).order_by(Audit.timestamp.desc()).all()
+    return [{"id": a.id, "filename": a.filename, "format": a.format, "timestamp": a.timestamp.strftime("%Y-%m-%d %H:%M:%S"), "status": a.status, "flag_count": len(a.anomalies) if a.anomalies else 0} for a in audits]
+
+@app.get("/api/audits/{audit_id}")
+def get_single_audit(audit_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    audit = db.query(Audit).filter(Audit.id == audit_id, Audit.user_id == current_user.id).first()
+    if not audit: raise HTTPException(status_code=404, detail="Audit log not found")
+    return {"status": "success", "filename": audit.filename, "format": audit.format, "anomalies": audit.anomalies}
 
 @app.get("/api/audit/status/{task_id}")
 async def get_audit_status(task_id: str, current_user: User = Depends(get_current_user)):
-    task = ACTIVE_TASKS.get(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
+    if task_id not in task_statuses: raise HTTPException(status_code=404, detail="Task not found")
+    return task_statuses[task_id]
 
-@app.get("/api/audits")
-async def get_audits(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    import json
-    audits = db.query(AuditRecord).filter(AuditRecord.operator_id == current_user.id).order_by(AuditRecord.timestamp.desc()).all()
-    results = []
-    for a in audits:
-        results.append({
-            "id": a.id, "filename": a.filename, "status": a.status, "flag_count": a.flag_count, 
-            "format": a.format, "timestamp": a.timestamp, "anomalies": json.loads(a.raw_anomalies) if a.raw_anomalies else []
-        })
-    return results
-
-class AIRequest(BaseModel):
-    report: Optional[str] = None
-    type: Optional[str] = None
-    description: Optional[str] = None
-
-@app.post("/api/ai/summary")
-async def generate_summary(req: AIRequest, current_user: User = Depends(get_current_user)):
-    # Replace with real openai_client.chat.completions call
-    await asyncio.sleep(1)
-    return {"text": "Executive Summary: The analyzed timeline presents 2 critical structural anomalies that mandate operator review prior to deployment."}
-
-@app.post("/api/ai/suggest")
-async def generate_suggestion(req: AIRequest, current_user: User = Depends(get_current_user)):
-    # Replace with real openai_client.chat.completions call
-    await asyncio.sleep(1)
-    return {"text": f"Remediation Strategy: Address the {req.type} by executing a timeline substitution or applying a limiter effect to the specified sub-channel."}
+@app.websocket("/ws/audit/{task_id}")
+async def websocket_audit_endpoint(websocket: WebSocket, task_id: str):
+    await websocket.accept()
+    active_connections[task_id] = websocket
+    try:
+        while True: await websocket.receive_text()
+    except WebSocketDisconnect:
+        if task_id in active_connections: del active_connections[task_id]
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
