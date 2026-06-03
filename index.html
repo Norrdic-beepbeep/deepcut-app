@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DeepCut // Video Compliance</title>
+    <script>
+        // --- FRONTEND ROUTER ---
+        // Forces the landing page to load first without renaming files.
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('portal') === 'secure') {
+            // User came from the landing page. Grant session access and clean the URL.
+            sessionStorage.setItem('portal_access', 'granted');
+            window.history.replaceState(null, '', window.location.pathname);
+        } else if (!sessionStorage.getItem('portal_access')) {
+            // User just typed the URL. Instantly redirect them to the landing page.
+            window.location.replace('landing.html');
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
