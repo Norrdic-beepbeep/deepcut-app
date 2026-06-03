@@ -136,6 +136,13 @@
                     <button id="showLoginBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-cAcc3 hover:text-cAcc2 transition-colors focus:outline-none p-1">&larr; Back to Login</button>
                 </div>
             </div>
+            <!-- Add this before your "Register" button -->
+            <div class="mb-6 flex items-start">
+                    <input type="checkbox" id="consent" name="consent" required class="mt-1 mr-3 h-4 w-4 border-2 border-[#2D2824]">
+                    <label for="consent" class="text-xs text-[#2D2824] font-bold">
+        I have read and agree to the <a href="/terms" target="_blank" class="underline">Terms and Conditions</a> and the processing of my data by DeepCut and OpenAI.
+    </label>
+</div>
         </div>
 
         <div id="forgotPasswordScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
