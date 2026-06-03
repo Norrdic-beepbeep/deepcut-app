@@ -260,8 +260,8 @@ def call_secure_gemini_api(prompt: str, is_summary: bool = False):
     if not gemini_key or not gemini_key.strip():
         return "System configuration error: Server side AI credentials missing."
         
-    # FIX: Pointing strictly to the stable 1.5 flash model endpoint
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+    # FIX: Pointing to the explicit "-latest" alias to prevent 404 Not Found errors
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key}"
     sys_instruction = (
         "You are a leading video post-production auditor. Write short, clear, and direct executive summaries (max 3 lines) based on the compliance report."
         if is_summary else
