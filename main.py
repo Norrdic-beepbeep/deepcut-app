@@ -21,7 +21,17 @@ from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, 
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from fastapi.responses import FileResponse
 
+# 1. This directs the "Root" URL to your Landing Page
+@app.get("/")
+async def get_landing():
+    return FileResponse("landing.html")
+
+# 2. This keeps your application accessible at /app
+@app.get("/app")
+async def get_app():
+    return FileResponse("index.html")
 # ---------------------------------------------------------
 # SECURITY & DATABASE CONFIGURATION
 # ---------------------------------------------------------
