@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -215,12 +216,13 @@
         <main id="mainContent" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-12 shadow-hard relative overflow-hidden mb-4 mr-2 sm:mr-3 z-10">
             <div id="inputWorkspace" class="space-y-6 sm:space-y-10 transition-opacity duration-300">
                 <label for="fileInput" id="uploadZone" class="group w-full block border-[3px] border-dashed border-cText bg-cBg/50 hover:bg-cAcc1/20 p-8 sm:p-12 text-center cursor-pointer transition-colors duration-300">
-                    <input type="file" id="fileInput" class="sr-only" accept=".xml,.fcpxml,.edl,.mp4" aria-describedby="fileFormatsHelp" />
+                    <input type="file" id="fileInput" class="sr-only" accept=".xml,.fcpxml,.edl,.mp4,.mov,.wav,.m4a" aria-describedby="fileFormatsHelp" />
                     <div class="space-y-4 pointer-events-none flex flex-col items-center">
                         <div class="text-5xl sm:text-6xl mb-2 transition-transform duration-300 group-hover:scale-110" aria-hidden="true">📂</div>
                         <div>
                             <div class="text-cText font-bold text-lg sm:text-xl uppercase tracking-wide">Select or drag timeline</div>
-                            <div id="fileFormatsHelp" class="text-cSubtext text-xs sm:text-sm font-typewriter mt-2 font-bold">Supports XML, FCPXML, EDL, MP4</div>
+                            <!-- UPDATED SUBTEXT FOR 100MB LIMIT -->
+                            <div id="fileFormatsHelp" class="text-cSubtext text-xs sm:text-sm font-typewriter mt-2 font-bold">Supports XML, MP4, MOV, WAV <span class="text-cAcc3 px-1 font-bold border border-cAcc3/30 rounded ml-1 bg-cAcc3/10">Max 100MB</span></div>
                         </div>
                     </div>
                 </label>
@@ -231,7 +233,8 @@
                 </div>
                 <div class="flex flex-col sm:flex-row gap-4 w-full relative">
                     <label for="urlInput" class="sr-only">Paste media link here</label>
-                    <input type="url" id="urlInput" placeholder="Paste media link here..." class="w-full flex-1 bg-cCard border-[2px] sm:border-[3px] border-cText text-cText px-4 py-4 sm:px-5 focus:outline-none focus:bg-cBg transition-colors text-sm sm:text-base font-typewriter placeholder:text-cMuted font-bold shadow-hard-sm">
+                    <!-- UPDATED PLACEHOLDER FOR 3 MIN LIMIT -->
+                    <input type="url" id="urlInput" placeholder="Paste media link here (Max 3 mins)..." class="w-full flex-1 bg-cCard border-[2px] sm:border-[3px] border-cText text-cText px-4 py-4 sm:px-5 focus:outline-none focus:bg-cBg transition-colors text-sm sm:text-base font-typewriter placeholder:text-cMuted font-bold shadow-hard-sm">
                     <button id="runUrlBtn" class="w-full sm:w-auto bg-cAcc2 text-cBg font-bold px-6 py-4 sm:px-8 text-sm sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Scan Link</button>
                 </div>
             </div>
@@ -387,24 +390,6 @@
                 </div>
                 <button id="submitChangePassBtn" disabled class="w-full bg-cAcc2 disabled:bg-cMuted disabled:cursor-not-allowed text-cBg font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-4 text-sm sm:text-base">Update Access Code</button>
             </div>
-        </div>
-    </div>
-
-    <!-- UPGRADE / QUOTA MODAL -->
-    <div id="upgradeModal" class="fixed inset-0 bg-cText/95 z-[100] hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Upgrade to Pro">
-        <div class="bg-cCard border-[3px] sm:border-[4px] border-cAcc1 p-6 sm:p-10 shadow-hard max-w-lg w-full relative text-center">
-            <button id="closeUpgradeBtn" class="absolute top-3 right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2">&times;</button>
-            <span class="text-5xl mb-4 block animate-bounce" aria-hidden="true">💎</span>
-            <h2 class="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-cText mb-2">Limit Reached</h2>
-            <p class="text-cSubtext text-sm font-medium leading-relaxed mb-6">You have used all 5 free audits included in your Beta account. Upgrade to DeepCut Pro for unlimited auditing, priority AI processing, and PDF certificate exports.</p>
-            
-            <div class="bg-cBg border-2 border-cText p-4 mb-6 shadow-inner text-left space-y-2 text-xs font-bold font-typewriter">
-                <p class="text-cSuccess">✓ Unlimited Audio/XML Scans</p>
-                <p class="text-cSuccess">✓ Automated PDF Certificates</p>
-                <p class="text-cSuccess">✓ Priority API Queueing</p>
-            </div>
-
-            <button id="checkoutBtn" class="w-full bg-cAcc1 text-cCard font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard shadow-hard-hover transition-all text-sm sm:text-base hover:bg-cAcc1/90">Upgrade for $29/mo</button>
         </div>
     </div>
 
@@ -810,15 +795,9 @@
         window.addEventListener('hashchange', handleHashRoute);
         window.addEventListener('DOMContentLoaded', handleHashRoute);
 
-        showRegisterBtn.addEventListener('click', () => {
-            window.location.hash = '#register';
-        });
-        showForgotBtn.addEventListener('click', () => {
-            window.location.hash = '#forgot';
-        });
-        const showLoginFromAnywhere = () => {
-            window.location.hash = '';
-        };
+        showRegisterBtn.addEventListener('click', () => { window.location.hash = '#register'; });
+        showForgotBtn.addEventListener('click', () => { window.location.hash = '#forgot'; });
+        const showLoginFromAnywhere = () => { window.location.hash = ''; };
         showLoginBtn.addEventListener('click', showLoginFromAnywhere);
         backToLoginFromForgotBtn.addEventListener('click', showLoginFromAnywhere);
 
@@ -890,10 +869,7 @@
                 const data = await response.json();
                 authToken = data.access_token;
                 
-                // Toggle admin button display visibility dynamically from backend flag
-                if (data.is_admin === true) { 
-                    adminPortalBtn.classList.remove('hidden');
-                }
+                if (data.is_admin === true) { adminPortalBtn.classList.remove('hidden'); }
 
                 document.getElementById('displayUsername').textContent = data.username || username;
                 document.getElementById('authContainer').classList.add('hidden');
@@ -912,7 +888,20 @@
         let selectedFiles = [];
         let submittedUrl = null;
 
-        fileInput.addEventListener('change', (e) => { if(e.target.files.length) handleFile(e.target.files[0]); });
+        fileInput.addEventListener('change', (e) => { 
+            if(e.target.files.length) {
+                // Frontend guardrail for file size
+                const file = e.target.files[0];
+                const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+                if (file.size > MAX_SIZE) {
+                    showCustomMsg("File too large. Maximum allowed size is 100MB.");
+                    fileInput.value = '';
+                    return;
+                }
+                handleFile(file); 
+            }
+        });
+        
         document.getElementById('clearSelectionBtn').addEventListener('click', () => {
             fileInput.value = ''; document.getElementById('urlInput').value = '';
             selectedFiles = []; submittedUrl = null;
@@ -922,7 +911,7 @@
         function handleFile(file) {
             selectedFiles = [file]; submittedUrl = null;
             document.getElementById('selectedFileName').textContent = file.name;
-            document.getElementById('selectedFileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+            document.getElementById('selectedFileSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
             document.getElementById('metaIconLink').classList.add('hidden'); document.getElementById('metaIconFile').classList.remove('hidden');
             inputWorkspace.classList.add('hidden'); fileMetaRow.classList.remove('hidden');
         }
@@ -933,7 +922,7 @@
             selectedFiles = []; submittedUrl = urlInput.value.trim();
             document.getElementById('metaIconFile').classList.add('hidden'); document.getElementById('metaIconLink').classList.remove('hidden');
             document.getElementById('selectedFileName').textContent = submittedUrl;
-            document.getElementById('selectedFileSize').textContent = "Web Stream";
+            document.getElementById('selectedFileSize').textContent = "Web Stream (Max 3m)";
             inputWorkspace.classList.add('hidden'); fileMetaRow.classList.remove('hidden');
         });
 
@@ -942,29 +931,6 @@
             if (ws) { try { ws.close(); } catch(e){} ws = null; }
             if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
         }
-
-        // --- UPGRADE MODAL CONTROLLER ---
-        const upgradeModal = document.getElementById('upgradeModal');
-        const closeUpgradeBtn = document.getElementById('closeUpgradeBtn');
-        const checkoutBtn = document.getElementById('checkoutBtn');
-        let upgradeFocusCleanup = null;
-
-        function showUpgradeModal() {
-            upgradeModal.classList.remove('hidden');
-            setTimeout(() => { upgradeModal.classList.remove('opacity-0'); }, 10);
-            upgradeFocusCleanup = trapModalFocus(upgradeModal, closeUpgradeBtn, document.activeElement);
-        }
-
-        closeUpgradeBtn.addEventListener('click', () => {
-            upgradeModal.classList.add('opacity-0');
-            setTimeout(() => { upgradeModal.classList.add('hidden'); }, 300);
-            if (upgradeFocusCleanup) { upgradeFocusCleanup(); upgradeFocusCleanup = null; }
-        });
-
-        checkoutBtn.addEventListener('click', () => {
-            alert("Stripe Checkout integration coming soon! This will redirect the user to a secure payment portal.");
-        });
-        // --------------------------------
 
         function handleProgressUpdate(stage, progress, message) {
             const barId = stage === 'scan' ? 'scanBar' : 'detectBar';
@@ -980,6 +946,10 @@
             if (!authToken) return;
             fileMetaRow.classList.add('hidden');
             document.getElementById('progressContainer').classList.remove('hidden');
+            
+            // Reset Progress Bars
+            handleProgressUpdate('scan', 0, 'INITIALIZING...');
+            handleProgressUpdate('detect', 0, 'Waiting for engine...');
             stopMonitoring(); 
 
             try {
@@ -989,18 +959,14 @@
 
                 const response = await fetch('https://deepcut-app.onrender.com/api/audit/start', { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}` }, body: formData });
                 
-                // Catch Quota Guardrail Error
-                if (response.status === 403) {
-                    const errData = await response.json();
-                    if (errData.detail === "QUOTA_EXCEEDED") {
-                        fileMetaRow.classList.remove('hidden');
-                        document.getElementById('progressContainer').classList.add('hidden');
-                        showUpgradeModal();
-                        return;
-                    }
+                if (response.status === 413) {
+                    throw new Error("File exceeds the 100MB size limit.");
                 }
 
-                if (!response.ok) throw new Error("Failed to start audit");
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || "Failed to start audit");
+                }
 
                 const { task_id } = await response.json();
                 let usingPollingFallback = false;
@@ -1012,6 +978,12 @@
                         const data = await res.json();
                         if (data.status === 'running') handleProgressUpdate(data.stage, data.progress, data.message);
                         else if (data.status === 'complete') { stopMonitoring(); populateAndRevealDashboard(data.result); loadHistory(); }
+                        else if (data.status === 'error') {
+                            stopMonitoring();
+                            showCustomMsg(data.message || "Audit failed.");
+                            document.getElementById('progressContainer').classList.add('hidden');
+                            inputWorkspace.classList.remove('hidden');
+                        }
                     }, 1500);
                 }
 
@@ -1021,10 +993,20 @@
                         const payload = JSON.parse(event.data);
                         if (payload.status === 'progress') handleProgressUpdate(payload.stage, payload.progress, payload.message);
                         else if (payload.status === 'complete') { stopMonitoring(); populateAndRevealDashboard(payload.result); loadHistory(); }
+                        else if (payload.status === 'error') {
+                            stopMonitoring();
+                            showCustomMsg(payload.message || "Audit failed due to an engine error.");
+                            document.getElementById('progressContainer').classList.add('hidden');
+                            inputWorkspace.classList.remove('hidden');
+                        }
                     };
                     ws.onerror = () => startPollingFallback();
                 } catch (e) { startPollingFallback(); }
-            } catch (error) { showCustomMsg("An unexpected server tracking error occurred."); }
+            } catch (error) { 
+                showCustomMsg(error.message || "An unexpected server tracking error occurred."); 
+                document.getElementById('progressContainer').classList.add('hidden');
+                inputWorkspace.classList.remove('hidden');
+            }
         });
 
         const geminiSummaryBtn = document.getElementById('geminiSummaryBtn');
@@ -1047,6 +1029,13 @@
         }
 
         function populateAndRevealDashboard(data) {
+            if(data.error) {
+                showCustomMsg(data.error);
+                document.getElementById('progressContainer').classList.add('hidden');
+                inputWorkspace.classList.remove('hidden');
+                return;
+            }
+
             document.getElementById('dashFileName').textContent = data.filename;
             document.getElementById('dashStatus').textContent = data.anomalies && data.anomalies.length ? `🚩 ${data.anomalies.length} Flags` : "🌟 Clean";
             const tableBody = document.getElementById('auditTableBody'); tableBody.innerHTML = '';
@@ -1074,7 +1063,12 @@
                 });
 
                 data.anomalies.forEach((a, index) => {
-                    tableBody.innerHTML += `<tr id="row-anomaly-${index}" class="border-b-[2px] sm:border-b-[3px] border-cText block sm:table-row row-highlight"><td class="p-4 sm:p-6 font-bold border-b sm:border-b-0 sm:border-r-[3px] border-cText block sm:table-cell w-full sm:w-auto">${a.timecode}</td><td class="p-4 sm:p-6 border-b sm:border-b-0 sm:border-r-[3px] border-cText block sm:table-cell w-full sm:w-auto"><span class="bg-cAcc3 text-cCard px-2 py-1 text-[9px] sm:text-xs font-bold">${a.type}</span></td><td class="p-4 sm:p-6 block sm:table-cell w-full sm:w-auto"><span class="block leading-relaxed text-sm">${a.description}</span><div class="mt-4"><button class="btn-sugerir bg-cText text-cBg px-4 py-2 text-xs font-bold hover:bg-cAcc2 uppercase tracking-widest transition-colors focus:outline-none" data-type="${a.type}" data-desc="${a.description}">✨ Suggest Fix</button><div class="sugerencia-out hidden mt-3 p-4 bg-cCard border-[2px] border-dashed border-cText text-sm leading-relaxed"></div></div></td></tr>`;
+                    let severityClass = "bg-cText text-cCard"; // Default
+                    if (a.type && a.type.toLowerCase().includes("high")) severityClass = "bg-cAcc3 text-cCard";
+                    else if (a.type && a.type.toLowerCase().includes("medium")) severityClass = "bg-cAcc1 text-cCard";
+                    else if (a.type && a.type.toLowerCase().includes("low")) severityClass = "bg-cAcc2 text-cCard";
+
+                    tableBody.innerHTML += `<tr id="row-anomaly-${index}" class="border-b-[2px] sm:border-b-[3px] border-cText block sm:table-row row-highlight"><td class="p-4 sm:p-6 font-bold border-b sm:border-b-0 sm:border-r-[3px] border-cText block sm:table-cell w-full sm:w-auto">${a.timecode}</td><td class="p-4 sm:p-6 border-b sm:border-b-0 sm:border-r-[3px] border-cText block sm:table-cell w-full sm:w-auto"><span class="${severityClass} px-2 py-1 text-[9px] sm:text-xs font-bold">${a.type}</span></td><td class="p-4 sm:p-6 block sm:table-cell w-full sm:w-auto"><span class="block leading-relaxed text-sm">${a.description}</span><div class="mt-4"><button class="btn-sugerir bg-cText text-cBg px-4 py-2 text-xs font-bold hover:bg-cAcc2 uppercase tracking-widest transition-colors focus:outline-none" data-type="${a.type}" data-desc="${a.description}">✨ Suggest Fix</button><div class="sugerencia-out hidden mt-3 p-4 bg-cCard border-[2px] border-dashed border-cText text-sm leading-relaxed"></div></div></td></tr>`;
                 });
             } else {
                 timelineContainer.classList.add('hidden');
@@ -1107,3 +1101,6 @@
     </script>
 </body>
 </html>
+
+
+```
