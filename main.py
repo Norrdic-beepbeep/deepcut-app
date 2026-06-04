@@ -39,10 +39,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- DATABASE MODELS (CLEAN SLATE OVERRIDE) ---
-# By changing the __tablename__, we completely bypass the corrupted 
-# locked tables on Render and force it to build fresh ones.
-
+# --- DATABASE MODELS ---
 class User(Base):
     __tablename__ = "deepcut_users"
     id = Column(Integer, primary_key=True, index=True)
@@ -52,6 +49,7 @@ class User(Base):
     hashed_password = Column(String)
     consent_given = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
+    is_suspended = Column(Boolean, default=False) # <--- NEW SUSPENSION COLUMN
     
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
@@ -67,7 +65,6 @@ class Audit(Base):
     
     owner = relationship("User", back_populates="audits")
 
-# Build tables (Will instantly create the new deepcut_users schema)
 Base.metadata.create_all(bind=engine)
 
 
@@ -185,6 +182,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         if not user or not verify_password(form_data.password, user.hashed_password):
             raise HTTPException(status_code=401, detail="Incorrect username or password")
         
+        # <--- NEW SUSPENSION CHECK --->
+        if user.is_suspended:
+            raise HTTPException(status_code=403, detail="Account suspended. Please contact administration.")
+        
         access_token = create_access_token(data={"sub": user.username})
         return {"access_token": access_token, "token_type": "bearer", "username": user.username, "is_admin": user.is_admin}
     except HTTPException:
@@ -224,7 +225,7 @@ def change_password(
 @app.get("/api/admin/users")
 def get_all_users(admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     users = db.query(User).all()
-    return [{"id": u.id, "name": u.name, "username": u.username, "email": u.email, "consent_given": u.consent_given} for u in users]
+    return [{"id": u.id, "name": u.name, "username": u.username, "email": u.email, "consent_given": u.consent_given, "is_suspended": u.is_suspended} for u in users]
 
 @app.delete("/api/admin/users/{uid}")
 def delete_user(uid: int, admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
@@ -236,16 +237,6 @@ def delete_user(uid: int, admin: User = Depends(get_current_admin), db: Session 
     db.delete(user)
     db.commit()
     return {"message": "Operator purged."}
-
-@app.post("/api/admin/users/{uid}/reset-password")
-def reset_user_password(uid: int, admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == uid).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Operator not found.")
-    temp_pass = f"DeepCut-{uuid.uuid4().hex[:6]}"
-    user.hashed_password = get_password_hash(temp_pass)
-    db.commit()
-    return {"temporary_code": temp_pass}
 
 
 # ==========================================
