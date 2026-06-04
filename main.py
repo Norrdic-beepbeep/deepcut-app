@@ -29,7 +29,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week token lifespan
 # 2. DATABASE SETUP (SQLAlchemy)
 # ==========================================
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./deepcut.db")
-# Render uses 'postgres://' but SQLAlchemy requires 'postgresql://'
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
@@ -40,9 +39,12 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- Database Models ---
+# --- DATABASE MODELS (CLEAN SLATE OVERRIDE) ---
+# By changing the __tablename__, we completely bypass the corrupted 
+# locked tables on Render and force it to build fresh ones.
+
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "deepcut_users"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     username = Column(String, unique=True, index=True)
@@ -54,24 +56,18 @@ class User(Base):
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
 class Audit(Base):
-    __tablename__ = "audits"
-    id = Column(String, primary_key=True, index=True) # Unique Job ID
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    __tablename__ = "deepcut_audits"
+    id = Column(String, primary_key=True, index=True) 
+    user_id = Column(Integer, ForeignKey("deepcut_users.id"), nullable=False)
     filename = Column(String, nullable=False)
     format = Column(String, nullable=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
-    status = Column(String, nullable=False) # "Processing", "Clean", "Flagged", "Error"
-    anomalies = Column(SQLA_JSON, nullable=True) # Stores the AI JSON results
+    status = Column(String, nullable=False) 
+    anomalies = Column(SQLA_JSON, nullable=True) 
     
     owner = relationship("User", back_populates="audits")
 
-# --- SELF-HEALING DATABASE MIGRATION TRIGGER ---
-# If you set the environment variable FORCE_RECREATE_DB=true on Render,
-# the backend will drop and recreate tables with the correct columns.
-if os.getenv("FORCE_RECREATE_DB", "false").lower() == "true":
-    Base.metadata.drop_all(bind=engine)
-
-# Build/Sync tables
+# Build tables (Will instantly create the new deepcut_users schema)
 Base.metadata.create_all(bind=engine)
 
 
@@ -106,7 +102,7 @@ def get_db():
     finally:
         db.close()
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -125,7 +121,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
-async def get_current_admin(current_user: User = Depends(get_current_user)):
+def get_current_admin(current_user: User = Depends(get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin privileges required")
     return current_user
@@ -136,7 +132,6 @@ async def get_current_admin(current_user: User = Depends(get_current_user)):
 # ==========================================
 app = FastAPI(title="DeepCut Engine API")
 
-# Setup CORS to securely bridge your Vercel frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -150,7 +145,7 @@ app.add_middleware(
 # 6. PUBLIC ROUTES (Login & Registration)
 # ==========================================
 @app.post("/api/register")
-async def register(
+def register(
     name: str = Form(...),
     username: str = Form(...),
     email: str = Form(...),
@@ -158,51 +153,69 @@ async def register(
     consent: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    if db.query(User).filter(User.username == username).first():
-        raise HTTPException(status_code=400, detail="Username already registered")
-    if db.query(User).filter(User.email == email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    is_first_user = db.query(User).count() == 0
-    
-    new_user = User(
-        name=name,
-        username=username,
-        email=email,
-        hashed_password=get_password_hash(password),
-        consent_given=(consent.lower() == 'true'),
-        is_admin=is_first_user  
-    )
-    db.add(new_user)
-    db.commit()
-    return {"message": "Operator registered successfully"}
+    try:
+        if db.query(User).filter(User.username == username).first():
+            raise HTTPException(status_code=400, detail="Username already registered")
+        if db.query(User).filter(User.email == email).first():
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        is_first_user = db.query(User).count() == 0
+        
+        new_user = User(
+            name=name,
+            username=username,
+            email=email,
+            hashed_password=get_password_hash(password),
+            consent_given=(consent.lower() == 'true'),
+            is_admin=is_first_user  
+        )
+        db.add(new_user)
+        db.commit()
+        return {"message": "Operator registered successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database Lock Error: {str(e)}")
 
 @app.post("/api/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter((User.username == form_data.username) | (User.email == form_data.username)).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer", "username": user.username, "is_admin": user.is_admin}
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter((User.username == form_data.username) | (User.email == form_data.username)).first()
+        if not user or not verify_password(form_data.password, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Incorrect username or password")
+        
+        access_token = create_access_token(data={"sub": user.username})
+        return {"access_token": access_token, "token_type": "bearer", "username": user.username, "is_admin": user.is_admin}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database Login Error: {str(e)}")
 
 @app.post("/api/forgot-password")
-async def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
+def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
     return {"message": "Recovery instructions dispatched if email exists."}
 
 @app.post("/api/change-password")
-async def change_password(
+def change_password(
     current_password: str = Form(...),
     new_password: str = Form(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if not verify_password(current_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Current access code is incorrect.")
-    
-    current_user.hashed_password = get_password_hash(new_password)
-    db.commit()
-    return {"message": "Access code updated securely."}
+    try:
+        if not verify_password(current_password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="Current access code is incorrect.")
+        
+        current_user.hashed_password = get_password_hash(new_password)
+        db.commit()
+        return {"message": "Access code updated securely."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Update Error: {str(e)}")
 
 
 # ==========================================
@@ -315,18 +328,16 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
             "anomalies": anomalies
         }
 
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
     except Exception as e:
+        db.rollback()
         audit_record = db.query(Audit).filter(Audit.id == job_id).first()
         if audit_record:
             audit_record.status = "Error"
             db.commit()
         active_jobs[job_id] = {"status": "error", "message": str(e)}
+    finally:
         if os.path.exists(file_path):
             os.remove(file_path)
-    finally:
         db.close()
 
 
@@ -334,54 +345,58 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
 # 10. ENGINE DISPATCH ROUTES
 # ==========================================
 @app.post("/api/audit/start")
-async def start_audit(
+def start_audit(
     background_tasks: BackgroundTasks,
     file: Optional[UploadFile] = File(None),
     video_url: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    job_id = str(uuid.uuid4())
-    filename = "Unknown Source"
-    temp_file_path = f"/tmp/{job_id}"
-    
-    if file:
-        filename = file.filename
-        temp_file_path += f"_{filename}"
-        with open(temp_file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    elif video_url:
-        filename = video_url
-        temp_file_path += "_url.txt"
-        with open(temp_file_path, "w") as f:
-            f.write(video_url)
-    else:
-        raise HTTPException(status_code=400, detail="Must provide a file or a URL")
+    try:
+        job_id = str(uuid.uuid4())
+        filename = "Unknown Source"
+        temp_file_path = f"/tmp/{job_id}"
+        
+        if file:
+            filename = file.filename
+            temp_file_path += f"_{filename}"
+            with open(temp_file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+        elif video_url:
+            filename = video_url
+            temp_file_path += "_url.txt"
+            with open(temp_file_path, "w") as f:
+                f.write(video_url)
+        else:
+            raise HTTPException(status_code=400, detail="Must provide a file or a URL")
 
-    new_audit = Audit(
-        id=job_id,
-        user_id=current_user.id,
-        filename=filename,
-        format="Stream URL" if video_url else "Timeline File",
-        status="Processing...",
-        anomalies=[]
-    )
-    db.add(new_audit)
-    db.commit()
+        new_audit = Audit(
+            id=job_id,
+            user_id=current_user.id,
+            filename=filename,
+            format="Stream URL" if video_url else "Timeline File",
+            status="Processing...",
+            anomalies=[]
+        )
+        db.add(new_audit)
+        db.commit()
 
-    active_jobs[job_id] = {"stage": "scan", "progress": 0, "message": "Enqueuing pipeline..."}
-    background_tasks.add_task(process_audit_in_background, job_id, temp_file_path, filename, current_user.id)
-    return JSONResponse({"task_id": job_id, "job_id": job_id, "status": "queued"})
+        active_jobs[job_id] = {"stage": "scan", "progress": 0, "message": "Enqueuing pipeline..."}
+        background_tasks.add_task(process_audit_in_background, job_id, temp_file_path, filename, current_user.id)
+        return JSONResponse({"task_id": job_id, "job_id": job_id, "status": "queued"})
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Audit Engine Error: {str(e)}")
 
 
 @app.get("/api/audit/status/{task_id}")
-async def get_audit_status(task_id: str):
+def get_audit_status(task_id: str, db: Session = Depends(get_db)):
     global active_jobs
     job_state = active_jobs.get(task_id)
     if not job_state:
-        db = SessionLocal()
         audit_record = db.query(Audit).filter(Audit.id == task_id).first()
-        db.close()
         if audit_record:
             return {
                 "status": "complete", 
@@ -452,7 +467,7 @@ class SuggestPayload(BaseModel):
     description: str
 
 @app.post("/api/ai/summary")
-async def generate_summary(payload: ReportPayload, current_user: User = Depends(get_current_user)):
+def generate_summary(payload: ReportPayload, current_user: User = Depends(get_current_user)):
     summary_text = (
         "The provided audit report indicates several areas requiring review. "
         "Primary concerns center around continuity and potential copyright flags within the timeline. "
@@ -461,7 +476,7 @@ async def generate_summary(payload: ReportPayload, current_user: User = Depends(
     return {"text": summary_text}
 
 @app.post("/api/ai/suggest")
-async def suggest_fix(payload: SuggestPayload, current_user: User = Depends(get_current_user)):
+def suggest_fix(payload: SuggestPayload, current_user: User = Depends(get_current_user)):
     suggestion = (
         f"To resolve the '{payload.type}' anomaly regarding '{payload.description}', "
         "we recommend reviewing the source clip at this timecode. Consider replacing the flagged "
