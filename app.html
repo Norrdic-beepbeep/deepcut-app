@@ -431,6 +431,32 @@
         let authToken = null;
         let currentAudits = [];
 
+// Centralized utility to reset the UI layout before a new scan runs
+function clearPreviousResults() {
+    console.log("Clearing ghost data from previous audit...");
+    
+    // Hide the main container and remove entry animations
+    const resultsDash = document.getElementById('resultsDashboard');
+    if (resultsDash) {
+        resultsDash.classList.add('hidden', 'opacity-0', 'translate-y-4');
+    }
+    
+    // Hide and wipe the AI Summary box
+    const geminiBox = document.getElementById('geminiSummaryContainer');
+    if (geminiBox) geminiBox.classList.add('hidden');
+    
+    const geminiText = document.getElementById('geminiSummaryText');
+    if (geminiText) geminiText.innerHTML = '';
+    
+    // Empty out the dynamic visual timeline blocks
+    const timeline = document.getElementById('interactiveTimeline');
+    if (timeline) timeline.innerHTML = '';
+    
+    // Completely purge the text table body entries
+    const tableBody = document.getElementById('auditTableBody');
+    if (tableBody) tableBody.innerHTML = '';
+}
+        
         function trapModalFocus(modalEl, closeBtnEl, triggerBtnEl) {
             const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
             const focusableContent = modalEl.querySelectorAll(focusableElements);
@@ -944,11 +970,16 @@
             document.getElementById(textId).textContent = message;
         }
 
-        document.getElementById('runAuditBtn').addEventListener('click', async () => {
-            if (selectedFiles.length === 0 && !submittedUrl) return;
-            if (!authToken) return;
-            fileMetaRow.classList.add('hidden');
-            document.getElementById('progressContainer').classList.remove('hidden');
+       document.getElementById('runAuditBtn').addEventListener('click', async () => {
+    if (selectedFiles.length === 0 && !submittedUrl) return;
+    if (!authToken) return;
+    
+    // CALL THE CENTRAL CLEANER HERE
+    clearPreviousResults(); 
+    
+    fileMetaRow.classList.add('hidden');
+    document.getElementById('progressContainer').classList.remove('hidden');
+    // ... rest of your code ...
 // --- WIPE PREVIOUS RESULTS ---
         const resultsDash = document.getElementById('resultsDashboard');
         resultsDash.classList.add('hidden', 'opacity-0', 'translate-y-4');
