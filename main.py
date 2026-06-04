@@ -1,3 +1,19 @@
+# --- PATCH FOR MISSING AUDIOOP IN PYTHON 3.11+ ---
+import sys
+try:
+    import audioop
+except ImportError:
+    try:
+        import pyaudioop as audioop
+        sys.modules['audioop'] = audioop
+    except ImportError:
+        # Mock object to prevent startup crashes if the library isn't found
+        class MockAudioop:
+            def mul(self, *args, **kwargs): return b''
+            def lin2lin(self, *args, **kwargs): return b''
+        sys.modules['audioop'] = MockAudioop()
+# -------------------------------------------------
+
 import os
 import time
 import requests
@@ -12,12 +28,12 @@ import tempfile
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
 import aiofiles
 from pydub import AudioSegment
 import openai
 import yt_dlp
 import uvicorn
-
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -25,6 +41,7 @@ from sqlalchemy import create_engine, Column, Integer, String, or_, ForeignKey, 
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from fastapi.responses import FileResponse
 
 # ---------------------------------------------------------
 # SECURITY & DATABASE CONFIGURATION
@@ -32,7 +49,7 @@ from jose import JWTError, jwt
 SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-fallback-key-change-this")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")  # Master Admin Username
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fallback.db")
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
@@ -69,9 +86,9 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
-    consent_given = Column(Boolean, default=False)  # GDPR Legal Flag
-    tier = Column(String, default="free")           # Billing Tier
-    audits_used = Column(Integer, default=0)        # Usage Tracker
+    consent_given = Column(Boolean, default=False)
+    tier = Column(String, default="free")
+    audits_used = Column(Integer, default=0)
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
 class Audit(Base):
@@ -87,22 +104,18 @@ class Audit(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# --- THE MAGIC AUTO-MIGRATION HACK ---
+# --- AUTO-MIGRATION HACKS ---
 try:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN consent_given BOOLEAN DEFAULT FALSE;"))
-        print("Successfully patched database with missing consent_given column!")
-except Exception:
-    pass # Column already exists, safe to ignore!
+except Exception: pass
 
 try:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN tier VARCHAR DEFAULT 'free';"))
         conn.execute(text("ALTER TABLE users ADD COLUMN audits_used INTEGER DEFAULT 0;"))
-        print("Successfully patched database with billing columns!")
-except Exception:
-    pass
-# -------------------------------------
+except Exception: pass
+# ----------------------------
 
 def get_db():
     db = SessionLocal()
@@ -220,7 +233,6 @@ active_connections: dict[str, WebSocket] = {}
 # MEDIA DOWNLOADER & HEAVY PROCESSING PIPELINE
 # ---------------------------------------------------------
 def download_audio_from_link(url: str, session_id: str):
-    """Downloads audio from a URL stream directly to disk."""
     temp_dir = tempfile.gettempdir()
     out_tmpl = os.path.join(temp_dir, f'{session_id}_downloaded.%(ext)s')
     ydl_opts = {'format': 'm4a/bestaudio/best', 'outtmpl': out_tmpl, 'noplaylist': True, 'quiet': True}
@@ -233,18 +245,15 @@ def download_audio_from_link(url: str, session_id: str):
         return None, str(e)
 
 def extract_and_chunk_audio(file_path: str, session_id: str):
-    """Uses FFmpeg to strip video, exports an MP3, and uses pydub to slice it into chunks."""
     temp_dir = tempfile.gettempdir()
     audio_path = os.path.join(temp_dir, f"{session_id}_extracted.mp3")
     chunk_paths = []
     
-    # Extract audio using FFmpeg
     subprocess.run([
         'ffmpeg', '-y', '-i', file_path,
         '-vn', '-acodec', 'libmp3lame', '-ac', '1', '-b:a', '64k', audio_path
     ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    # Slice the extracted audio into 15-minute chunks for OpenAI
     audio = AudioSegment.from_mp3(audio_path)
     chunk_length_ms = 15 * 60 * 1000 
     chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
@@ -260,7 +269,7 @@ def extract_and_chunk_audio(file_path: str, session_id: str):
     return chunk_paths
 
 # ---------------------------------------------------------
-# OPENAI COMPLIANCE ANALYSIS FUNCTIONS
+# OPENAI COMPLIANCE ANALYSIS FUNCTIONS (REFINED PROMPTS)
 # ---------------------------------------------------------
 def detect_with_ai_xml(file_content, filename):
     if not client: return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
@@ -269,8 +278,20 @@ def detect_with_ai_xml(file_content, filename):
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a strict video compliance auditor. Look for copyrighted music and continuity errors in the XML. Return JSON: {\"anomalies\": [{\"timecode\": \"string\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"},
-                {"role": "user", "content": f"Filename: {filename}\nXML: {text_content}"}
+                {
+                    "role": "system", 
+                    "content": (
+                        "You are a Senior Cinematic Post-Production Auditor. Your job is to parse FCPXML/XML structural data and identify critical timeline anomalies before final render. "
+                        "STRICTLY FLAG THE FOLLOWING:\n"
+                        "1. Copyright Risk: Any temp audio, watermarked tracks, or unlicensed stock (e.g., filenames containing 'AudioJungle', 'Shutterstock', 'Envato', 'Temp', or '.mp3' rips).\n"
+                        "2. Continuity Gaps: Empty spaces (slugs) in the primary video track, or offline media references.\n"
+                        "3. Formatting Errors: Framerate mismatches or irregular resolution scaling.\n\n"
+                        "Do not hallucinate. If the timeline is clean, return an empty array. "
+                        "Respond ONLY with valid JSON in this exact structure:\n"
+                        "{\"anomalies\": [{\"timecode\": \"01:00:00:00\", \"type\": \"High - Copyright Risk\", \"description\": \"Found watermarked stock audio file 'AudioJungle_track.mp3' on Track 2.\"}], \"error\": null}"
+                    )
+                },
+                {"role": "user", "content": f"Filename: {filename}\nTimeline XML Data:\n{text_content}"}
             ], 
             response_format={ "type": "json_object" }
         )
@@ -280,23 +301,32 @@ def detect_with_ai_xml(file_content, filename):
 def detect_with_ai_audio_chunked(file_path: str, filename: str, task_id: str):
     if not client: return {"anomalies": [], "error": "AI Engine offline. OpenAI API key missing."}
     try:
-        # Process the massive file via FFmpeg and slice it
         chunk_paths = extract_and_chunk_audio(file_path, task_id)
         
         full_transcript = ""
-        # Process chunks sequentially through Whisper
         for chunk_path in chunk_paths:
             with open(chunk_path, "rb") as af:
                 transcript_response = client.audio.transcriptions.create(model="whisper-1", file=af)
                 full_transcript += transcript_response.text + " "
-            os.remove(chunk_path) # Instantly cleanup to save disk space
+            os.remove(chunk_path) 
             
-        # Send full assembled transcript to GPT for compliance check
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a broadcast auditor. Flag profanity or explicit mentions of competitor brands. Return JSON: {\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"string\", \"description\": \"string\"}], \"error\": null}"},
-                {"role": "user", "content": f"Transcript:\n{full_transcript}"}
+                {
+                    "role": "system", 
+                    "content": (
+                        "You are a strict Broadcast Standards & Practices (S&P) Auditor. Analyze the following audio transcript for compliance violations. "
+                        "STRICTLY FLAG THE FOLLOWING:\n"
+                        "1. Explicit Content: Profanity, hate speech, or sexually explicit dialogue.\n"
+                        "2. Brand/Copyright Liability: Unauthorized mentions of real-world competitor brands, trademarked jingles, or copyrighted lyrics.\n"
+                        "3. Audio Dropouts: Unexplained dead air, severe stuttering, or repeated dialogue indicative of a rendering error.\n\n"
+                        "If the transcript is clean, return an empty array. "
+                        "Respond ONLY with valid JSON in this exact structure:\n"
+                        "{\"anomalies\": [{\"timecode\": \"Spoken Audio\", \"type\": \"Medium - Broadcast Standard\", \"description\": \"Uncensored profanity ('f-word') detected in primary dialogue track.\"}], \"error\": null}"
+                    )
+                },
+                {"role": "user", "content": f"Master Transcript for {filename}:\n{full_transcript}"}
             ], 
             response_format={ "type": "json_object" }
         )
@@ -432,7 +462,6 @@ async def run_audit_background(task_id: str, file_path: str, filename: str, vide
         await notify_progress(task_id, "scan", 10, "EXTRACTING MEDIA..." if video_url else "STREAMING TO LOCAL STORAGE...")
         await asyncio.sleep(1)
         
-        # Determine File Path Context
         if video_url:
             await notify_progress(task_id, "scan", 40, "DOWNLOADING STREAM TO DISK...")
             file_path, err = download_audio_from_link(video_url, task_id)
@@ -446,14 +475,11 @@ async def run_audit_background(task_id: str, file_path: str, filename: str, vide
 
         await notify_progress(task_id, "detect", 20, "INITIALIZING AI PIPELINE...")
         
-        # Audio / Video Processing Execution (The Heavy Lifter)
         if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a', '.mov')):
             await notify_progress(task_id, "detect", 50, "SLICING & TRANSCRIBING VIA WHISPER...")
-            # Route to the newly built FFmpeg/Pydub logic
             ai_analysis = detect_with_ai_audio_chunked(file_path, filename, task_id)
         else:
             await notify_progress(task_id, "detect", 60, "ANALYZING XML STRUCTURAL DATA...")
-            # For lightweight XML files, safe to read straight into RAM
             with open(file_path, 'rb') as f:
                 file_content = f.read()
             ai_analysis = detect_with_ai_xml(file_content, filename)
@@ -463,7 +489,6 @@ async def run_audit_background(task_id: str, file_path: str, filename: str, vide
         final_result = {"status": "success", "filename": filename, "anomalies": ai_analysis.get('anomalies', []), "error": ai_analysis.get('error', None)}
         task_statuses[task_id] = {"status": "complete", "stage": "detect", "progress": 100, "message": "AUDIT COMPLETE.", "result": final_result}
 
-        # Save to Database
         db = SessionLocal()
         try:
             db_audit = db.query(Audit).filter(Audit.id == task_id).first()
@@ -488,7 +513,6 @@ async def run_audit_background(task_id: str, file_path: str, filename: str, vide
         if task_id in active_connections: await active_connections[task_id].send_json({"status": "error", "message": str(e)})
         
     finally:
-        # THE JANITOR: Always scrub massive video files from Render's disk
         if file_path and os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -497,13 +521,11 @@ async def run_audit_background(task_id: str, file_path: str, filename: str, vide
 
 @app.post("/api/audit/start")
 async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # --- QUOTA GUARDRAIL ---
     if current_user.username != ADMIN_USERNAME:
         if current_user.tier == "free" and current_user.audits_used >= 5:
             raise HTTPException(status_code=403, detail="QUOTA_EXCEEDED")
         current_user.audits_used += 1
         db.commit()
-    # -----------------------
 
     if not file and not video_url: raise HTTPException(status_code=400, detail="Must provide file or URL.")
     
@@ -513,20 +535,17 @@ async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File
     filename = file.filename if file else None
     format_label = "Web Stream" if video_url else ("Audio" if filename.lower().endswith(('.mp4', '.mp3', '.wav', '.m4a', '.mov')) else "XML")
 
-    # STREAM TO DISK FIRST: Save the file out of RAM before the route finishes
     file_path = None
     if file:
         temp_dir = tempfile.gettempdir()
         file_path = os.path.join(temp_dir, f"{task_id}_{file.filename}")
         async with aiofiles.open(file_path, 'wb') as out_file:
-            # Streams the heavy video locally in ultra-light 1MB memory blocks
             while content := await file.read(1024 * 1024):
                 await out_file.write(content)
 
     db.add(Audit(id=task_id, user_id=current_user.id, filename=filename or "Web Stream", format=format_label, status="Running", anomalies=[]))
     db.commit()
     
-    # Hand off the local path (not the heavy file object) to the worker
     background_tasks.add_task(run_audit_background, task_id, file_path, filename, video_url)
     
     return {"task_id": task_id}
