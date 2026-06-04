@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/favicon.png">
     
     <style>
         :root {
@@ -54,6 +55,7 @@
 
     <a href="#mainContent" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-cCard focus:text-cText focus:border-4 focus:border-cText focus:shadow-hard font-bold uppercase tracking-wider text-sm">Skip to main content</a>
 
+    <!-- HISTORIC VAULT DRAWER -->
     <div id="vaultDrawer" class="fixed inset-y-0 left-0 w-[290px] sm:w-[350px] bg-cCard border-r-[4px] border-cText z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-hard" role="dialog" aria-modal="true" aria-label="Vault Archive">
         <div class="p-6 border-b-[3px] border-cText flex justify-between items-center bg-cBg/30">
             <h3 class="text-lg font-bold tracking-widest uppercase font-typewriter">📁 Vault Archive</h3>
@@ -74,18 +76,12 @@
     </div>
     <div id="vaultOverlay" class="fixed inset-0 bg-cText/60 z-40 hidden transition-opacity duration-300 opacity-0" aria-hidden="true"></div>
 
+    <!-- AUTH CONTAINER -->
     <div id="authContainer" class="w-full max-w-lg mx-auto mt-8 sm:mt-16 z-20 transition-all duration-500 relative px-2 sm:px-0">
-        
-        <!-- HOME BUTTON FOR AUTH SCREENS -->
-        <div class="mb-4 flex justify-start">
-            <a href="/" class="inline-flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 py-2 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all focus:outline-none">
-                &larr; Home
-            </a>
-        </div>
-
+        <!-- LOGIN SCREEN -->
         <div id="loginScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-8 border-b-[3px] border-cText pb-6">
-                <span class="text-4xl mb-3 block" aria-hidden="true">🔐</span>
+                <img src="/logo.png" alt="DeepCut Logo" class="h-16 w-auto mx-auto mb-4 object-contain drop-shadow-[2px_2px_0px_rgba(45,40,36,1)]">
                 <h1 class="text-3xl sm:text-4xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Access</h1>
                 <p class="text-cSubtext text-xs sm:text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Authorized Personnel Only</p>
             </div>
@@ -106,6 +102,7 @@
             </div>
         </div>
 
+        <!-- REGISTER SCREEN -->
         <div id="registerScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-6 border-b-[3px] border-cText pb-6">
                 <span class="text-4xl mb-3 block" aria-hidden="true">🛡️</span>
@@ -137,6 +134,7 @@
                     </ul>
                 </div>
                 
+                <!-- GDPR REGISTRATION COMPLIANCE CHECKBOX -->
                 <div class="flex items-start bg-cBg/20 p-3 border-[2px] border-cText shadow-inner mb-2">
                     <input type="checkbox" id="regConsent" class="mt-1 mr-3 h-4 w-4 accent-cAcc2 border-[2px] border-cText cursor-pointer">
                     <label for="regConsent" class="text-[11px] sm:text-xs font-bold text-cText leading-relaxed">
@@ -153,6 +151,7 @@
             </div>
         </div>
 
+        <!-- FORGOT PASSWORD SCREEN -->
         <div id="forgotPasswordScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-6 border-b-[3px] border-cText pb-6">
                 <span class="text-4xl mb-3 block" aria-hidden="true">🔑</span>
@@ -173,6 +172,7 @@
         </div>
     </div>
 
+    <!-- MAIN APP INTERFACE -->
     <div id="appScreen" class="w-full max-w-5xl mx-auto space-y-8 sm:space-y-12 mt-6 sm:mt-10 relative z-10 hidden opacity-0 transition-opacity duration-700 px-0 sm:px-4">
         <header class="w-full flex flex-col border-b-[3px] sm:border-b-4 border-cText pb-6 sm:pb-8 relative z-30">
             <div class="text-center w-full">
@@ -180,11 +180,14 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-cSuccess animate-pulse border border-cText" aria-hidden="true"></span>
                     <span class="text-xs font-bold uppercase tracking-[0.2em] text-cText">System Operational</span>
                 </div>
-                <h1 class="fluid-title font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
+                <div class="flex justify-center items-center gap-4 mb-2 flex-wrap">
+                    <img src="/logo.png" alt="DeepCut Logo" class="h-12 sm:h-16 w-auto object-contain drop-shadow-[2px_2px_0px_rgba(45,40,36,1)] hidden sm:block">
+                    <h1 class="fluid-title font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">DeepCut Engine</h1>
+                </div>
                 <p class="text-cSubtext w-full max-w-2xl mx-auto fluid-subtitle font-medium tracking-wide mt-4 px-4">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
             </div>
             
-            <div class="flex flex-col md:flex-row justify-between items-stretch sm:items-center w-full pt-8 gap-4 px-2 sm:px-0">
+            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center w-full pt-8 gap-4 px-2 sm:px-0">
                 <div class="flex flex-row items-center gap-3 w-full sm:w-auto z-20">
                     <div class="relative w-full sm:w-auto" id="userMenuContainer">
                         <button id="userMenuBtn" class="h-12 w-full flex items-center justify-between sm:justify-start bg-cSuccess text-cBg hover:bg-cSuccess/90 border-[2px] sm:border-[3px] border-cText px-4 shadow-hard-sm shadow-hard-hover transition-all focus:outline-none" aria-haspopup="true" aria-expanded="false">
@@ -197,6 +200,7 @@
                         
                         <div id="userDropdown" class="absolute left-0 sm:right-0 mt-2 w-full sm:w-full min-w-[220px] bg-cCard border-[2px] sm:border-[3px] border-cText shadow-hard hidden z-50 transition-all duration-200 opacity-0 transform -translate-y-2">
                             <div class="flex flex-col" role="menu" aria-orientation="vertical" aria-labelledby="userMenuBtn">
+                                <!-- ADMIN TERMINAL MENU OVERRIDE ENTRY -->
                                 <button id="adminPortalBtn" class="w-full text-left px-4 py-4 text-xs font-bold tracking-[0.2em] uppercase text-cText hover:bg-cAcc2 hover:text-cBg transition-colors border-b-[2px] border-cText/20 hidden" role="menuitem">Admin Console ⚙️</button>
                                 <button id="changePassBtn" class="w-full text-left px-4 py-4 text-xs font-bold tracking-[0.2em] uppercase text-cText hover:bg-cAcc1 hover:text-cBg transition-colors border-b-[2px] border-cText/20" role="menuitem">Change Code 🔑</button>
                                 <button id="logoutBtn" class="w-full text-left px-4 py-4 text-xs font-bold tracking-[0.2em] uppercase text-cAcc3 hover:bg-cAcc3 hover:text-cBg transition-colors" role="menuitem">Log Out ⏏</button>
@@ -205,8 +209,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 w-full md:w-auto z-10">
-                    <a href="/" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all focus:outline-none">&larr; Home</a>
+                <div class="flex gap-3 w-full sm:w-auto z-10">
                     <button id="vaultBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">📁 Vault</button>
                     <button id="guideBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">Guide 📖</button>
                 </div>
@@ -221,6 +224,7 @@
                         <div class="text-5xl sm:text-6xl mb-2 transition-transform duration-300 group-hover:scale-110" aria-hidden="true">📂</div>
                         <div>
                             <div class="text-cText font-bold text-lg sm:text-xl uppercase tracking-wide">Select or drag timeline</div>
+                            <!-- UPDATED SUBTEXT FOR 100MB LIMIT -->
                             <div id="fileFormatsHelp" class="text-cSubtext text-xs sm:text-sm font-typewriter mt-2 font-bold">Supports XML, MP4, MOV, WAV <span class="text-cAcc3 px-1 font-bold border border-cAcc3/30 rounded ml-1 bg-cAcc3/10">Max 100MB</span></div>
                         </div>
                     </div>
@@ -232,6 +236,7 @@
                 </div>
                 <div class="flex flex-col sm:flex-row gap-4 w-full relative">
                     <label for="urlInput" class="sr-only">Paste media link here</label>
+                    <!-- UPDATED PLACEHOLDER FOR 3 MIN LIMIT -->
                     <input type="url" id="urlInput" placeholder="Paste media link here (Max 3 mins)..." class="w-full flex-1 bg-cCard border-[2px] sm:border-[3px] border-cText text-cText px-4 py-4 sm:px-5 focus:outline-none focus:bg-cBg transition-colors text-sm sm:text-base font-typewriter placeholder:text-cMuted font-bold shadow-hard-sm">
                     <button id="runUrlBtn" class="w-full sm:w-auto bg-cAcc2 text-cBg font-bold px-6 py-4 sm:px-8 text-sm sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Scan Link</button>
                 </div>
@@ -302,13 +307,15 @@
                     <button id="geminiSummaryBtn" class="w-full sm:w-auto bg-cText text-cBg px-4 py-3 sm:py-2 text-xs font-bold uppercase tracking-widest hover:bg-cAcc1 hover:text-cText border-[2px] sm:border-[3px] border-cText shadow-hard-sm transition-colors">✨ Generate Exec Summary</button>
                 </div>
 
+                <!-- INTERACTIVE TIMELINE TRACK -->
                 <div id="interactiveTimelineContainer" class="hidden mb-4">
                     <div class="flex justify-between text-[10px] sm:text-xs font-typewriter text-cMuted mb-2 font-bold">
                         <span>00:00:00</span>
                         <span id="timelineDuration">End of Media</span>
                     </div>
                     <div id="interactiveTimeline" class="w-full h-8 sm:h-10 bg-cBg/50 border-[2px] sm:border-[3px] border-cText relative shadow-hard-sm overflow-hidden">
-                        </div>
+                        <!-- Markers get injected here dynamically -->
+                    </div>
                 </div>
 
                 <div class="w-full">
@@ -327,6 +334,7 @@
         </section>
     </div>
 
+    <!-- GUIDE MODAL -->
     <div id="guideModal" class="fixed inset-0 bg-cText/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Official User Documentation">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-12 shadow-hard max-w-3xl w-full max-h-[90vh] overflow-y-auto relative" id="guideModalContainer">
             <button id="closeGuideBtn" class="absolute top-3 right-5 sm:top-4 sm:right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2" aria-label="Close User Guide Modal">&times;</button>
@@ -345,58 +353,21 @@
         </div>
     </div>
 
-<div id="termsPopModal" class="fixed inset-0 bg-cText/95 z-[100] hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Terms of Service and Privacy Policy">
-        <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-8 shadow-hard max-w-2xl w-full max-h-[80vh] flex flex-col relative">
-            <button id="closeTermsPopBtn" class="absolute top-2 right-4 text-3xl font-bold text-cText hover:text-cAcc3 focus:outline-none p-2" aria-label="Close">&times;</button>
-            <h3 class="text-lg sm:text-xl font-bold font-typewriter uppercase tracking-wider mb-4 border-b-[3px] border-cText pb-4 shrink-0">📋 Legal Protocol & Data Processing</h3>
-            
-            <div class="overflow-y-auto pr-4 space-y-6 text-xs sm:text-sm font-medium leading-relaxed text-cText flex-1 custom-scrollbar">
-                
-                <section>
-                    <h4 class="font-bold uppercase tracking-widest text-cAcc3 mb-2">1. The DeepCut Guarantee (Zero Retention)</h4>
-                    <p class="mb-2">DeepCut operates as a transient processing node. We do not want your proprietary media, and we do not keep it.</p>
-                    <ul class="list-disc pl-5 space-y-1 text-cSubtext">
-                        <li><strong>Media Files:</strong> Uploaded timelines, videos, and audio files are processed in volatile memory and are <strong>permanently purged</strong> the absolute millisecond your audit report is generated.</li>
-                        <li><strong>No Model Training:</strong> Transcripts and metadata routed through our third-party AI brokers (OpenAI) via API are strictly ring-fenced. Your data is <strong>never</strong> used to train public or private AI models.</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h4 class="font-bold uppercase tracking-widest text-cAcc3 mb-2">2. Data We Collect (UK GDPR Compliance)</h4>
-                    <p class="mb-2">To provide this service, we store only the absolute minimum required operator data:</p>
-                    <ul class="list-disc pl-5 space-y-1 text-cSubtext">
-                        <li><strong>Account Credentials:</strong> Your Name, Username, and heavily encrypted (hashed) password.</li>
-                        <li><strong>Audit Logs:</strong> The text-based results of your compliance audits (timecodes, error descriptions, and AI insights) are saved to your secure Vault so you can review them later.</li>
-                    </ul>
-                    <p class="mt-2 text-cSubtext">Under UK GDPR, you retain total structural authority over this data. You may request a complete, unrecoverable purge of your operator profile and all historical logs at any time.</p>
-                </section>
-
-                <section>
-                    <h4 class="font-bold uppercase tracking-widest text-cAcc3 mb-2">3. Terms of Service</h4>
-                    <p class="text-cSubtext mb-2">By utilizing the DeepCut Engine, you agree to the following operational parameters:</p>
-                    <ul class="list-disc pl-5 space-y-1 text-cSubtext">
-                        <li><strong>Authorized Use:</strong> You confirm that you hold the necessary rights, licenses, or permissions to upload and process the media you submit to the engine.</li>
-                        <li><strong>System Limitations:</strong> DeepCut is a highly advanced AI-assisted tool, not a human legal team. While we strive for absolute accuracy in copyright detection and continuity analysis, our reports should be used as an advisory layer. You remain ultimately responsible for the final compliance of your exported media.</li>
-                        <li><strong>Abuse:</strong> Attempting to reverse-engineer the engine, bypass structural limits, or upload malicious payloads will result in immediate and permanent operator termination.</li>
-                    </ul>
-                </section>
-
+    <!-- INFORMED CONSENT POP-UP MODAL (GDPR COMPLIANCE) -->
+    <div id="termsPopModal" class="fixed inset-0 bg-cText/95 z-[100] hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Terms of Service Integration Agreement">
+        <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-8 shadow-hard max-w-xl w-full max-h-[75vh] overflow-y-auto relative">
+            <button id="closeTermsPopBtn" class="absolute top-2 right-4 text-2xl font-bold text-cText hover:text-cAcc3 focus:outline-none p-2">&times;</button>
+            <h3 class="text-md sm:text-lg font-bold font-typewriter uppercase tracking-wider mb-4 border-b-2 border-cText pb-2">📋 Legal Terms & Protocol Integration</h3>
+            <div class="text-xs sm:text-sm font-medium leading-relaxed space-y-3 text-cSubtext">
+                <p><strong>1. Processing Layer:</strong> DeepCut acts as an automated processing node parsing user-submitted structural timelines (XML) and spatial audio files.</p>
+                <p><strong>2. AI Broker Routing:</strong> By registering, you understand transcript layers and text maps route securely into OpenAI core nodes via API parameters. Data remains strictly localized and is never trained on.</p>
+                <p><strong>3. Data Sovereignty:</strong> Identity records are securely salted and hashed. You retain structural authority to purge user data routes and historical parameters securely at any time.</p>
             </div>
-
-            <div class="pt-6 border-t-[3px] border-cText shrink-0 mt-4">
-                <button id="acknowledgeTermsPopBtn" class="w-full bg-cAcc2 text-cCard font-bold py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard-sm hover:shadow-hard transition-all focus:outline-none">Acknowledge & Agree</button>
-            </div>
+            <button id="acknowledgeTermsPopBtn" class="w-full bg-cAcc2 text-cBg font-bold py-3 uppercase tracking-widest border-2 border-cText shadow-hard-sm mt-6 hover:opacity-90">Acknowledge Agreement</button>
         </div>
     </div>
-    
-    <style>
-        /* Custom scrollbar to match the brutalist aesthetic */
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgb(var(--c-bg)); border-left: 2px solid rgb(var(--c-text)); }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgb(var(--c-text)); }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-acc3)); }
-    </style>
 
+    <!-- CHANGE PASSWORD MODAL -->
     <div id="changePassModal" class="fixed inset-0 bg-cText/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Change Access Code">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard max-w-lg w-full relative">
             <button id="closeChangePassBtn" class="absolute top-3 right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2" aria-label="Close Change Password Modal">&times;</button>
@@ -425,6 +396,7 @@
         </div>
     </div>
 
+    <!-- ADMINISTRATIVE TERMINAL MASTER CONTROL MODAL -->
     <div id="adminModal" class="fixed inset-0 bg-cText/95 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Administrative System Terminal">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard max-w-4xl w-full max-h-[85vh] overflow-y-auto relative">
             <button id="closeAdminBtn" class="absolute top-3 right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2">&times;</button>
