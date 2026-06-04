@@ -15,6 +15,7 @@
     <!-- PINNED TAILWIND VERSION FOR SUPPLY CHAIN SECURITY -->
     <script src="https://cdn.tailwindcss.com/3.4.5"></script>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/favicon.png">
     
     <script>
         tailwind.config = {
@@ -37,12 +38,13 @@
     
     <!-- TOP NAVIGATION -->
     <nav class="w-full flex flex-col sm:flex-row justify-between items-center p-6 sm:p-12 gap-4 sm:gap-0 shrink-0">
-        <div class="text-2xl font-bold tracking-tighter uppercase italic border-b-[3px] border-cText">DeepCut.Video</div>
+        <div class="flex items-center gap-3">
+            <img src="/logo.png" alt="DeepCut Logo" class="h-12 w-auto object-contain drop-shadow-[2px_2px_0px_rgba(45,40,36,1)]">
+            <div class="text-2xl font-bold tracking-tighter uppercase italic border-b-[3px] border-cText">DeepCut.video</div>
+        </div>
         <div class="flex items-center gap-6">
-            <a href="app.html#register" class="bg-cText text-cBg px-6 py-3 text-sm font-bold uppercase tracking-widest hover:bg-cAcc2 transition-all whitespace-nowrap border-[3px] border-transparent hover:border-cText">Register Access</a>
-            <a href="/app.html" class="inline-block bg-[#b45044] text-[#fdfbf7] font-bold px-8 py-4 text-base uppercase tracking-widest border-[3px] border-[#2d2824] shadow-[4px_4px_0px_#2d2824] hover:shadow-[6px_6px_0px_#2d2824] hover:-translate-y-0.5 hover:-translate-x-0.5 active:shadow-[2px_2px_0px_#2d2824] active:translate-y-0.5 active:translate-x-0.5 transition-all focus:outline-none">
-  Sign in &rarr;
-</a>
+            <a href="index.html" class="text-cText font-bold uppercase tracking-widest text-sm hover:text-cAcc2 transition-colors">Sign In</a>
+            <a href="index.html#register" class="bg-cText text-cBg px-6 py-3 text-sm font-bold uppercase tracking-widest hover:bg-cAcc2 transition-all whitespace-nowrap border-[3px] border-transparent hover:border-cText">Register Access</a>
         </div>
     </nav>
 
@@ -58,7 +60,7 @@
         </p>
 
         <div class="flex flex-col sm:flex-row gap-6 pt-10">
-            <a href="app.html#register" class="btn-hover bg-cAcc1 border-[3px] border-cText px-10 py-5 text-base sm:text-lg font-bold uppercase tracking-widest shadow-hard text-center whitespace-nowrap transition-transform">Register Access</a>
+            <a href="index.html#register" class="btn-hover bg-cAcc1 border-[3px] border-cText px-10 py-5 text-base sm:text-lg font-bold uppercase tracking-widest shadow-hard text-center whitespace-nowrap transition-transform">Register Access</a>
             <button id="openDocsBtn" type="button" class="btn-hover bg-cCard border-[3px] border-cText px-10 py-5 text-base sm:text-lg font-bold uppercase tracking-widest shadow-hard text-center hover:bg-white transition-colors whitespace-nowrap focus:outline-none">View Documentation</button>
         </div>
     </main>
