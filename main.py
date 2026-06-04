@@ -163,7 +163,7 @@ def send_reset_email_task(recipient_email: str, temp_password: str):
         return
 
     msg = MIMEMultipart()
-    msg['From'] = f"DeepCut Administration <{sender_email}>"
+    msg['From'] = sender_email
     msg['To'] = recipient_email
     msg['Subject'] = "DeepCut Engine: Operator Access Recovery"
 
