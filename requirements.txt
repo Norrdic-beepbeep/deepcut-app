@@ -12,3 +12,4 @@ psycopg2-binary
 aiofiles
 pydub
 audioop-lts
+pip install celery redis
