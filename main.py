@@ -238,6 +238,14 @@ def download_audio_from_link(url: str, session_id: str):
     ydl_opts = {'format': 'm4a/bestaudio/best', 'outtmpl': out_tmpl, 'noplaylist': True, 'quiet': True}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # 1. Pre-flight check: Extract metadata without downloading
+            info = ydl.extract_info(url, download=False)
+            duration_seconds = info.get('duration', 0)
+            
+            if duration_seconds > 180: # 3 Minute Limit
+                return None, "Link limit exceeded. Videos must be 3 minutes or less."
+
+            # 2. Passed guardrail, execute download
             info = ydl.extract_info(url, download=True)
             path = ydl.prepare_filename(info)
             return path, None
@@ -372,7 +380,7 @@ def secure_generate_summary(data: dict, current_user: User = Depends(get_current
 # OPERATOR ACCESS ENDPOINTS
 # ---------------------------------------------------------
 @app.get("/")
-def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.5.0-admin-enabled"}
+def home_root(): return {"status": "online", "engine": "DeepCut Compliance API", "version": "1.6.0-start-up"}
 
 @app.post("/api/register")
 def register_user(background_tasks: BackgroundTasks, name: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...), consent: bool = Form(...), db: Session = Depends(get_db)):
@@ -521,13 +529,13 @@ async def run_audit_background(task_id: str, file_path: str, filename: str, vide
 
 @app.post("/api/audit/start")
 async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File(None), video_url: str = Form(None), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.username != ADMIN_USERNAME:
-        if current_user.tier == "free" and current_user.audits_used >= 5:
-            raise HTTPException(status_code=403, detail="QUOTA_EXCEEDED")
-        current_user.audits_used += 1
-        db.commit()
+    
+    # We still track usage, but we removed the 5-audit limit entirely.
+    current_user.audits_used += 1
+    db.commit()
 
-    if not file and not video_url: raise HTTPException(status_code=400, detail="Must provide file or URL.")
+    if not file and not video_url: 
+        raise HTTPException(status_code=400, detail="Must provide file or URL.")
     
     task_id = str(uuid.uuid4())
     task_statuses[task_id] = {"status": "running", "stage": "scan", "progress": 0, "message": "INITIALIZING...", "result": None}
@@ -539,9 +547,21 @@ async def start_audit(background_tasks: BackgroundTasks, file: UploadFile = File
     if file:
         temp_dir = tempfile.gettempdir()
         file_path = os.path.join(temp_dir, f"{task_id}_{file.filename}")
-        async with aiofiles.open(file_path, 'wb') as out_file:
-            while content := await file.read(1024 * 1024):
-                await out_file.write(content)
+        
+        MAX_SIZE_BYTES = 100 * 1024 * 1024 # 100 Megabytes
+        current_size = 0
+        
+        try:
+            async with aiofiles.open(file_path, 'wb') as out_file:
+                while content := await file.read(1024 * 1024):
+                    current_size += len(content)
+                    if current_size > MAX_SIZE_BYTES:
+                        raise HTTPException(status_code=413, detail="Upload limit exceeded. Files must be under 100MB.")
+                    await out_file.write(content)
+        except Exception as e:
+            if os.path.exists(file_path):
+                os.remove(file_path) # Cleanup if aborted
+            raise e
 
     db.add(Audit(id=task_id, user_id=current_user.id, filename=filename or "Web Stream", format=format_label, status="Running", anomalies=[]))
     db.commit()
@@ -576,4 +596,4 @@ async def websocket_audit_endpoint(websocket: WebSocket, task_id: str):
         if task_id in active_connections: del active_connections[task_id]
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000))) 
