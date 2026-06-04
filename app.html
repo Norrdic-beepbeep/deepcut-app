@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,7 +54,6 @@
 
     <a href="#mainContent" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-cCard focus:text-cText focus:border-4 focus:border-cText focus:shadow-hard font-bold uppercase tracking-wider text-sm">Skip to main content</a>
 
-    <!-- HISTORIC VAULT DRAWER -->
     <div id="vaultDrawer" class="fixed inset-y-0 left-0 w-[290px] sm:w-[350px] bg-cCard border-r-[4px] border-cText z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-hard" role="dialog" aria-modal="true" aria-label="Vault Archive">
         <div class="p-6 border-b-[3px] border-cText flex justify-between items-center bg-cBg/30">
             <h3 class="text-lg font-bold tracking-widest uppercase font-typewriter">📁 Vault Archive</h3>
@@ -76,9 +74,7 @@
     </div>
     <div id="vaultOverlay" class="fixed inset-0 bg-cText/60 z-40 hidden transition-opacity duration-300 opacity-0" aria-hidden="true"></div>
 
-    <!-- AUTH CONTAINER -->
     <div id="authContainer" class="w-full max-w-lg mx-auto mt-8 sm:mt-16 z-20 transition-all duration-500 relative px-2 sm:px-0">
-        <!-- LOGIN SCREEN -->
         <div id="loginScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-8 border-b-[3px] border-cText pb-6">
                 <span class="text-4xl mb-3 block" aria-hidden="true">🔐</span>
@@ -102,7 +98,6 @@
             </div>
         </div>
 
-        <!-- REGISTER SCREEN -->
         <div id="registerScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-6 border-b-[3px] border-cText pb-6">
                 <span class="text-4xl mb-3 block" aria-hidden="true">🛡️</span>
@@ -134,7 +129,6 @@
                     </ul>
                 </div>
                 
-                <!-- GDPR REGISTRATION COMPLIANCE CHECKBOX -->
                 <div class="flex items-start bg-cBg/20 p-3 border-[2px] border-cText shadow-inner mb-2">
                     <input type="checkbox" id="regConsent" class="mt-1 mr-3 h-4 w-4 accent-cAcc2 border-[2px] border-cText cursor-pointer">
                     <label for="regConsent" class="text-[11px] sm:text-xs font-bold text-cText leading-relaxed">
@@ -151,7 +145,6 @@
             </div>
         </div>
 
-        <!-- FORGOT PASSWORD SCREEN -->
         <div id="forgotPasswordScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-6 border-b-[3px] border-cText pb-6">
                 <span class="text-4xl mb-3 block" aria-hidden="true">🔑</span>
@@ -172,7 +165,6 @@
         </div>
     </div>
 
-    <!-- MAIN APP INTERFACE -->
     <div id="appScreen" class="w-full max-w-5xl mx-auto space-y-8 sm:space-y-12 mt-6 sm:mt-10 relative z-10 hidden opacity-0 transition-opacity duration-700 px-0 sm:px-4">
         <header class="w-full flex flex-col border-b-[3px] sm:border-b-4 border-cText pb-6 sm:pb-8 relative z-30">
             <div class="text-center w-full">
@@ -184,7 +176,7 @@
                 <p class="text-cSubtext w-full max-w-2xl mx-auto fluid-subtitle font-medium tracking-wide mt-4 px-4">Automated cinematic auditing for continuity, copyright compliance, and visual consistency.</p>
             </div>
             
-            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center w-full pt-8 gap-4 px-2 sm:px-0">
+            <div class="flex flex-col md:flex-row justify-between items-stretch sm:items-center w-full pt-8 gap-4 px-2 sm:px-0">
                 <div class="flex flex-row items-center gap-3 w-full sm:w-auto z-20">
                     <div class="relative w-full sm:w-auto" id="userMenuContainer">
                         <button id="userMenuBtn" class="h-12 w-full flex items-center justify-between sm:justify-start bg-cSuccess text-cBg hover:bg-cSuccess/90 border-[2px] sm:border-[3px] border-cText px-4 shadow-hard-sm shadow-hard-hover transition-all focus:outline-none" aria-haspopup="true" aria-expanded="false">
@@ -197,7 +189,6 @@
                         
                         <div id="userDropdown" class="absolute left-0 sm:right-0 mt-2 w-full sm:w-full min-w-[220px] bg-cCard border-[2px] sm:border-[3px] border-cText shadow-hard hidden z-50 transition-all duration-200 opacity-0 transform -translate-y-2">
                             <div class="flex flex-col" role="menu" aria-orientation="vertical" aria-labelledby="userMenuBtn">
-                                <!-- ADMIN TERMINAL MENU OVERRIDE ENTRY -->
                                 <button id="adminPortalBtn" class="w-full text-left px-4 py-4 text-xs font-bold tracking-[0.2em] uppercase text-cText hover:bg-cAcc2 hover:text-cBg transition-colors border-b-[2px] border-cText/20 hidden" role="menuitem">Admin Console ⚙️</button>
                                 <button id="changePassBtn" class="w-full text-left px-4 py-4 text-xs font-bold tracking-[0.2em] uppercase text-cText hover:bg-cAcc1 hover:text-cBg transition-colors border-b-[2px] border-cText/20" role="menuitem">Change Code 🔑</button>
                                 <button id="logoutBtn" class="w-full text-left px-4 py-4 text-xs font-bold tracking-[0.2em] uppercase text-cAcc3 hover:bg-cAcc3 hover:text-cBg transition-colors" role="menuitem">Log Out ⏏</button>
@@ -206,19 +197,10 @@
                     </div>
                 </div>
 
-            <div class="flex gap-3 w-full sm:w-auto z-10">
-    <a href="/" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all focus:outline-none">
-        &larr; Home
-    </a>
-    
-    <button id="vaultBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">📁 Vault</button>
-    <button id="guideBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">Guide 📖</button>
-</div>
-    
-    <button id="vaultBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">📁 Vault</button>
-    <button id="guideBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">Guide 📖</button>
-</div>
-                
+                <div class="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 w-full md:w-auto z-10">
+                    <a href="/" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all focus:outline-none">&larr; Home</a>
+                    <button id="vaultBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">📁 Vault</button>
+                    <button id="guideBtn" class="flex-1 sm:flex-none h-12 flex items-center justify-center bg-cCard text-cText hover:bg-cBg border-[2px] sm:border-[3px] border-cText px-4 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase shadow-hard-sm shadow-hard-hover transition-all">Guide 📖</button>
                 </div>
             </div>
         </header>
@@ -231,7 +213,6 @@
                         <div class="text-5xl sm:text-6xl mb-2 transition-transform duration-300 group-hover:scale-110" aria-hidden="true">📂</div>
                         <div>
                             <div class="text-cText font-bold text-lg sm:text-xl uppercase tracking-wide">Select or drag timeline</div>
-                            <!-- UPDATED SUBTEXT FOR 100MB LIMIT -->
                             <div id="fileFormatsHelp" class="text-cSubtext text-xs sm:text-sm font-typewriter mt-2 font-bold">Supports XML, MP4, MOV, WAV <span class="text-cAcc3 px-1 font-bold border border-cAcc3/30 rounded ml-1 bg-cAcc3/10">Max 100MB</span></div>
                         </div>
                     </div>
@@ -243,7 +224,6 @@
                 </div>
                 <div class="flex flex-col sm:flex-row gap-4 w-full relative">
                     <label for="urlInput" class="sr-only">Paste media link here</label>
-                    <!-- UPDATED PLACEHOLDER FOR 3 MIN LIMIT -->
                     <input type="url" id="urlInput" placeholder="Paste media link here (Max 3 mins)..." class="w-full flex-1 bg-cCard border-[2px] sm:border-[3px] border-cText text-cText px-4 py-4 sm:px-5 focus:outline-none focus:bg-cBg transition-colors text-sm sm:text-base font-typewriter placeholder:text-cMuted font-bold shadow-hard-sm">
                     <button id="runUrlBtn" class="w-full sm:w-auto bg-cAcc2 text-cBg font-bold px-6 py-4 sm:px-8 text-sm sm:text-base uppercase tracking-widest border-[2px] sm:border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all whitespace-nowrap">Scan Link</button>
                 </div>
@@ -314,15 +294,13 @@
                     <button id="geminiSummaryBtn" class="w-full sm:w-auto bg-cText text-cBg px-4 py-3 sm:py-2 text-xs font-bold uppercase tracking-widest hover:bg-cAcc1 hover:text-cText border-[2px] sm:border-[3px] border-cText shadow-hard-sm transition-colors">✨ Generate Exec Summary</button>
                 </div>
 
-                <!-- INTERACTIVE TIMELINE TRACK -->
                 <div id="interactiveTimelineContainer" class="hidden mb-4">
                     <div class="flex justify-between text-[10px] sm:text-xs font-typewriter text-cMuted mb-2 font-bold">
                         <span>00:00:00</span>
                         <span id="timelineDuration">End of Media</span>
                     </div>
                     <div id="interactiveTimeline" class="w-full h-8 sm:h-10 bg-cBg/50 border-[2px] sm:border-[3px] border-cText relative shadow-hard-sm overflow-hidden">
-                        <!-- Markers get injected here dynamically -->
-                    </div>
+                        </div>
                 </div>
 
                 <div class="w-full">
@@ -341,7 +319,6 @@
         </section>
     </div>
 
-    <!-- GUIDE MODAL -->
     <div id="guideModal" class="fixed inset-0 bg-cText/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Official User Documentation">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-12 shadow-hard max-w-3xl w-full max-h-[90vh] overflow-y-auto relative" id="guideModalContainer">
             <button id="closeGuideBtn" class="absolute top-3 right-5 sm:top-4 sm:right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2" aria-label="Close User Guide Modal">&times;</button>
@@ -360,7 +337,6 @@
         </div>
     </div>
 
-    <!-- INFORMED CONSENT POP-UP MODAL (GDPR COMPLIANCE) -->
     <div id="termsPopModal" class="fixed inset-0 bg-cText/95 z-[100] hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Terms of Service Integration Agreement">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-8 shadow-hard max-w-xl w-full max-h-[75vh] overflow-y-auto relative">
             <button id="closeTermsPopBtn" class="absolute top-2 right-4 text-2xl font-bold text-cText hover:text-cAcc3 focus:outline-none p-2">&times;</button>
@@ -374,7 +350,6 @@
         </div>
     </div>
 
-    <!-- CHANGE PASSWORD MODAL -->
     <div id="changePassModal" class="fixed inset-0 bg-cText/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Change Access Code">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard max-w-lg w-full relative">
             <button id="closeChangePassBtn" class="absolute top-3 right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2" aria-label="Close Change Password Modal">&times;</button>
@@ -403,7 +378,6 @@
         </div>
     </div>
 
-    <!-- ADMINISTRATIVE TERMINAL MASTER CONTROL MODAL -->
     <div id="adminModal" class="fixed inset-0 bg-cText/95 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Administrative System Terminal">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard max-w-4xl w-full max-h-[85vh] overflow-y-auto relative">
             <button id="closeAdminBtn" class="absolute top-3 right-5 text-3xl font-bold text-cText hover:text-cAcc3 transition-colors focus:outline-none p-2">&times;</button>
