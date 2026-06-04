@@ -345,18 +345,57 @@
         </div>
     </div>
 
-    <div id="termsPopModal" class="fixed inset-0 bg-cText/95 z-[100] hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Terms of Service Integration Agreement">
-        <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-8 shadow-hard max-w-xl w-full max-h-[75vh] overflow-y-auto relative">
-            <button id="closeTermsPopBtn" class="absolute top-2 right-4 text-2xl font-bold text-cText hover:text-cAcc3 focus:outline-none p-2">&times;</button>
-            <h3 class="text-md sm:text-lg font-bold font-typewriter uppercase tracking-wider mb-4 border-b-2 border-cText pb-2">📋 Legal Terms & Protocol Integration</h3>
-            <div class="text-xs sm:text-sm font-medium leading-relaxed space-y-3 text-cSubtext">
-                <p><strong>1. Processing Layer:</strong> DeepCut acts as an automated processing node parsing user-submitted structural timelines (XML) and spatial audio files.</p>
-                <p><strong>2. AI Broker Routing:</strong> By registering, you understand transcript layers and text maps route securely into OpenAI core nodes via API parameters. Data remains strictly localized and is never trained on.</p>
-                <p><strong>3. Data Sovereignty:</strong> Identity records are securely salted and hashed. You retain structural authority to purge user data routes and historical parameters securely at any time.</p>
+<div id="termsPopModal" class="fixed inset-0 bg-cText/95 z-[100] hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Terms of Service and Privacy Policy">
+        <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-8 shadow-hard max-w-2xl w-full max-h-[80vh] flex flex-col relative">
+            <button id="closeTermsPopBtn" class="absolute top-2 right-4 text-3xl font-bold text-cText hover:text-cAcc3 focus:outline-none p-2" aria-label="Close">&times;</button>
+            <h3 class="text-lg sm:text-xl font-bold font-typewriter uppercase tracking-wider mb-4 border-b-[3px] border-cText pb-4 shrink-0">📋 Legal Protocol & Data Processing</h3>
+            
+            <div class="overflow-y-auto pr-4 space-y-6 text-xs sm:text-sm font-medium leading-relaxed text-cText flex-1 custom-scrollbar">
+                
+                <section>
+                    <h4 class="font-bold uppercase tracking-widest text-cAcc3 mb-2">1. The DeepCut Guarantee (Zero Retention)</h4>
+                    <p class="mb-2">DeepCut operates as a transient processing node. We do not want your proprietary media, and we do not keep it.</p>
+                    <ul class="list-disc pl-5 space-y-1 text-cSubtext">
+                        <li><strong>Media Files:</strong> Uploaded timelines, videos, and audio files are processed in volatile memory and are <strong>permanently purged</strong> the absolute millisecond your audit report is generated.</li>
+                        <li><strong>No Model Training:</strong> Transcripts and metadata routed through our third-party AI brokers (OpenAI) via API are strictly ring-fenced. Your data is <strong>never</strong> used to train public or private AI models.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h4 class="font-bold uppercase tracking-widest text-cAcc3 mb-2">2. Data We Collect (UK GDPR Compliance)</h4>
+                    <p class="mb-2">To provide this service, we store only the absolute minimum required operator data:</p>
+                    <ul class="list-disc pl-5 space-y-1 text-cSubtext">
+                        <li><strong>Account Credentials:</strong> Your Name, Username, and heavily encrypted (hashed) password.</li>
+                        <li><strong>Audit Logs:</strong> The text-based results of your compliance audits (timecodes, error descriptions, and AI insights) are saved to your secure Vault so you can review them later.</li>
+                    </ul>
+                    <p class="mt-2 text-cSubtext">Under UK GDPR, you retain total structural authority over this data. You may request a complete, unrecoverable purge of your operator profile and all historical logs at any time.</p>
+                </section>
+
+                <section>
+                    <h4 class="font-bold uppercase tracking-widest text-cAcc3 mb-2">3. Terms of Service</h4>
+                    <p class="text-cSubtext mb-2">By utilizing the DeepCut Engine, you agree to the following operational parameters:</p>
+                    <ul class="list-disc pl-5 space-y-1 text-cSubtext">
+                        <li><strong>Authorized Use:</strong> You confirm that you hold the necessary rights, licenses, or permissions to upload and process the media you submit to the engine.</li>
+                        <li><strong>System Limitations:</strong> DeepCut is a highly advanced AI-assisted tool, not a human legal team. While we strive for absolute accuracy in copyright detection and continuity analysis, our reports should be used as an advisory layer. You remain ultimately responsible for the final compliance of your exported media.</li>
+                        <li><strong>Abuse:</strong> Attempting to reverse-engineer the engine, bypass structural limits, or upload malicious payloads will result in immediate and permanent operator termination.</li>
+                    </ul>
+                </section>
+
             </div>
-            <button id="acknowledgeTermsPopBtn" class="w-full bg-cAcc2 text-cBg font-bold py-3 uppercase tracking-widest border-2 border-cText shadow-hard-sm mt-6 hover:opacity-90">Acknowledge Agreement</button>
+
+            <div class="pt-6 border-t-[3px] border-cText shrink-0 mt-4">
+                <button id="acknowledgeTermsPopBtn" class="w-full bg-cAcc2 text-cCard font-bold py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard-sm hover:shadow-hard transition-all focus:outline-none">Acknowledge & Agree</button>
+            </div>
         </div>
     </div>
+    
+    <style>
+        /* Custom scrollbar to match the brutalist aesthetic */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgb(var(--c-bg)); border-left: 2px solid rgb(var(--c-text)); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgb(var(--c-text)); }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-acc3)); }
+    </style>
 
     <div id="changePassModal" class="fixed inset-0 bg-cText/90 z-50 hidden flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Change Access Code">
         <div class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard max-w-lg w-full relative">
