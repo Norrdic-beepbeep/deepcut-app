@@ -1,0 +1,1 @@
+Now, your tool is safely backed up in the cloud with the rest of your app. Whenever someone needs a password reset, you just open your terminal in VS Code, run python admin_tools/hash_maker.py, type the password, and copy the result to DBeaver!
