@@ -49,7 +49,11 @@ class User(Base):
     hashed_password = Column(String)
     consent_given = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    is_suspended = Column(Boolean, default=False) # <--- NEW SUSPENSION COLUMN
+    is_suspended = Column(Boolean, default=False)
+    
+    # Add these two new lines:
+    last_login = Column(DateTime, nullable=True)
+    reset_requested = Column(Boolean, default=False)
     
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
@@ -182,10 +186,14 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         if not user or not verify_password(form_data.password, user.hashed_password):
             raise HTTPException(status_code=401, detail="Incorrect username or password")
         
-        # <--- NEW SUSPENSION CHECK --->
         if user.is_suspended:
             raise HTTPException(status_code=403, detail="Account suspended. Please contact administration.")
         
+        # --- NEW CODE: Stamp the login time ---
+        user.last_login = datetime.datetime.utcnow()
+        db.commit()
+        # --------------------------------------
+
         access_token = create_access_token(data={"sub": user.username})
         return {"access_token": access_token, "token_type": "bearer", "username": user.username, "is_admin": user.is_admin}
     except HTTPException:
@@ -196,7 +204,20 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @app.post("/api/forgot-password")
 def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
-    return {"message": "Recovery instructions dispatched if email exists."}
+    try:
+        # Look for the user in the database
+        user = db.query(User).filter(User.email == email).first()
+        
+        # If they exist, flip the reset_requested switch to True
+        if user:
+            user.reset_requested = True
+            db.commit()
+            
+        # Always return the same message so hackers can't use this route to guess valid emails
+        return {"message": "Recovery instructions dispatched if email exists."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
 
 @app.post("/api/change-password")
 def change_password(
