@@ -149,18 +149,21 @@ app.add_middleware(
 # 6. EMAIL & PUBLIC ROUTES
 # ==========================================
 def send_reset_email_task(recipient_email: str, temp_password: str):
-    # Defaulting to Outlook/Office365 settings
-    smtp_server = os.getenv("SMTP_SERVER", "smtp.office365.com") 
+    # Your Resend SMTP credentials
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.resend.com") 
     smtp_port = int(os.getenv("SMTP_PORT", 587))
-    smtp_user = os.getenv("SMTP_USER", "info@deepcut.video")
+    smtp_user = os.getenv("SMTP_USER", "resend")
     smtp_password = os.getenv("SMTP_PASSWORD", "")
+    
+    # We explicitly hardcode your verified sender email here
+    sender_email = "info@deepcut.video"
 
     if not smtp_password:
         print("SMTP_PASSWORD not set in Render environment. Email aborted.")
         return
 
     msg = MIMEMultipart()
-    msg['From'] = f"DeepCut Administration <{smtp_user}>"
+    msg['From'] = f"DeepCut Administration <{sender_email}>"
     msg['To'] = recipient_email
     msg['Subject'] = "DeepCut Engine: Operator Access Recovery"
 
