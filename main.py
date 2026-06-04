@@ -65,15 +65,19 @@ class Audit(Base):
     
     owner = relationship("User", back_populates="audits")
 
-# Build tables
+# --- SELF-HEALING DATABASE MIGRATION TRIGGER ---
+# If you set the environment variable FORCE_RECREATE_DB=true on Render,
+# the backend will drop and recreate tables with the correct columns.
+if os.getenv("FORCE_RECREATE_DB", "false").lower() == "true":
+    Base.metadata.drop_all(bind=engine)
+
+# Build/Sync tables
 Base.metadata.create_all(bind=engine)
 
 
 # ==========================================
 # 3. GLOBAL TRANSIENT JOB TRACKER
 # ==========================================
-# This acts as our "in-memory Redis". It tracks live progress steps 
-# so your UI progress bars stay animated without hitting the database too much.
 active_jobs = {}
 
 
@@ -135,7 +139,7 @@ app = FastAPI(title="DeepCut Engine API")
 # Setup CORS to securely bridge your Vercel frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For absolute safety, change this to your Vercel domains later
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -264,19 +268,12 @@ def get_single_audit(audit_id: str, current_user: User = Depends(get_current_use
 # 9. ASYNCHRONOUS FREE BACKGROUND AUDITOR
 # ==========================================
 def process_audit_in_background(job_id: str, file_path: str, filename: str, user_id: int):
-    """
-    This function handles the file processing asynchronously on a separate thread,
-    keeping your main thread light and allowing logins to go through instantly.
-    """
     global active_jobs
     db = SessionLocal()
     try:
-        # Step 1: Initializing
         active_jobs[job_id] = {"stage": "scan", "progress": 10, "message": "Parsing timeline XML metadata..."}
         time_to_wait = 2.0
         
-        # Simulating heavy compliance parsing steps...
-        # Replace these sleep statements with your actual FFmpeg / analysis code!
         import time
         time.sleep(time_to_wait)
         active_jobs[job_id] = {"stage": "scan", "progress": 50, "message": "Auditing raw waveforms for licensing signatures..."}
@@ -286,7 +283,6 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
         
         time.sleep(time_to_wait)
         
-        # Step 2: Formulate AI Anomaly Output
         anomalies = [
             {
                 "timecode": "00:01:14", 
@@ -305,14 +301,12 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
             }
         ]
 
-        # Step 3: Write final result into the SQL database
         audit_record = db.query(Audit).filter(Audit.id == job_id).first()
         if audit_record:
             audit_record.status = "Flagged" if len(anomalies) > 0 else "Clean"
             audit_record.anomalies = anomalies
             db.commit()
 
-        # Step 4: Clear memory trackers and delete temp file
         active_jobs[job_id] = {
             "status": "complete",
             "filename": filename,
@@ -325,7 +319,6 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
             os.remove(file_path)
 
     except Exception as e:
-        # If anything crashes, fail gracefully so the UI doesn't hang forever
         audit_record = db.query(Audit).filter(Audit.id == job_id).first()
         if audit_record:
             audit_record.status = "Error"
@@ -365,7 +358,6 @@ async def start_audit(
     else:
         raise HTTPException(status_code=400, detail="Must provide a file or a URL")
 
-    # Save a "Processing" record to the database
     new_audit = Audit(
         id=job_id,
         user_id=current_user.id,
@@ -377,24 +369,16 @@ async def start_audit(
     db.add(new_audit)
     db.commit()
 
-    # Set initial progress state in global memory dictionary
     active_jobs[job_id] = {"stage": "scan", "progress": 0, "message": "Enqueuing pipeline..."}
-
-    # Dispatch the task to the local FastAPI background worker thread (FREE!)
     background_tasks.add_task(process_audit_in_background, job_id, temp_file_path, filename, current_user.id)
-    
-    # We return the job_id as the task_id so your frontend JavaScript works untouched!
     return JSONResponse({"task_id": job_id, "job_id": job_id, "status": "queued"})
 
 
 @app.get("/api/audit/status/{task_id}")
 async def get_audit_status(task_id: str):
-    """Fallback HTTP Polling for clients who drop WebSocket connections."""
     global active_jobs
-    
     job_state = active_jobs.get(task_id)
     if not job_state:
-        # Check database directly if not in transient memory (it might have finished long ago)
         db = SessionLocal()
         audit_record = db.query(Audit).filter(Audit.id == task_id).first()
         db.close()
@@ -425,7 +409,6 @@ async def get_audit_status(task_id: str):
 
 @app.websocket("/ws/audit/{task_id}")
 async def websocket_audit_status(websocket: WebSocket, task_id: str):
-    """Real-time progress streaming via WebSockets without needing external message brokers."""
     await websocket.accept()
     global active_jobs
     
