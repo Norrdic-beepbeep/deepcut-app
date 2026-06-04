@@ -4,6 +4,11 @@ import uuid
 import datetime
 import asyncio
 from typing import List, Optional
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import secrets
+import string
 
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, BackgroundTasks
 from fastapi.responses import JSONResponse
@@ -49,9 +54,7 @@ class User(Base):
     hashed_password = Column(String)
     consent_given = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    is_suspended = Column(Boolean, default=False)
-    
-    # Add these two new lines:
+    is_suspended = Column(Boolean, default=False) 
     last_login = Column(DateTime, nullable=True)
     reset_requested = Column(Boolean, default=False)
     
@@ -143,8 +146,48 @@ app.add_middleware(
 
 
 # ==========================================
-# 6. PUBLIC ROUTES (Login & Registration)
+# 6. EMAIL & PUBLIC ROUTES
 # ==========================================
+def send_reset_email_task(recipient_email: str, temp_password: str):
+    # Defaulting to Outlook/Office365 settings
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.office365.com") 
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER", "info@deepcut.video")
+    smtp_password = os.getenv("SMTP_PASSWORD", "")
+
+    if not smtp_password:
+        print("SMTP_PASSWORD not set in Render environment. Email aborted.")
+        return
+
+    msg = MIMEMultipart()
+    msg['From'] = f"DeepCut Administration <{smtp_user}>"
+    msg['To'] = recipient_email
+    msg['Subject'] = "DeepCut Engine: Operator Access Recovery"
+
+    body = f"""
+    DEEPCUT SYSTEM ALERT
+    -----------------------------------------
+    A password reset was authorized for your Operator account.
+    
+    Your temporary access code is: {temp_password}
+    
+    Return to the DeepCut Engine, log in with this temporary code, 
+    and update your credentials immediately.
+    -----------------------------------------
+    """
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        print(f"Recovery email successfully dispatched to {recipient_email}")
+    except Exception as e:
+        print(f"SMTP Error: Failed to dispatch email to {recipient_email}. Error: {str(e)}")
+
+
 @app.post("/api/register")
 def register(
     name: str = Form(...),
@@ -179,6 +222,7 @@ def register(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database Lock Error: {str(e)}")
 
+
 @app.post("/api/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     try:
@@ -189,11 +233,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         if user.is_suspended:
             raise HTTPException(status_code=403, detail="Account suspended. Please contact administration.")
         
-        # --- NEW CODE: Stamp the login time ---
+        # Stamp the login time
         user.last_login = datetime.datetime.utcnow()
         db.commit()
-        # --------------------------------------
-
+        
         access_token = create_access_token(data={"sub": user.username})
         return {"access_token": access_token, "token_type": "bearer", "username": user.username, "is_admin": user.is_admin}
     except HTTPException:
@@ -202,22 +245,34 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database Login Error: {str(e)}")
 
+
 @app.post("/api/forgot-password")
-def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
+def forgot_password(
+    background_tasks: BackgroundTasks, 
+    email: str = Form(...), 
+    db: Session = Depends(get_db)
+):
     try:
-        # Look for the user in the database
         user = db.query(User).filter(User.email == email).first()
         
-        # If they exist, flip the reset_requested switch to True
         if user:
+            # Generate a secure 10-character temporary password
+            alphabet = string.ascii_letters + string.digits
+            temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
+            
+            # Hash it and save it to the database immediately
+            user.hashed_password = get_password_hash(temp_password)
             user.reset_requested = True
             db.commit()
             
-        # Always return the same message so hackers can't use this route to guess valid emails
+            # Fire off the email silently in the background
+            background_tasks.add_task(send_reset_email_task, user.email, temp_password)
+            
         return {"message": "Recovery instructions dispatched if email exists."}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+
 
 @app.post("/api/change-password")
 def change_password(
