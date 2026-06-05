@@ -67,6 +67,8 @@ class User(Base):
     postcode = Column(String, nullable=True)
     country = Column(String, nullable=True)
     role = Column(String, default="Operator")
+    failed_login_attempts = Column(Integer, default=0)
+    lockout_time = Column(DateTime, nullable=True)
     
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
@@ -353,39 +355,48 @@ def register_user(
 
 @app.post("/api/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    try:
-        user = db.query(User).filter((User.username == form_data.username) | (User.email == form_data.username)).first()
-        if not user or not verify_password(form_data.password, user.hashed_password):
-            raise HTTPException(status_code=401, detail="Incorrect username or password")
-        
-        if getattr(user, 'is_suspended', False):
-            raise HTTPException(status_code=403, detail="Account suspended. Please contact administration.")
-        
-        # Stamp the login time
-        user.last_login = datetime.datetime.utcnow()
-        db.commit()
-        
-        # --- NEW RBAC LOGIC ---
-        # 1. Embed the role into the JWT token for the bouncer to read later
-        access_token = create_access_token(data={"sub": user.username, "role": user.role})
-        
-        # 2. Determine admin status dynamically based on their hierarchy level
-        is_admin_tier = user.role in ["Master_Control", "Org_Admin"]
-        # ----------------------
-        
-        return {
-            "access_token": access_token, 
-            "token_type": "bearer", 
-            "username": user.username, 
-            "role": user.role,         # Sent to frontend for future use
-            "is_admin": is_admin_tier  # Tells frontend to show the Admin button
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Database Login Error: {str(e)}")
+    user = db.query(User).filter((User.username == form_data.username) | (User.email == form_data.username)).first()
+    
+    # 1. Handle non-existent users immediately
+    if not user:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
 
+    # 2. Check for Cooldown
+    now = datetime.datetime.utcnow()
+    if user.lockout_time and user.lockout_time > now:
+        wait_time = int((user.lockout_time - now).total_seconds() / 60)
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Account locked. Cooldown active. Try again in {wait_time} minutes."
+        )
+
+    # 3. Check password
+    if not verify_password(form_data.password, user.hashed_password):
+        # Increment failed attempts
+        user.failed_login_attempts += 1
+        
+        # Trigger lockout after 5 fails
+        if user.failed_login_attempts >= 5:
+            user.lockout_time = now + datetime.timedelta(minutes=15)
+        
+        db.commit()
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+
+    # 4. Successful login: Reset counters
+    user.failed_login_attempts = 0
+    user.lockout_time = None
+    user.last_login = now
+    db.commit()
+
+    # ... (Keep your existing token generation/return logic here) ...
+    access_token = create_access_token(data={"sub": user.username, "role": user.role})
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer", 
+        "username": user.username,
+        "role": user.role,
+        "is_admin": user.role in ["Master_Control", "Org_Admin"]
+    }
 
 @app.post("/api/forgot-password")
 def forgot_password(
