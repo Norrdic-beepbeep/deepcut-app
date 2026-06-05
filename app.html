@@ -48,7 +48,7 @@
         button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid rgb(var(--c-acc1)) !important; outline-offset: 2px !important; }
     </style>
     <script>
-        tailwind.config = { theme: { extend: { colors: { cBg: 'rgb(var(--c-bg) / <alpha-value>)', cText: 'rgb(var(--var(--c-text)) / <alpha-value>)', cCard: 'rgb(var(--c-card) / <alpha-value>)', cAcc1: 'rgb(var(--c-acc1) / <alpha-value>)', cAcc2: 'rgb(var(--c-acc2) / <alpha-value>)', cAcc3: 'rgb(var(--c-acc3) / <alpha-value>)', cSuccess: 'rgb(var(--c-success) / <alpha-value>)', cMuted: 'rgb(var(--c-muted) / <alpha-value>)', cSubtext: 'rgb(var(--c-subtext) / <alpha-value>)' } } } }
+        tailwind.config = { theme: { extend: { colors: { cBg: 'rgb(var(--c-bg) / <alpha-value>)', cText: 'rgb(var(--c-text) / <alpha-value>)', cCard: 'rgb(var(--c-card) / <alpha-value>)', cAcc1: 'rgb(var(--c-acc1) / <alpha-value>)', cAcc2: 'rgb(var(--c-acc2) / <alpha-value>)', cAcc3: 'rgb(var(--c-acc3) / <alpha-value>)', cSuccess: 'rgb(var(--c-success) / <alpha-value>)', cMuted: 'rgb(var(--c-muted) / <alpha-value>)', cSubtext: 'rgb(var(--c-subtext) / <alpha-value>)' } } } }
     </script>
 </head>
 <body class="bg-cBg text-cText min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 relative overflow-x-hidden selection:bg-cAcc1 selection:text-cText transition-colors duration-300">
@@ -439,7 +439,7 @@
                 <p class="text-cSubtext text-xs font-typewriter mt-2 uppercase tracking-widest font-bold">Operator Directory & Access Management</p>
             </div>
 
-<div class="mb-6 p-4 border-[2px] border-cText bg-cBg/30">
+            <div class="mb-6 p-4 border-[2px] border-cText bg-cBg/30">
                 <h3 class="text-xs font-bold tracking-widest uppercase mb-3 text-cAcc2">Provision New Operator</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <input type="text" id="newOpName" placeholder="Full Name" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-3 py-2 text-xs font-typewriter font-bold shadow-hard-sm focus:outline-none">
@@ -459,17 +459,17 @@
                         </tr>
                     </thead>
                     <tbody id="adminUserTableBody" class="text-xs sm:text-sm font-typewriter font-bold uppercase"></tbody>
+                </table>
+            </div>
 
-                    <div class="mt-8 border-t-[3px] border-cText pt-6">
+            <div class="mt-8 border-t-[3px] border-cText pt-6">
                 <h3 class="text-xs font-bold tracking-widest uppercase mb-4 text-cSubtext">Recent Security Actions</h3>
                 <div class="bg-cBg border-[2px] border-cText p-3 max-h-40 overflow-y-auto font-typewriter text-[10px]">
                     <table class="w-full text-left border-collapse" id="adminLogTable">
                         <tbody id="adminLogTableBody">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
-            </div>
-                </table>
             </div>
         </div>
     </div>
@@ -630,7 +630,7 @@
 
         async function loadAdminDashboard() {
             try {
-                // 1. Fetch Users (Existing code)
+                // 1. Fetch Users
                 const res = await fetch('https://deepcut-app.onrender.com/api/admin/users', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
@@ -638,7 +638,7 @@
                 const users = await res.json();
                 renderAdminDirectory(users);
 
-                // 2. Fetch Audit Logs (NEW CODE)
+                // 2. Fetch Audit Logs
                 const logRes = await fetch('https://deepcut-app.onrender.com/api/admin/logs', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
@@ -657,7 +657,7 @@
             }
         }
 
-        // 3. Render the Logs (NEW CODE)
+        // 3. Render the Logs
         function renderAdminLogs(logs) {
             const logBody = document.getElementById('adminLogTableBody');
             logBody.innerHTML = '';
@@ -1112,24 +1112,15 @@
             document.getElementById(textId).textContent = message;
         }
 
-       document.getElementById('runAuditBtn').addEventListener('click', async () => {
-    if (selectedFiles.length === 0 && !submittedUrl) return;
-    if (!authToken) return;
-    
-    // CALL THE CENTRAL CLEANER HERE
-    clearPreviousResults(); 
-    
-    fileMetaRow.classList.add('hidden');
-    document.getElementById('progressContainer').classList.remove('hidden');
-    // ... rest of your code ...
-// --- WIPE PREVIOUS RESULTS ---
-        const resultsDash = document.getElementById('resultsDashboard');
-        resultsDash.classList.add('hidden', 'opacity-0', 'translate-y-4');
-        document.getElementById('geminiSummaryContainer').classList.add('hidden');
-        document.getElementById('geminiSummaryText').innerHTML = '';
-        document.getElementById('interactiveTimeline').innerHTML = '';
-        document.getElementById('auditTableBody').innerHTML = '';
-        // -----------------------------
+        document.getElementById('runAuditBtn').addEventListener('click', async () => {
+            if (selectedFiles.length === 0 && !submittedUrl) return;
+            if (!authToken) return;
+            
+            // CALL THE CENTRAL CLEANER HERE
+            clearPreviousResults(); 
+            
+            fileMetaRow.classList.add('hidden');
+            document.getElementById('progressContainer').classList.remove('hidden');
             
             // Reset Progress Bars
             handleProgressUpdate('scan', 0, 'INITIALIZING...');
@@ -1274,7 +1265,8 @@
             const d = document.getElementById('resultsDashboard'); d.classList.remove('hidden');
             setTimeout(() => { d.classList.remove('opacity-0', 'translate-y-4'); d.scrollIntoView({ behavior: 'smooth' }); }, 50);
         }
-// --- ADD NEW OPERATOR LOGIC ---
+
+        // --- ADD NEW OPERATOR LOGIC ---
         const addOperatorBtn = document.getElementById('addOperatorBtn');
         if (addOperatorBtn) {
             addOperatorBtn.addEventListener('click', async () => {

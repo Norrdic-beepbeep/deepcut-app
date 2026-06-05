@@ -7,7 +7,6 @@ from typing import List, Optional
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import secrets
 import string
 import secrets
 
@@ -72,8 +71,6 @@ class User(Base):
     
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
-    from sqlalchemy import Column, Integer, String, DateTime
-import datetime
 
 class AdminLog(Base):
     __tablename__ = "deepcut_admin_logs"
@@ -100,9 +97,11 @@ Base.metadata.create_all(bind=engine)
 
 
 # ==========================================
-# 3. GLOBAL TRANSIENT JOB TRACKER
+# 3. GLOBAL TRANSIENT JOB TRACKER & VAULT
 # ==========================================
 active_jobs = {}
+TEMP_UPLOAD_DIR = "tmp_uploads"
+os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
 
 
 # ==========================================
@@ -149,8 +148,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-
-from typing import List
 
 class RoleChecker:
     def __init__(self, allowed_roles: List[str]):
@@ -333,25 +330,7 @@ def register_user(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Registration Error: {str(e)}")
-    # ... existing password hashing logic ...
 
-    new_user = User(
-        # ... existing fields mapped here ...
-        company_type=company_type,
-        company_name=company_name,
-        number_of_employees=number_of_employees,
-        address_line_1=address_line_1,
-        address_line_2=address_line_2,
-        city_town=city_town,
-        postcode=postcode,
-        country=country
-    )
-    
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    return {"message": "Enterprise account successfully created."}
 
 @app.post("/api/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -372,23 +351,23 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
     # 3. Check password
     if not verify_password(form_data.password, user.hashed_password):
-    user.failed_login_attempts += 1
+        user.failed_login_attempts += 1
 
-    print(
-        f"Failed login: {user.username}, "
-        f"attempts={user.failed_login_attempts}"
-    )
+        print(
+            f"Failed login: {user.username}, "
+            f"attempts={user.failed_login_attempts}"
+        )
 
-    if user.failed_login_attempts >= 5:
-        user.lockout_time = now + datetime.timedelta(minutes=2)
-        print(f"LOCKED UNTIL: {user.lockout_time}")
+        if user.failed_login_attempts >= 5:
+            user.lockout_time = now + datetime.timedelta(minutes=2)
+            print(f"LOCKED UNTIL: {user.lockout_time}")
 
-    db.commit()
+        db.commit()
 
-    raise HTTPException(
-        status_code=401,
-        detail="Incorrect username or password"
-    )
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password"
+        )
 
     # 4. Successful login: Reset counters
     user.failed_login_attempts = 0
@@ -396,7 +375,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user.last_login = now
     db.commit()
 
-    # ... (Keep your existing token generation/return logic here) ...
     access_token = create_access_token(data={"sub": user.username, "role": user.role})
     return {
         "access_token": access_token, 
@@ -463,17 +441,14 @@ def change_password(
 # ==========================================
 # 7. ADMIN ROUTES
 # ==========================================
-# The Depends(require_admin) is the physical lock on the door
 @app.get("/api/admin/users")
 def get_all_users(
-    current_user: User = Depends(require_admin), # Lets both roles inside
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     if current_user.role == "Master_Control":
-        # Master Control gets the global list
         users = db.query(User).all()
     else:
-        # Org_Admin ONLY gets a list of their exact co-workers
         users = db.query(User).filter(User.company_name == current_user.company_name).all()
         
     return users
@@ -484,10 +459,8 @@ def get_admin_logs(
     db: Session = Depends(get_db)
 ):
     if current_user.role == "Master_Control":
-        # Master gets to see everything
         logs = db.query(AdminLog).order_by(AdminLog.timestamp.desc()).limit(50).all()
     else:
-        # Org_Admin only sees their own actions
         logs = db.query(AdminLog).filter(AdminLog.admin_username == current_user.username).order_by(AdminLog.timestamp.desc()).limit(50).all()
         
     return logs
@@ -498,13 +471,10 @@ def delete_user(
     current_user: User = Depends(require_admin), 
     db: Session = Depends(get_db)
 ):
-    # 1. Find the target user in the database
     user_to_delete = db.query(User).filter(User.id == user_id).first()
     if not user_to_delete:
         raise HTTPException(status_code=404, detail="Operator not found")
         
-    # 2. Strict Boundary Check for Org_Admins
-    # Managers can only delete operators that share their exact company name
     if current_user.role == "Org_Admin":
         if getattr(user_to_delete, 'company_name', None) != getattr(current_user, 'company_name', None):
             raise HTTPException(
@@ -512,13 +482,18 @@ def delete_user(
                 detail="Security Override: Cannot modify operators outside your organization."
             )
             
-    # 3. Master_Control bypasses the check entirely and deletes the user
+    target_username_cache = user_to_delete.username
     db.delete(user_to_delete)
+    
+    log_entry = AdminLog(
+        admin_username=current_user.username,
+        action="PURGED_OPERATOR",
+        target_username=target_username_cache
+    )
+    db.add(log_entry)
     db.commit()
     
     return {"message": f"Operator {user_id} structurally purged."}
-
-
 
 @app.post("/api/admin/users/{user_id}/reset-password")
 def admin_reset_password(
@@ -530,7 +505,6 @@ def admin_reset_password(
     if not target_user:
         raise HTTPException(status_code=404, detail="Operator not found")
         
-    # Strict Boundary Check for Org_Admins
     if current_user.role == "Org_Admin":
         if getattr(target_user, 'company_name', None) != getattr(current_user, 'company_name', None):
             raise HTTPException(
@@ -538,51 +512,19 @@ def admin_reset_password(
                 detail="Security Override: Cannot modify operators outside your organization."
             )
 
-    # Generate a secure, random fallback code
     temporary_code = secrets.token_urlsafe(6) 
     target_user.hashed_password = get_password_hash(temporary_code)
     target_user.reset_requested = True
 
-# --- NEW AUDIT LOG ---
     log_entry = AdminLog(
         admin_username=current_user.username,
         action="RESET_PASSWORD",
         target_username=target_user.username
     )
     db.add(log_entry)
-    # ---------------------
-    
     db.commit()
+    
     return {"message": "Access code overridden.", "temporary_code": temporary_code}
-
-
-    # 1. Find the target user
-    user_to_delete = db.query(User).filter(User.id == user_id).first()
-    if not user_to_delete:
-        raise HTTPException(status_code=404, detail="Operator not found")
-        
-    # 2. Strict Boundary Check for Org_Admins
-    if current_user.role == "Org_Admin":
-        if user_to_delete.company_name != current_user.company_name:
-            raise HTTPException(
-                status_code=403, 
-                detail="Security Override: Cannot modify operators outside your organization."
-            )
-            
-    # 3. Master_Control bypasses the check entirely and deletes the user
-    target_username_cache = user_to_delete.username
-    db.delete(user_to_delete)
-    
-    log_entry = AdminLog(
-        admin_username=current_user.username,
-        action="PURGED_OPERATOR",
-        target_username=target_username_cache
-    )
-    db.add(log_entry)
-    # ---------------------
-    
-    db.commit()
-    return {"message": f"Operator {user_id} structurally purged."}
 
 @app.post("/api/admin/users/create")
 def admin_create_user(
@@ -592,23 +534,20 @@ def admin_create_user(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    # 1. Ensure the username or email isn't already taken
     existing_user = db.query(User).filter((User.email == email) | (User.username == username)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Operator email or username already exists.")
 
-    # 2. Generate a secure temporary password
     temp_password = secrets.token_urlsafe(8)
     hashed_pw = get_password_hash(temp_password)
 
-    # 3. Create the user, inheriting the manager's enterprise data!
     new_user = User(
         name=name,
         username=username,
         email=email,
         hashed_password=hashed_pw,
-        role="Operator", # Force role to standard operator
-        consent_given=True, # Assuming organization-level consent
+        role="Operator", 
+        consent_given=True, 
         company_type=current_user.company_type,
         company_name=current_user.company_name,
         number_of_employees=current_user.number_of_employees,
@@ -619,20 +558,18 @@ def admin_create_user(
         country=current_user.country
     )
     
-    # ... existing create user logic ...
     db.add(new_user)
     
-    # --- NEW AUDIT LOG ---
     log_entry = AdminLog(
         admin_username=current_user.username,
         action="PROVISIONED_OPERATOR",
         target_username=username
     )
     db.add(log_entry)
-    # ---------------------
-    
     db.commit()
+    
     return {"message": "Operator provisioned.", "temporary_password": temp_password}
+
 
 # ==========================================
 # 8. HISTORY VAULT ROUTES
@@ -745,7 +682,7 @@ def start_audit(
     try:
         job_id = str(uuid.uuid4())
         filename = "Unknown Source"
-        temp_file_path = f"/tmp/{job_id}"
+        temp_file_path = os.path.join(TEMP_UPLOAD_DIR, f"{job_id}")
         
         if file:
             filename = file.filename
