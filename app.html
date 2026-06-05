@@ -1032,11 +1032,33 @@
         loginBtn.addEventListener('click', async () => {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                showCustomMsg("Please provide both identity parameters.");
+                return;
+            }
+
             const formData = new URLSearchParams();
-            formData.append('username', username); formData.append('password', password);
+            formData.append('username', username); 
+            formData.append('password', password);
+            
+            // Visual loading state
+            loginBtn.disabled = true;
+            loginBtn.textContent = "AUTHORIZING...";
+
             try {
-                const response = await fetch('https://deepcut-app.onrender.com/api/login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
-                if (!response.ok) throw new Error();
+                const response = await fetch('https://deepcut-app.onrender.com/api/login', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, 
+                    body: formData 
+                });
+                
+                // --- THE FIX: Read the backend's specific error message! ---
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || "Login failed. Check your identification parameters.");
+                }
+                
                 const data = await response.json();
                 authToken = data.access_token;
                 
@@ -1047,7 +1069,15 @@
                 document.getElementById('appScreen').classList.remove('hidden');
                 setTimeout(() => document.getElementById('appScreen').classList.remove('opacity-0'), 50);
                 loadHistory();
-            } catch (e) { showCustomMsg("Login failed. Check your identification parameters."); }
+                
+            } catch (e) { 
+                // Display the dynamic error message we caught from Python
+                showCustomMsg(e.message); 
+            } finally {
+                // Reset the button state
+                loginBtn.disabled = false;
+                loginBtn.textContent = "AUTHORIZE";
+            }
         });
 
         logoutBtn.addEventListener('click', () => { window.location.reload(); });
