@@ -56,7 +56,15 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False) 
     last_login = Column(DateTime, nullable=True)
-    reset_requested = Column(Boolean, default=False)
+    reset_requested = Column(Boolean, default=False)    
+    company_type = Column(String, nullable=True)
+    company_name = Column(String, nullable=True)
+    number_of_employees = Column(Integer, nullable=True)
+    address_line_1 = Column(String, nullable=True)
+    address_line_2 = Column(String, nullable=True)
+    city_town = Column(String, nullable=True)
+    postcode = Column(String, nullable=True)
+    country = Column(String, nullable=True)
     
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
@@ -235,39 +243,37 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
 
 
 @app.post("/api/register")
-def register(
-    name: str = Form(...),
-    username: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...),
-    consent: str = Form(...),
+def register_user(
+    # ... your existing fields (like email: str = Form(...), etc) ...
+    company_type: str = Form(...),
+    company_name: str = Form(...),
+    number_of_employees: int = Form(...),
+    address_line_1: str = Form(...),
+    address_line_2: str = Form(None), # Made optional with None
+    city_town: str = Form(...),
+    postcode: str = Form(...),
+    country: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    try:
-        if db.query(User).filter(User.username == username).first():
-            raise HTTPException(status_code=400, detail="Username already registered")
-        if db.query(User).filter(User.email == email).first():
-            raise HTTPException(status_code=400, detail="Email already registered")
-        
-        is_first_user = db.query(User).count() == 0
-        
-        new_user = User(
-            name=name,
-            username=username,
-            email=email,
-            hashed_password=get_password_hash(password),
-            consent_given=(consent.lower() == 'true'),
-            is_admin=is_first_user  
-        )
-        db.add(new_user)
-        db.commit()
-        return {"message": "Operator registered successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Database Lock Error: {str(e)}")
+    # ... existing password hashing logic ...
 
+    new_user = User(
+        # ... existing fields mapped here ...
+        company_type=company_type,
+        company_name=company_name,
+        number_of_employees=number_of_employees,
+        address_line_1=address_line_1,
+        address_line_2=address_line_2,
+        city_town=city_town,
+        postcode=postcode,
+        country=country
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {"message": "Enterprise account successfully created."}
 
 @app.post("/api/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
