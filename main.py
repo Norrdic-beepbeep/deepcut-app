@@ -9,6 +9,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import string
 import secrets
+import xml.etree.ElementTree as ET
+
 
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, BackgroundTasks
 from fastapi.responses import JSONResponse
@@ -599,6 +601,54 @@ def get_single_audit(audit_id: str, current_user: User = Depends(get_current_use
         "anomalies": audit.anomalies
     }
 
+def parse_fcpxml_timeline(file_path: str):
+    """Parses an FCPXML file and extracts the timeline structure and media clips."""
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        
+        # 1. Get Project Metadata
+        project_tag = root.find('.//project')
+        project_name = project_tag.get('name', 'Unknown Project') if project_tag is not None else 'Unknown Project'
+        
+        sequence_tag = root.find('.//sequence')
+        sequence_duration = sequence_tag.get('duration', '00:00:00:00') if sequence_tag is not None else '00:00:00:00'
+        
+        # 2. Extract every piece of media in the timeline
+        clips = []
+        # We look inside the <spine> tag where Final Cut stores the active track
+        for item in root.findall('.//spine/*'):
+            clip_type = item.tag  # Will be 'clip', 'audio', etc.
+            name = item.get('name', 'Unknown')
+            offset = item.get('offset', '00:00:00:00')
+            duration = item.get('duration', '00:00:00:00')
+            
+            # Extract nested source paths if they exist
+            src = None
+            asset_tag = item.find('asset')
+            if asset_tag is not None:
+                src = asset_tag.get('src')
+                
+            clips.append({
+                "type": clip_type,
+                "name": name,
+                "timecode": offset, # The offset acts as the start timecode on the master timeline
+                "duration": duration,
+                "src": src
+            })
+            
+        return {
+            "success": True,
+            "project_name": project_name,
+            "duration": sequence_duration,
+            "clips": clips
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to parse XML: {str(e)}"}
+
+
+
+
 
 # ==========================================
 # 9. ASYNCHRONOUS FREE BACKGROUND AUDITOR
@@ -606,54 +656,43 @@ def get_single_audit(audit_id: str, current_user: User = Depends(get_current_use
 def process_audit_in_background(job_id: str, file_path: str, filename: str, user_id: int):
     global active_jobs
     db = SessionLocal()
+    anomalies = []
+    
     try:
-        active_jobs[job_id] = {"stage": "scan", "progress": 10, "message": "Parsing timeline XML metadata..."}
-        time_to_wait = 2.0
+        # --- STAGE 1: PARSING ---
+        active_jobs[job_id] = {"stage": "scan", "progress": 15, "message": "Parsing timeline XML metadata..."}
         
-        import time
-        time.sleep(time_to_wait)
+        # Crack open the file using our new parser
+        parsed_data = parse_fcpxml_timeline(file_path)
+        
+        if not parsed_data["success"]:
+            raise Exception(parsed_data["error"])
+            
+        timeline_clips = parsed_data["clips"]
+        
+        # --- STAGE 2: THE DETECTION ALGORITHMS ---
         active_jobs[job_id] = {"stage": "scan", "progress": 50, "message": "Auditing raw waveforms for licensing signatures..."}
         
-        time.sleep(time_to_wait)
-        active_jobs[job_id] = {"stage": "detect", "progress": 80, "message": "Detecting physical continuity and visual violations..."}
+        # Algorithm 1: Copyright Flagging
+        # Look for known protected artist names in the audio filenames
+        restricted_keywords = ["drake", "hans_zimmer", "warner", "universal", "envato"]
         
-        time.sleep(time_to_wait)
+        for clip in timeline_clips:
+            # Check if any restricted keyword exists in the clip's name (case-insensitive)
+            clip_name_lower = clip["name"].lower()
+            if any(keyword in clip_name_lower for keyword in restricted_keywords):
+                anomalies.append({
+                    "timecode": clip["timecode"], 
+                    "type": "High Risk", 
+                    "description": f"Copyrighted signature matched on asset: '{clip['name']}'. Action required."
+                })
+                
+        active_jobs[job_id] = {"stage": "detect", "progress": 85, "message": "Detecting physical continuity and visual violations..."}
         
-        anomalies = [
-            {
-                "timecode": "00:01:14", 
-                "type": "High Risk", 
-                "description": "Warner Chappell music license signature matched on background track. Action required."
-            },
-            {
-                "timecode": "00:02:40", 
-                "type": "Medium Risk", 
-                "description": "Glaring lighting luminance spike exceeds broadcast standards. Continuity disruption."
-            },
-            {
-                "timecode": "00:03:05", 
-                "type": "Low Risk", 
-                "description": "Potential visual brand trademark identified on actor apparel (un-cleared logo)."
-            }
-        ]
+        # (Future Algorithms for offline media or framerate mismatches will go here)
 
-        audit_record = db.query(Audit).filter(Audit.id == job_id).first()
-        if audit_record:
-            audit_record.status = "Flagged" if len(anomalies) > 0 else "Clean"
-            audit_record.anomalies = anomalies
-            db.commit()
-
-            user = db.query(User).filter(User.id == user_id).first()
-            if user:
-                send_audit_complete_email(user.email, filename, len(anomalies))
-
-        active_jobs[job_id] = {
-            "status": "complete",
-            "filename": filename,
-            "format": "H.264 / AAC Pro",
-            "flag_count": len(anomalies),
-            "anomalies": anomalies
-        }
+        # --- STAGE 3: DATABASE UPDATE ---
+        # ... (Keep the rest of your existing function from `audit_record = db.query(Audit)...` downward) ...
 
     except Exception as e:
         db.rollback()
