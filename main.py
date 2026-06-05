@@ -217,7 +217,7 @@ def send_welcome_email_task(recipient_email: str, username: str, company_name: s
             <p style="font-size: 14px; line-height: 1.6;">Your structural workspace is now active. You may begin initializing compliance audits immediately.</p>
             
             <div style="text-align: center; margin-top: 30px; border-top: 2px dashed #2D2824; padding-top: 20px;">
-                <a href="https://deepcut-app.onrender.com" style="display: inline-block; background-color: #40635A; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px; box-shadow: 3px 3px 0px #2D2824;">ACCESS TERMINAL ENTRANCE</a>
+                <a href="https://deepcut.video" style="display: inline-block; background-color: #40635A; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px; box-shadow: 3px 3px 0px #2D2824;">ACCESS TERMINAL ENTRANCE</a>
             </div>
         </div>
     </body>
