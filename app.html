@@ -438,6 +438,17 @@
                 <h2 class="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-cText">System Control Terminal</h2>
                 <p class="text-cSubtext text-xs font-typewriter mt-2 uppercase tracking-widest font-bold">Operator Directory & Access Management</p>
             </div>
+
+<div class="mb-6 p-4 border-[2px] border-cText bg-cBg/30">
+                <h3 class="text-xs font-bold tracking-widest uppercase mb-3 text-cAcc2">Provision New Operator</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="text" id="newOpName" placeholder="Full Name" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-3 py-2 text-xs font-typewriter font-bold shadow-hard-sm focus:outline-none">
+                    <input type="text" id="newOpUsername" placeholder="Username" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-3 py-2 text-xs font-typewriter font-bold shadow-hard-sm focus:outline-none">
+                    <input type="email" id="newOpEmail" placeholder="Email Address" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-3 py-2 text-xs font-typewriter font-bold shadow-hard-sm focus:outline-none">
+                </div>
+                <button id="addOperatorBtn" class="mt-3 bg-cAcc2 text-cBg text-xs font-bold px-4 py-2 uppercase tracking-widest border-[2px] border-cText shadow-hard-sm shadow-hard-hover transition-all">Add to Organization</button>
+            </div>
+            
             <div class="w-full overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -1212,6 +1223,56 @@
             document.getElementById('progressContainer').classList.add('hidden'); inputWorkspace.classList.remove('hidden'); 
             const d = document.getElementById('resultsDashboard'); d.classList.remove('hidden');
             setTimeout(() => { d.classList.remove('opacity-0', 'translate-y-4'); d.scrollIntoView({ behavior: 'smooth' }); }, 50);
+        }
+// --- ADD NEW OPERATOR LOGIC ---
+        const addOperatorBtn = document.getElementById('addOperatorBtn');
+        if (addOperatorBtn) {
+            addOperatorBtn.addEventListener('click', async () => {
+                const name = document.getElementById('newOpName').value.trim();
+                const username = document.getElementById('newOpUsername').value.trim();
+                const email = document.getElementById('newOpEmail').value.trim();
+
+                if (!name || !username || !email) {
+                    showCustomMsg("Please fill out all fields to provision an operator.");
+                    return;
+                }
+
+                addOperatorBtn.disabled = true;
+                addOperatorBtn.textContent = "PROVISIONING...";
+
+                const formData = new URLSearchParams();
+                formData.append('name', name);
+                formData.append('username', username);
+                formData.append('email', email);
+
+                try {
+                    const res = await fetch('https://deepcut-app.onrender.com/api/admin/users/create', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/x-www-form-urlencoded', 
+                            'Authorization': `Bearer ${authToken}` 
+                        },
+                        body: formData
+                    });
+                    
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.detail || "Failed to create operator.");
+
+                    showCustomMsg(`Operator [${username}] provisioned successfully.<br><br>Temporary Access Code: <span class="font-typewriter tracking-widest bg-cBg p-2 font-bold select-all border border-cText">${data.temporary_password}</span>`, true);
+
+                    // Clear fields and visually refresh the directory
+                    document.getElementById('newOpName').value = '';
+                    document.getElementById('newOpUsername').value = '';
+                    document.getElementById('newOpEmail').value = '';
+                    loadAdminDashboard();
+                    
+                } catch (err) {
+                    showCustomMsg(err.message);
+                } finally {
+                    addOperatorBtn.disabled = false;
+                    addOperatorBtn.textContent = "ADD TO ORGANIZATION";
+                }
+            });
         }
 
         function showCustomMsg(msg, isSuccess = false) {

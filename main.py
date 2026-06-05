@@ -492,6 +492,46 @@ def admin_reset_password(
     
     return {"message": f"Operator {user_id} structurally purged."}
 
+@app.post("/api/admin/users/create")
+def admin_create_user(
+    name: str = Form(...),
+    username: str = Form(...),
+    email: str = Form(...),
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    # 1. Ensure the username or email isn't already taken
+    existing_user = db.query(User).filter((User.email == email) | (User.username == username)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Operator email or username already exists.")
+
+    # 2. Generate a secure temporary password
+    temp_password = secrets.token_urlsafe(8)
+    hashed_pw = get_password_hash(temp_password)
+
+    # 3. Create the user, inheriting the manager's enterprise data!
+    new_user = User(
+        name=name,
+        username=username,
+        email=email,
+        hashed_password=hashed_pw,
+        role="Operator", # Force role to standard operator
+        consent_given=True, # Assuming organization-level consent
+        company_type=current_user.company_type,
+        company_name=current_user.company_name,
+        number_of_employees=current_user.number_of_employees,
+        address_line_1=current_user.address_line_1,
+        address_line_2=current_user.address_line_2,
+        city_town=current_user.city_town,
+        postcode=current_user.postcode,
+        country=current_user.country
+    )
+    
+    db.add(new_user)
+    db.commit()
+    
+    return {"message": "Operator provisioned.", "temporary_password": temp_password}
+
 # ==========================================
 # 8. HISTORY VAULT ROUTES
 # ==========================================
