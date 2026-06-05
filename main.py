@@ -244,17 +244,59 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
 
 @app.post("/api/register")
 def register_user(
-    # ... your existing fields (like email: str = Form(...), etc) ...
+    name: str = Form(...),
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    consent: bool = Form(...),
     company_type: str = Form(...),
     company_name: str = Form(...),
     number_of_employees: int = Form(...),
     address_line_1: str = Form(...),
-    address_line_2: str = Form(None), # Made optional with None
+    address_line_2: str = Form(None), 
     city_town: str = Form(...),
     postcode: str = Form(...),
     country: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    try:
+        # 1. Check if username or email is already taken
+        existing_user = db.query(User).filter((User.email == email) | (User.username == username)).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email or Username already registered.")
+
+        # 2. Hash the secure password
+        hashed_pw = get_password_hash(password)
+
+        # 3. Build the COMPLETE operator profile
+        new_user = User(
+            name=name,
+            username=username,
+            email=email,
+            hashed_password=hashed_pw,
+            consent_given=consent,
+            company_type=company_type,
+            company_name=company_name,
+            number_of_employees=number_of_employees,
+            address_line_1=address_line_1,
+            address_line_2=address_line_2,
+            city_town=city_town,
+            postcode=postcode,
+            country=country
+        )
+        
+        # 4. Save to DBeaver
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        return {"message": "Enterprise account successfully created."}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Registration Error: {str(e)}")
     # ... existing password hashing logic ...
 
     new_user = User(
