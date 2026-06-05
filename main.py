@@ -189,37 +189,41 @@ app.add_middleware(
 # ==========================================
 # 6. EMAIL & PUBLIC ROUTES
 # ==========================================
-def send_reset_email_task(recipient_email: str, temp_password: str):
-    # Your Resend SMTP credentials
+def send_welcome_email_task(recipient_email: str, username: str, company_name: str):
     smtp_server = os.getenv("SMTP_SERVER", "smtp.resend.com") 
     smtp_port = int(os.getenv("SMTP_PORT", 587))
     smtp_user = os.getenv("SMTP_USER", "resend")
     smtp_password = os.getenv("SMTP_PASSWORD", "")
-    
-    # We explicitly hardcode your verified sender email here
     sender_email = "info@deepcut.video"
 
-    if not smtp_password:
-        print("SMTP_PASSWORD not set in Render environment. Email aborted.")
-        return
+    if not smtp_password: return
 
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
+    msg = MIMEMultipart("alternative")
+    msg['From'] = f"DeepCut Engine <{sender_email}>"
     msg['To'] = recipient_email
-    msg['Subject'] = "DeepCut Engine: Operator Access Recovery"
+    msg['Subject'] = "DeepCut Engine: Operator Provisioning Complete"
 
-    body = f"""
-    DEEPCUT SYSTEM ALERT
-    -----------------------------------------
-    A password reset was authorized for your Operator account.
-    
-    Your temporary access code is: {temp_password}
-    
-    Return to the DeepCut Engine, log in with this temporary code, 
-    and update your credentials immediately.
-    -----------------------------------------
+    html_body = f"""
+    <html>
+    <body style="background-color: #EAE3D2; padding: 40px 20px; font-family: 'Courier New', Courier, monospace; color: #2D2824;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #FDFBF7; border: 4px solid #2D2824; padding: 30px; box-shadow: 6px 6px 0px #2D2824;">
+            <div style="text-align: center; border-bottom: 3px solid #2D2824; padding-bottom: 20px; margin-bottom: 20px;">
+                <h1 style="margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">DeepCut Engine</h1>
+                <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: bold; letter-spacing: 3px; color: #504840;">AUTHORIZED PERSONNEL ONLY</p>
+            </div>
+            
+            <p style="font-size: 14px; line-height: 1.6;"><strong>STATUS:</strong> CLEARANCE GRANTED</p>
+            <p style="font-size: 14px; line-height: 1.6;">Operator <strong>[{username}]</strong> has been successfully provisioned under the enterprise entity: <strong>{company_name}</strong>.</p>
+            <p style="font-size: 14px; line-height: 1.6;">Your structural workspace is now active. You may begin initializing compliance audits immediately.</p>
+            
+            <div style="text-align: center; margin-top: 30px; border-top: 2px dashed #2D2824; padding-top: 20px;">
+                <a href="https://deepcut-app.onrender.com" style="display: inline-block; background-color: #40635A; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px; box-shadow: 3px 3px 0px #2D2824;">ACCESS TERMINAL ENTRANCE</a>
+            </div>
+        </div>
+    </body>
+    </html>
     """
-    msg.attach(MIMEText(body, 'plain'))
+    msg.attach(MIMEText(html_body, 'html'))
 
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -227,9 +231,56 @@ def send_reset_email_task(recipient_email: str, temp_password: str):
         server.login(smtp_user, smtp_password)
         server.send_message(msg)
         server.quit()
-        print(f"Recovery email successfully dispatched to {recipient_email}")
     except Exception as e:
-        print(f"SMTP Error: Failed to dispatch email to {recipient_email}. Error: {str(e)}")
+        print(f"SMTP Error: {str(e)}")
+
+
+def send_reset_email_task(recipient_email: str, temp_password: str):
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.resend.com") 
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER", "resend")
+    smtp_password = os.getenv("SMTP_PASSWORD", "")
+    sender_email = "info@deepcut.video"
+
+    if not smtp_password: return
+
+    msg = MIMEMultipart("alternative")
+    msg['From'] = f"DeepCut Engine <{sender_email}>"
+    msg['To'] = recipient_email
+    msg['Subject'] = "DeepCut Engine: Operator Access Recovery"
+
+    html_body = f"""
+    <html>
+    <body style="background-color: #EAE3D2; padding: 40px 20px; font-family: 'Courier New', Courier, monospace; color: #2D2824;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #FDFBF7; border: 4px solid #2D2824; padding: 30px; box-shadow: 6px 6px 0px #2D2824;">
+            <div style="text-align: center; border-bottom: 3px solid #2D2824; padding-bottom: 20px; margin-bottom: 20px;">
+                <h1 style="margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">System Recovery</h1>
+                <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: bold; letter-spacing: 3px; color: #B45044;">SECURITY OVERRIDE INITIATED</p>
+            </div>
+            
+            <p style="font-size: 14px; line-height: 1.6;">A structural override has been authorized for your Operator account.</p>
+            <p style="font-size: 14px; line-height: 1.6;">Use the following temporary clearance code to bypass the login gate:</p>
+            
+            <div style="background-color: #EAE3D2; border: 2px solid #2D2824; padding: 15px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">{temp_password}</span>
+            </div>
+            
+            <p style="font-size: 14px; line-height: 1.6;">Return to the DeepCut Engine, log in with this temporary code, and update your access parameters immediately.</p>
+        </div>
+    </body>
+    </html>
+    """
+    msg.attach(MIMEText(html_body, 'html'))
+
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        print(f"SMTP Error: {str(e)}")
+
 
 def send_audit_complete_email(recipient_email: str, filename: str, flag_count: int):
     smtp_server = os.getenv("SMTP_SERVER", "smtp.resend.com") 
@@ -238,31 +289,47 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
     smtp_password = os.getenv("SMTP_PASSWORD", "")
     sender_email = "info@deepcut.video"
 
-    if not smtp_password:
-        print("SMTP_PASSWORD missing. Cannot send completion email.")
-        return
+    if not smtp_password: return
 
-    msg = MIMEMultipart()
+    msg = MIMEMultipart("alternative")
     msg['From'] = f"DeepCut Engine <{sender_email}>"
     msg['To'] = recipient_email
     
-    # Change the subject line depending on if the engine found issues
     status_text = "ACTION REQUIRED" if flag_count > 0 else "CLEAN"
+    status_color = "#B45044" if flag_count > 0 else "#4B7350"
+    
     msg['Subject'] = f"DeepCut Audit Complete [{status_text}]: {filename}"
 
-    body = f"""
-    DEEPCUT SYSTEM ALERT
-    -----------------------------------------
-    The engine has finished processing your timeline.
-    
-    File Name: {filename}
-    Anomalies Detected: {flag_count}
-    
-    Log in to the DeepCut Engine dashboard to review the full audit report 
-    and export your clearance documentation.
-    -----------------------------------------
+    html_body = f"""
+    <html>
+    <body style="background-color: #EAE3D2; padding: 40px 20px; font-family: 'Courier New', Courier, monospace; color: #2D2824;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #FDFBF7; border: 4px solid #2D2824; padding: 30px; box-shadow: 6px 6px 0px #2D2824;">
+            <div style="text-align: center; border-bottom: 3px solid #2D2824; padding-bottom: 20px; margin-bottom: 20px;">
+                <h1 style="margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Audit Complete</h1>
+                <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: bold; letter-spacing: 3px; color: {status_color};">{status_text}</p>
+            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #2D2824; font-weight: bold; width: 40%;">FILE:</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #2D2824;">{filename}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #2D2824; font-weight: bold;">ANOMALIES DETECTED:</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #2D2824; font-weight: bold; color: {status_color}; font-size: 18px;">{flag_count}</td>
+                </tr>
+            </table>
+            
+            <p style="font-size: 14px; line-height: 1.6;">The DeepCut Engine has finished processing the timeline parameters. Log in to the dashboard to review the full compliance log and AI executive summary.</p>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="https://deepcut.video style="display: inline-block; background-color: #2D2824; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px; box-shadow: 3px 3px 0px #D2911E;">OPEN DASHBOARD</a>
+            </div>
+        </div>
+    </body>
+    </html>
     """
-    msg.attach(MIMEText(body, 'plain'))
+    msg.attach(MIMEText(html_body, 'html'))
 
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -270,9 +337,8 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
         server.login(smtp_user, smtp_password)
         server.send_message(msg)
         server.quit()
-        print(f"Audit completion email dispatched to {recipient_email}")
     except Exception as e:
-        print(f"SMTP Error: Failed to dispatch completion email. Error: {str(e)}")
+        print(f"SMTP Error: {str(e)}")
 
 
 @app.post("/api/register")
@@ -322,6 +388,28 @@ def register_user(
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+
+        @app.post("/api/register")
+def register_user(
+    background_tasks: BackgroundTasks, # <--- ADD THIS TO THE FUNCTION ARGUMENTS
+    name: str = Form(...),
+    username: str = Form(...),
+    # ... other arguments ...
+):
+    try:
+        # ... your existing check user and hash password logic ...
+
+        new_user = User(
+            # ... your existing user mapping ...
+        )
+        
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        # --- NEW CODE: DISPATCH THE HTML WELCOME EMAIL ---
+        background_tasks.add_task(send_welcome_email_task, new_user.email, new_user.username, new_user.company_name)
+        # -------------------------------------------------
         
         return {"message": "Enterprise account successfully created."}
     
