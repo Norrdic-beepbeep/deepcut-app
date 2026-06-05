@@ -1244,7 +1244,10 @@
 
             // --- ADD THESE TWO LINES ---
             currentDashboardData = data; 
-            document.getElementById('exportCsvBtn').classList.remove('hidden');
+            const exportBtn = document.getElementById('exportCsvBtn');
+            if (exportBtn) {
+                exportBtn.classList.remove('hidden');
+            }
             // ---------------------------
             
             document.getElementById('dashFileName').textContent = data.filename;
