@@ -447,6 +447,34 @@ def get_all_users(
         
     return users
 
+@app.delete("/api/admin/users/{user_id}")
+def delete_user(
+    user_id: int, 
+    current_user: User = Depends(require_admin), 
+    db: Session = Depends(get_db)
+):
+    # 1. Find the target user in the database
+    user_to_delete = db.query(User).filter(User.id == user_id).first()
+    if not user_to_delete:
+        raise HTTPException(status_code=404, detail="Operator not found")
+        
+    # 2. Strict Boundary Check for Org_Admins
+    # Managers can only delete operators that share their exact company name
+    if current_user.role == "Org_Admin":
+        if getattr(user_to_delete, 'company_name', None) != getattr(current_user, 'company_name', None):
+            raise HTTPException(
+                status_code=403, 
+                detail="Security Override: Cannot modify operators outside your organization."
+            )
+            
+    # 3. Master_Control bypasses the check entirely and deletes the user
+    db.delete(user_to_delete)
+    db.commit()
+    
+    return {"message": f"Operator {user_id} structurally purged."}
+
+
+
 @app.post("/api/admin/users/{user_id}/reset-password")
 def admin_reset_password(
     user_id: int, 
