@@ -485,6 +485,7 @@
         let vaultFocusCleanup = null;
         let authToken = null;
         let currentAudits = [];
+        let currentDashboardData = null; // Holds the active audit data for the CSV
 
         // Centralized utility to reset the UI layout before a new scan runs
         function clearPreviousResults() {
@@ -1241,6 +1242,14 @@
                 return;
             }
 
+            // --- ADD THESE TWO LINES ---
+            currentDashboardData = data; 
+            document.getElementById('exportCsvBtn').classList.remove('hidden');
+            // ---------------------------
+            
+            document.getElementById('dashFileName').textContent = data.filename;
+            // ... the rest of your existing function ...
+
             document.getElementById('dashFileName').textContent = data.filename;
             document.getElementById('dashStatus').textContent = data.anomalies && data.anomalies.length ? `🚩 ${data.anomalies.length} Flags` : "🌟 Clean";
             const tableBody = document.getElementById('auditTableBody'); tableBody.innerHTML = '';
@@ -1354,6 +1363,36 @@
             const activeBtn = document.activeElement; const cleanup = trapModalFocus(modal, document.getElementById('msgAcknowledgeBtn'), activeBtn);
             document.getElementById('msgAcknowledgeBtn').addEventListener('click', () => { cleanup(); modal.remove(); });
         }
+
+
+        // --- CSV EXPORT GENERATOR ---
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            if (!currentDashboardData || !currentDashboardData.anomalies) return;
+
+            // 1. Create the CSV Headers
+            let csvContent = "Timecode,Risk Level,Description\n";
+
+            // 2. Loop through the anomalies and format them for a spreadsheet
+            currentDashboardData.anomalies.forEach(a => {
+                // We wrap the description in quotes so commas inside the text don't break the spreadsheet columns
+                const safeDescription = `"${a.description.replace(/"/g, '""')}"`;
+                csvContent += `${a.timecode},${a.type},${safeDescription}\n`;
+            });
+
+            // 3. Package it into a Browser Blob and force download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            // Name the file dynamically based on the timeline they audited
+            link.setAttribute("download", `DeepCut_Audit_${currentDashboardData.filename}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
     </script>
 </body>
 </html>
