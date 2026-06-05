@@ -288,7 +288,12 @@ def change_password(
         if not verify_password(current_password, current_user.hashed_password):
             raise HTTPException(status_code=400, detail="Current access code is incorrect.")
         
+        # 1. Update to the new secure password
         current_user.hashed_password = get_password_hash(new_password)
+        
+        # 2. Uncheck the reset box in DBeaver!
+        current_user.reset_requested = False 
+        
         db.commit()
         return {"message": "Access code updated securely."}
     except HTTPException:
