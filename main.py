@@ -343,6 +343,7 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
 
 @app.post("/api/register")
 def register_user(
+    background_tasks: BackgroundTasks,
     name: str = Form(...),
     username: str = Form(...),
     email: str = Form(...),
@@ -384,12 +385,22 @@ def register_user(
             country=country
         )
         
-        # 4. Save to DBeaver
+        # 4. Save to database
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+        
+        # 5. Dispatch the newly styled HTML welcome email
+        background_tasks.add_task(send_welcome_email_task, new_user.email, new_user.username, new_user.company_name)
+        
+        return {"message": "Enterprise account successfully created."}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Registration Error: {str(e)}")
 
-        @app.post("/api/register")
 def register_user(
     background_tasks: BackgroundTasks, # <--- ADD THIS TO THE FUNCTION ARGUMENTS
     name: str = Form(...),
