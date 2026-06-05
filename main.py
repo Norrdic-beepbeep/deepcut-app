@@ -438,7 +438,7 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
             audit_record.anomalies = anomalies
             db.commit()
 
-        user = db.query(User).filter(User.id == user_id).first()
+            user = db.query(User).filter(User.id == user_id).first()
             if user:
                 send_audit_complete_email(user.email, filename, len(anomalies))
 
