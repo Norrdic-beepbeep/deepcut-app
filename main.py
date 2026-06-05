@@ -372,15 +372,23 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
     # 3. Check password
     if not verify_password(form_data.password, user.hashed_password):
-        # Increment failed attempts
-        user.failed_login_attempts = getattr(user, 'failed_login_attempts', 0) + 1
-        
-        # Trigger lockout after 5 fails
-        if user.failed_login_attempts >= 5:
-            user.lockout_time = now + datetime.timedelta(minutes=2.0)
-        
-        db.commit()
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    user.failed_login_attempts += 1
+
+    print(
+        f"Failed login: {user.username}, "
+        f"attempts={user.failed_login_attempts}"
+    )
+
+    if user.failed_login_attempts >= 5:
+        user.lockout_time = now + datetime.timedelta(minutes=2)
+        print(f"LOCKED UNTIL: {user.lockout_time}")
+
+    db.commit()
+
+    raise HTTPException(
+        status_code=401,
+        detail="Incorrect username or password"
+    )
 
     # 4. Successful login: Reset counters
     user.failed_login_attempts = 0
