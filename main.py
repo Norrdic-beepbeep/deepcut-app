@@ -70,6 +70,18 @@ class User(Base):
     
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
+    from sqlalchemy import Column, Integer, String, DateTime
+import datetime
+
+class AdminLog(Base):
+    __tablename__ = "deepcut_admin_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    admin_username = Column(String, nullable=False)
+    action = Column(String, nullable=False)
+    target_username = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
 class Audit(Base):
     __tablename__ = "deepcut_audits"
     id = Column(String, primary_key=True, index=True) 
@@ -447,6 +459,20 @@ def get_all_users(
         
     return users
 
+@app.get("/api/admin/logs")
+def get_admin_logs(
+    current_user: User = Depends(require_admin), 
+    db: Session = Depends(get_db)
+):
+    if current_user.role == "Master_Control":
+        # Master gets to see everything
+        logs = db.query(AdminLog).order_by(AdminLog.timestamp.desc()).limit(50).all()
+    else:
+        # Org_Admin only sees their own actions
+        logs = db.query(AdminLog).filter(AdminLog.admin_username == current_user.username).order_by(AdminLog.timestamp.desc()).limit(50).all()
+        
+    return logs
+
 @app.delete("/api/admin/users/{user_id}")
 def delete_user(
     user_id: int, 
@@ -497,9 +523,19 @@ def admin_reset_password(
     temporary_code = secrets.token_urlsafe(6) 
     target_user.hashed_password = get_password_hash(temporary_code)
     target_user.reset_requested = True
-    db.commit()
+
+# --- NEW AUDIT LOG ---
+    log_entry = AdminLog(
+        admin_username=current_user.username,
+        action="RESET_PASSWORD",
+        target_username=target_user.username
+    )
+    db.add(log_entry)
+    # ---------------------
     
+    db.commit()
     return {"message": "Access code overridden.", "temporary_code": temporary_code}
+
 
     # 1. Find the target user
     user_to_delete = db.query(User).filter(User.id == user_id).first()
@@ -515,9 +551,18 @@ def admin_reset_password(
             )
             
     # 3. Master_Control bypasses the check entirely and deletes the user
+    target_username_cache = user_to_delete.username
     db.delete(user_to_delete)
-    db.commit()
     
+    log_entry = AdminLog(
+        admin_username=current_user.username,
+        action="PURGED_OPERATOR",
+        target_username=target_username_cache
+    )
+    db.add(log_entry)
+    # ---------------------
+    
+    db.commit()
     return {"message": f"Operator {user_id} structurally purged."}
 
 @app.post("/api/admin/users/create")
@@ -555,9 +600,19 @@ def admin_create_user(
         country=current_user.country
     )
     
+    # ... existing create user logic ...
     db.add(new_user)
-    db.commit()
     
+    # --- NEW AUDIT LOG ---
+    log_entry = AdminLog(
+        admin_username=current_user.username,
+        action="PROVISIONED_OPERATOR",
+        target_username=username
+    )
+    db.add(log_entry)
+    # ---------------------
+    
+    db.commit()
     return {"message": "Operator provisioned.", "temporary_password": temp_password}
 
 # ==========================================
