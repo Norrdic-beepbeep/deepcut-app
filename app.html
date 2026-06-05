@@ -1305,6 +1305,36 @@
             setTimeout(() => { d.classList.remove('opacity-0', 'translate-y-4'); d.scrollIntoView({ behavior: 'smooth' }); }, 50);
         }
 
+
+        // --- CSV EXPORT GENERATOR ---
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            if (!currentDashboardData || !currentDashboardData.anomalies) return;
+
+            // 1. Create the CSV Headers
+            let csvContent = "Timecode,Risk Level,Description\n";
+
+            // 2. Loop through the anomalies and format them for a spreadsheet
+            currentDashboardData.anomalies.forEach(a => {
+                // We wrap the description in quotes so commas inside the text don't break the spreadsheet columns
+                const safeDescription = `"${a.description.replace(/"/g, '""')}"`;
+                csvContent += `${a.timecode},${a.type},${safeDescription}\n`;
+            });
+
+            // 3. Package it into a Browser Blob and force download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            // Name the file dynamically based on the timeline they audited
+            link.setAttribute("download", `DeepCut_Audit_${currentDashboardData.filename}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
         // --- ADD NEW OPERATOR LOGIC ---
         const addOperatorBtn = document.getElementById('addOperatorBtn');
         if (addOperatorBtn) {
@@ -1365,34 +1395,7 @@
         }
 
 
-        // --- CSV EXPORT GENERATOR ---
-        document.getElementById('exportCsvBtn').addEventListener('click', () => {
-            if (!currentDashboardData || !currentDashboardData.anomalies) return;
-
-            // 1. Create the CSV Headers
-            let csvContent = "Timecode,Risk Level,Description\n";
-
-            // 2. Loop through the anomalies and format them for a spreadsheet
-            currentDashboardData.anomalies.forEach(a => {
-                // We wrap the description in quotes so commas inside the text don't break the spreadsheet columns
-                const safeDescription = `"${a.description.replace(/"/g, '""')}"`;
-                csvContent += `${a.timecode},${a.type},${safeDescription}\n`;
-            });
-
-            // 3. Package it into a Browser Blob and force download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            // Name the file dynamically based on the timeline they audited
-            link.setAttribute("download", `DeepCut_Audit_${currentDashboardData.filename}.csv`);
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
+        
     </script>
 </body>
 </html>
