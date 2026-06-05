@@ -459,6 +459,16 @@
                         </tr>
                     </thead>
                     <tbody id="adminUserTableBody" class="text-xs sm:text-sm font-typewriter font-bold uppercase"></tbody>
+
+                    <div class="mt-8 border-t-[3px] border-cText pt-6">
+                <h3 class="text-xs font-bold tracking-widest uppercase mb-4 text-cSubtext">Recent Security Actions</h3>
+                <div class="bg-cBg border-[2px] border-cText p-3 max-h-40 overflow-y-auto font-typewriter text-[10px]">
+                    <table class="w-full text-left border-collapse" id="adminLogTable">
+                        <tbody id="adminLogTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
                 </table>
             </div>
         </div>
@@ -619,18 +629,58 @@
         closeAdminBtn.addEventListener('click', closeAdminPortal);
 
         async function loadAdminDashboard() {
-            if (!authToken) return;
-            adminUserTableBody.innerHTML = `<tr><td colspan="3" class="text-center p-6 animate-pulse">Accessing Secure Records Vault...</td></tr>`;
             try {
-                const response = await fetch('https://deepcut-app.onrender.com/api/admin/users', {
+                // 1. Fetch Users (Existing code)
+                const res = await fetch('https://deepcut-app.onrender.com/api/admin/users', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
-                if (!response.ok) throw new Error();
-                const users = await response.json();
+                if (!res.ok) throw new Error("Directory access denied.");
+                const users = await res.json();
                 renderAdminDirectory(users);
+
+                // 2. Fetch Audit Logs (NEW CODE)
+                const logRes = await fetch('https://deepcut-app.onrender.com/api/admin/logs', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (logRes.ok) {
+                    const logs = await logRes.json();
+                    renderAdminLogs(logs);
+                }
+
+                // Show the modal
+                const modal = document.getElementById('adminModal');
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+                
             } catch (err) {
-                adminUserTableBody.innerHTML = `<tr><td colspan="3" class="text-center p-6 text-cAcc3">Failed to load system control logs.</td></tr>`;
+                showCustomMsg("Clearance rejected: " + err.message);
             }
+        }
+
+        // 3. Render the Logs (NEW CODE)
+        function renderAdminLogs(logs) {
+            const logBody = document.getElementById('adminLogTableBody');
+            logBody.innerHTML = '';
+            
+            if (logs.length === 0) {
+                logBody.innerHTML = `<tr><td class="py-2 text-cMuted">No recent administrative actions recorded.</td></tr>`;
+                return;
+            }
+
+            logs.forEach(log => {
+                const dateObj = new Date(log.timestamp + "Z");
+                const formattedTime = dateObj.toLocaleString();
+                
+                const row = document.createElement('tr');
+                row.className = "border-b border-cText/10";
+                row.innerHTML = `
+                    <td class="py-1.5 text-cAcc3 font-bold w-1/4">${log.admin_username}</td>
+                    <td class="py-1.5 text-cText">${log.action}</td>
+                    <td class="py-1.5 font-bold">➔ ${log.target_username || 'System'}</td>
+                    <td class="py-1.5 text-cMuted text-right">${formattedTime}</td>
+                `;
+                logBody.appendChild(row);
+            });
         }
 
         function renderAdminDirectory(users) {
