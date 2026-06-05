@@ -65,6 +65,7 @@ class User(Base):
     city_town = Column(String, nullable=True)
     postcode = Column(String, nullable=True)
     country = Column(String, nullable=True)
+    role = Column(String, default="Operator")
     
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
