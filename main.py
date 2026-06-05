@@ -604,26 +604,36 @@ def get_single_audit(audit_id: str, current_user: User = Depends(get_current_use
 def parse_fcpxml_timeline(file_path: str):
     """Parses an FCPXML file and extracts the timeline structure and media clips."""
     try:
-        tree = ET.parse(file_path)
-        root = tree.getroot()
+        # 1. ROBUST READ: Open the file and read the raw text, ignoring weird encoding artifacts
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            raw_content = f.read().strip()
+            
+        if not raw_content:
+            return {"success": False, "error": "The uploaded XML file is empty."}
+            
+        # 2. SANITIZE: Find the very first '<' bracket and slice off any invisible BOMs or spaces before it
+        start_index = raw_content.find('<')
+        if start_index != -1:
+            raw_content = raw_content[start_index:]
+
+        # 3. Parse the freshly sanitized text string directly
+        root = ET.fromstring(raw_content)
         
-        # 1. Get Project Metadata
+        # 4. Get Project Metadata
         project_tag = root.find('.//project')
         project_name = project_tag.get('name', 'Unknown Project') if project_tag is not None else 'Unknown Project'
         
         sequence_tag = root.find('.//sequence')
         sequence_duration = sequence_tag.get('duration', '00:00:00:00') if sequence_tag is not None else '00:00:00:00'
         
-        # 2. Extract every piece of media in the timeline
+        # 5. Extract every piece of media in the timeline
         clips = []
-        # We look inside the <spine> tag where Final Cut stores the active track
         for item in root.findall('.//spine/*'):
-            clip_type = item.tag  # Will be 'clip', 'audio', etc.
+            clip_type = item.tag  
             name = item.get('name', 'Unknown')
             offset = item.get('offset', '00:00:00:00')
             duration = item.get('duration', '00:00:00:00')
             
-            # Extract nested source paths if they exist
             src = None
             asset_tag = item.find('asset')
             if asset_tag is not None:
@@ -632,7 +642,7 @@ def parse_fcpxml_timeline(file_path: str):
             clips.append({
                 "type": clip_type,
                 "name": name,
-                "timecode": offset, # The offset acts as the start timecode on the master timeline
+                "timecode": offset,
                 "duration": duration,
                 "src": src
             })
@@ -645,7 +655,6 @@ def parse_fcpxml_timeline(file_path: str):
         }
     except Exception as e:
         return {"success": False, "error": f"Failed to parse XML: {str(e)}"}
-
 
 
 
