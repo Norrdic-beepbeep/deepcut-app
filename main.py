@@ -9,6 +9,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import secrets
 import string
+import secrets
 
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, BackgroundTasks
 from fastapi.responses import JSONResponse
@@ -434,27 +435,62 @@ def change_password(
 # The Depends(require_admin) is the physical lock on the door
 @app.get("/api/admin/users")
 def get_all_users(
+    current_user: User = Depends(require_admin), # Lets both roles inside
+    db: Session = Depends(get_db)
+):
+    if current_user.role == "Master_Control":
+        # Master Control gets the global list
+        users = db.query(User).all()
+    else:
+        # Org_Admin ONLY gets a list of their exact co-workers
+        users = db.query(User).filter(User.company_name == current_user.company_name).all()
+        
+    return users
+
+@app.post("/api/admin/users/{user_id}/reset-password")
+def admin_reset_password(
+    user_id: int, 
     current_user: User = Depends(require_admin), 
     db: Session = Depends(get_db)
 ):
-    users = db.query(User).all()
-    # (Optional future upgrade: If current_user.role == "Org_Admin", 
-    # filter this list so they only see users in their specific company!)
-    return users
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Operator not found")
+        
+    # Strict Boundary Check for Org_Admins
+    if current_user.role == "Org_Admin":
+        if getattr(target_user, 'company_name', None) != getattr(current_user, 'company_name', None):
+            raise HTTPException(
+                status_code=403, 
+                detail="Security Override: Cannot modify operators outside your organization."
+            )
 
-@app.delete("/api/admin/users/{user_id}")
-def delete_user(
-    user_id: int, 
-    current_user: User = Depends(require_master), # Stricter bouncer applied
-    db: Session = Depends(get_db)
-):
+    # Generate a secure, random fallback code
+    temporary_code = secrets.token_urlsafe(6) 
+    target_user.hashed_password = get_password_hash(temporary_code)
+    target_user.reset_requested = True
+    db.commit()
+    
+    return {"message": "Access code overridden.", "temporary_code": temporary_code}
+
+    # 1. Find the target user
     user_to_delete = db.query(User).filter(User.id == user_id).first()
     if not user_to_delete:
         raise HTTPException(status_code=404, detail="Operator not found")
         
+    # 2. Strict Boundary Check for Org_Admins
+    if current_user.role == "Org_Admin":
+        if user_to_delete.company_name != current_user.company_name:
+            raise HTTPException(
+                status_code=403, 
+                detail="Security Override: Cannot modify operators outside your organization."
+            )
+            
+    # 3. Master_Control bypasses the check entirely and deletes the user
     db.delete(user_to_delete)
     db.commit()
-    return {"message": f"Operator {user_id} purged."}
+    
+    return {"message": f"Operator {user_id} structurally purged."}
 
 # ==========================================
 # 8. HISTORY VAULT ROUTES
