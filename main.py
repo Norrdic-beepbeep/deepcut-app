@@ -190,6 +190,49 @@ def send_reset_email_task(recipient_email: str, temp_password: str):
     except Exception as e:
         print(f"SMTP Error: Failed to dispatch email to {recipient_email}. Error: {str(e)}")
 
+def send_audit_complete_email(recipient_email: str, filename: str, flag_count: int):
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.resend.com") 
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER", "resend")
+    smtp_password = os.getenv("SMTP_PASSWORD", "")
+    sender_email = "info@deepcut.video"
+
+    if not smtp_password:
+        print("SMTP_PASSWORD missing. Cannot send completion email.")
+        return
+
+    msg = MIMEMultipart()
+    msg['From'] = f"DeepCut Engine <{sender_email}>"
+    msg['To'] = recipient_email
+    
+    # Change the subject line depending on if the engine found issues
+    status_text = "ACTION REQUIRED" if flag_count > 0 else "CLEAN"
+    msg['Subject'] = f"DeepCut Audit Complete [{status_text}]: {filename}"
+
+    body = f"""
+    DEEPCUT SYSTEM ALERT
+    -----------------------------------------
+    The engine has finished processing your timeline.
+    
+    File Name: {filename}
+    Anomalies Detected: {flag_count}
+    
+    Log in to the DeepCut Engine dashboard to review the full audit report 
+    and export your clearance documentation.
+    -----------------------------------------
+    """
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        print(f"Audit completion email dispatched to {recipient_email}")
+    except Exception as e:
+        print(f"SMTP Error: Failed to dispatch completion email. Error: {str(e)}")
+
 
 @app.post("/api/register")
 def register(
@@ -394,6 +437,10 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
             audit_record.status = "Flagged" if len(anomalies) > 0 else "Clean"
             audit_record.anomalies = anomalies
             db.commit()
+
+        user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                send_audit_complete_email(user.email, filename, len(anomalies))
 
         active_jobs[job_id] = {
             "status": "complete",
