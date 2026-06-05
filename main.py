@@ -134,6 +134,26 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
+
+from typing import List
+
+class RoleChecker:
+    def __init__(self, allowed_roles: List[str]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, current_user: User = Depends(get_current_user)):
+        # If their role isn't on the VIP list, instantly block them
+        if current_user.role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=403, 
+                detail="Operation denied. Insufficient security clearance."
+            )
+        return current_user
+
+# Create specific bouncers you can attach to any route
+require_master = RoleChecker(["Master_Control"])
+require_admin = RoleChecker(["Master_Control", "Org_Admin"])
+
 def get_current_admin(current_user: User = Depends(get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin privileges required")
@@ -325,15 +345,28 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         if not user or not verify_password(form_data.password, user.hashed_password):
             raise HTTPException(status_code=401, detail="Incorrect username or password")
         
-        if user.is_suspended:
+        if getattr(user, 'is_suspended', False):
             raise HTTPException(status_code=403, detail="Account suspended. Please contact administration.")
         
         # Stamp the login time
         user.last_login = datetime.datetime.utcnow()
         db.commit()
         
-        access_token = create_access_token(data={"sub": user.username})
-        return {"access_token": access_token, "token_type": "bearer", "username": user.username, "is_admin": user.is_admin}
+        # --- NEW RBAC LOGIC ---
+        # 1. Embed the role into the JWT token for the bouncer to read later
+        access_token = create_access_token(data={"sub": user.username, "role": user.role})
+        
+        # 2. Determine admin status dynamically based on their hierarchy level
+        is_admin_tier = user.role in ["Master_Control", "Org_Admin"]
+        # ----------------------
+        
+        return {
+            "access_token": access_token, 
+            "token_type": "bearer", 
+            "username": user.username, 
+            "role": user.role,         # Sent to frontend for future use
+            "is_admin": is_admin_tier  # Tells frontend to show the Admin button
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -398,22 +431,30 @@ def change_password(
 # ==========================================
 # 7. ADMIN ROUTES
 # ==========================================
+# The Depends(require_admin) is the physical lock on the door
 @app.get("/api/admin/users")
-def get_all_users(admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+def get_all_users(
+    current_user: User = Depends(require_admin), 
+    db: Session = Depends(get_db)
+):
     users = db.query(User).all()
-    return [{"id": u.id, "name": u.name, "username": u.username, "email": u.email, "consent_given": u.consent_given, "is_suspended": u.is_suspended} for u in users]
+    # (Optional future upgrade: If current_user.role == "Org_Admin", 
+    # filter this list so they only see users in their specific company!)
+    return users
 
-@app.delete("/api/admin/users/{uid}")
-def delete_user(uid: int, admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    if admin.id == uid:
-        raise HTTPException(status_code=400, detail="Cannot purge your own admin account.")
-    user = db.query(User).filter(User.id == uid).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Operator not found.")
-    db.delete(user)
+@app.delete("/api/admin/users/{user_id}")
+def delete_user(
+    user_id: int, 
+    current_user: User = Depends(require_master), # Stricter bouncer applied
+    db: Session = Depends(get_db)
+):
+    user_to_delete = db.query(User).filter(User.id == user_id).first()
+    if not user_to_delete:
+        raise HTTPException(status_code=404, detail="Operator not found")
+        
+    db.delete(user_to_delete)
     db.commit()
-    return {"message": "Operator purged."}
-
+    return {"message": f"Operator {user_id} purged."}
 
 # ==========================================
 # 8. HISTORY VAULT ROUTES
