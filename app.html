@@ -344,7 +344,10 @@
                     <h3 class="text-sm sm:text-base font-bold text-cText tracking-[0.1em] sm:tracking-[0.2em] uppercase flex items-center gap-3">
                         <span class="text-2xl" aria-hidden="true">📋</span> Compliance Log
                     </h3>
-                   <button id="geminiSummaryBtn" class=" w-full sm:w-auto bg-cText text-cBg px-4 py-3 sm:py-2 text-xs font-bold uppercase tracking-widest hover:bg-cAcc1 hover:text-cText border-[2px] sm:border-[3px] border-cText shadow-hard-sm transition-colors">✨ Generate Exec Summary</button>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <button id="exportCsvBtn" class="hidden w-full sm:w-auto bg-cAcc2 text-cBg px-4 py-3 sm:py-2 text-xs font-bold uppercase tracking-widest hover:bg-cAcc1 border-[2px] sm:border-[3px] border-cText shadow-hard-sm transition-colors">📥 Export CSV Report</button>
+                        <button id="geminiSummaryBtn" class="w-full sm:w-auto bg-cText text-cBg px-4 py-3 sm:py-2 text-xs font-bold uppercase tracking-widest hover:bg-cAcc1 hover:text-cText border-[2px] sm:border-[3px] border-cText shadow-hard-sm transition-colors">✨ Generate Exec Summary</button>
+                    </div>
                 </div>
 
                 <div id="interactiveTimelineContainer" class="hidden mb-4">
@@ -1214,47 +1217,53 @@
                 inputWorkspace.classList.remove('hidden');
             }
         });
+
         // --- CSV EXPORT GENERATOR ---
-        document.getElementById('exportCsvBtn').addEventListener('click', () => {
-            if (!currentDashboardData || !currentDashboardData.anomalies) return;
+        const exportCsvBtn = document.getElementById('exportCsvBtn');
+        if (exportCsvBtn) {
+            exportCsvBtn.addEventListener('click', () => {
+                if (!currentDashboardData || !currentDashboardData.anomalies) return;
 
-            // 1. Create the CSV Headers
-            let csvContent = "Timecode,Risk Level,Description\n";
+                // 1. Create the CSV Headers
+                let csvContent = "Timecode,Risk Level,Description\n";
 
-            // 2. Loop through the anomalies and format them for a spreadsheet
-            currentDashboardData.anomalies.forEach(a => {
-                // We wrap the description in quotes so commas inside the text don't break the spreadsheet columns
-                const safeDescription = `"${a.description.replace(/"/g, '""')}"`;
-                csvContent += `${a.timecode},${a.type},${safeDescription}\n`;
+                // 2. Loop through the anomalies and format them for a spreadsheet
+                currentDashboardData.anomalies.forEach(a => {
+                    // We wrap the description in quotes so commas inside the text don't break the spreadsheet columns
+                    const safeDescription = `"${a.description.replace(/"/g, '""')}"`;
+                    csvContent += `${a.timecode},${a.type},${safeDescription}\n`;
+                });
+
+                // 3. Package it into a Browser Blob and force download
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                // Name the file dynamically based on the timeline they audited
+                link.setAttribute("download", `DeepCut_Audit_${currentDashboardData.filename}.csv`);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             });
-
-            // 3. Package it into a Browser Blob and force download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            // Name the file dynamically based on the timeline they audited
-            link.setAttribute("download", `DeepCut_Audit_${currentDashboardData.filename}.csv`);
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
+        }
 
         const geminiSummaryBtn = document.getElementById('geminiSummaryBtn');
-        geminiSummaryBtn.addEventListener('click', async (e) => {
-            if (!authToken) return;
-            document.getElementById('geminiSummaryContainer').classList.remove('hidden');
-            document.getElementById('geminiSummaryText').textContent = "AI drafting executive summary...";
-            let reportData = ""; document.querySelectorAll('#auditTableBody tr').forEach(row => { reportData += row.innerText + "\n"; });
-            try {
-                const res = await fetch('https://deepcut-app.onrender.com/api/ai/summary', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` }, body: JSON.stringify({ report: reportData }) });
-                const data = await res.json();
-                document.getElementById('geminiSummaryText').innerHTML = `<span class="font-bold text-xs text-cAcc2 block mb-1.5 uppercase tracking-widest">✨ AI Executive Summary:</span> ${data.text}`;
-            } catch (err) { document.getElementById('geminiSummaryText').textContent = "Error generating summary profile."; }
-        });
+        if (geminiSummaryBtn) {
+            geminiSummaryBtn.addEventListener('click', async (e) => {
+                if (!authToken) return;
+                document.getElementById('geminiSummaryContainer').classList.remove('hidden');
+                document.getElementById('geminiSummaryText').textContent = "AI drafting executive summary...";
+                let reportData = ""; document.querySelectorAll('#auditTableBody tr').forEach(row => { reportData += row.innerText + "\n"; });
+                try {
+                    const res = await fetch('https://deepcut-app.onrender.com/api/ai/summary', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` }, body: JSON.stringify({ report: reportData }) });
+                    const data = await res.json();
+                    document.getElementById('geminiSummaryText').innerHTML = `<span class="font-bold text-xs text-cAcc2 block mb-1.5 uppercase tracking-widest">✨ AI Executive Summary:</span> ${data.text}`;
+                } catch (err) { document.getElementById('geminiSummaryText').textContent = "Error generating summary profile."; }
+            });
+        }
 
         function tcToSeconds(tc) {
             if (!tc || tc === "N/A" || tc === "Spoken Audio") return 0;
@@ -1262,7 +1271,7 @@
             return parts.length >= 3 ? (parts[0] * 3600) + (parts[1] * 60) + parts[2] : (parts.length === 2 ? (parts[0] * 60) + parts[1] : 0);
         }
 
-function populateAndRevealDashboard(data) {
+        function populateAndRevealDashboard(data) {
             // 1. If there is an error, the function stops here.
             if(data.error) {
                 showCustomMsg(data.error);
@@ -1334,9 +1343,6 @@ function populateAndRevealDashboard(data) {
             setTimeout(() => { d.classList.remove('opacity-0', 'translate-y-4'); d.scrollIntoView({ behavior: 'smooth' }); }, 50);
         }
 
-
-
-
         // --- ADD NEW OPERATOR LOGIC ---
         const addOperatorBtn = document.getElementById('addOperatorBtn');
         if (addOperatorBtn) {
@@ -1395,8 +1401,6 @@ function populateAndRevealDashboard(data) {
             const activeBtn = document.activeElement; const cleanup = trapModalFocus(modal, document.getElementById('msgAcknowledgeBtn'), activeBtn);
             document.getElementById('msgAcknowledgeBtn').addEventListener('click', () => { cleanup(); modal.remove(); });
         }
-
-
         
     </script>
 </body>
