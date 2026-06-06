@@ -9,6 +9,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import string
 import secrets
+import xml.etree.ElementTree as ET
 
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, BackgroundTasks
 from fastapi.responses import JSONResponse
