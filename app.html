@@ -1280,21 +1280,6 @@ function populateAndRevealDashboard(data) {
 
             // 3. The rest of the dashboard logic continues...
             document.getElementById('dashFileName').textContent = data.filename;
-
-            
-
-            // --- ADD THESE TWO LINES ---
-            currentDashboardData = data; 
-            const exportBtn = document.getElementById('exportCsvBtn');
-            if (exportBtn) {
-                exportBtn.classList.remove('hidden');
-            }
-            // ---------------------------
-            
-            document.getElementById('dashFileName').textContent = data.filename;
-            // ... the rest of your existing function ...
-
-            document.getElementById('dashFileName').textContent = data.filename;
             document.getElementById('dashStatus').textContent = data.anomalies && data.anomalies.length ? `🚩 ${data.anomalies.length} Flags` : "🌟 Clean";
             const tableBody = document.getElementById('auditTableBody'); tableBody.innerHTML = '';
             const timelineContainer = document.getElementById('interactiveTimelineContainer');
