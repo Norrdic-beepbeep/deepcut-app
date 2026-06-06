@@ -774,6 +774,67 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
             os.remove(file_path)
         db.close()
 
+        # ==========================================
+# 10. ENGINE DISPATCH ROUTES
+# ==========================================
+@app.post("/api/audit/start")
+async def start_audit(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(None),
+    video_url: str = Form(None),
+    current_user: User = Depends(get_current_user)
+):
+    if not file and not video_url:
+        raise HTTPException(status_code=400, detail="No timeline file or URL provided.")
+        
+    # Generate a unique tracking ID for this specific audit
+    import uuid
+    import shutil
+    job_id = str(uuid.uuid4())
+    filename = file.filename if file else "URL_Stream"
+    file_path = f"temp_{job_id}.xml"
+    
+    # Save the incoming XML file to the server's local storage
+    if file:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    else:
+        # Placeholder for URL logic
+        with open(file_path, "w") as f:
+            f.write("<fcpxml><project name='URL_Stream'></project></fcpxml>")
+
+    # 1. Register the audit in the persistent SQLite database
+    db = SessionLocal()
+    new_audit = Audit(
+        id=job_id,
+        user_id=current_user.id,
+        filename=filename,
+        format="FCPXML Sequence",
+        status="Running"
+    )
+    db.add(new_audit)
+    db.commit()
+    db.close()
+
+    # 2. Register the audit in the live memory tracker for WebSockets
+    active_jobs[job_id] = {
+        "stage": "scan", 
+        "progress": 0, 
+        "message": "INITIALIZING..."
+    }
+
+    # 3. Fire the forensic engine in the background so the user doesn't freeze
+    background_tasks.add_task(
+        process_audit_in_background, 
+        job_id, 
+        file_path, 
+        filename, 
+        current_user.id
+    )
+
+    # Immediately hand the tracking ID back to the frontend
+    return {"task_id": job_id}
+
 
 # ==========================================
 # 10. ENGINE DISPATCH ROUTES
