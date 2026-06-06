@@ -173,6 +173,7 @@ def get_current_admin(current_user: User = Depends(get_current_user)):
 
 
 # ==========================================
+# ==========================================
 # 5. FASTAPI INITIALIZATION
 # ==========================================
 app = FastAPI(title="DeepCut Engine API")
@@ -184,6 +185,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- ADD THIS HEARTBEAT ROUTE ---
+@app.get("/")
+@app.head("/")
+def health_check():
+    return {"status": "DeepCut Engine is online and operational."}
+# --------------------------------
 
 
 # ==========================================
