@@ -99,45 +99,69 @@
             </div>
         </div>
 
-        <div id="registerScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
-            <div class="text-center mb-6 border-b-[3px] border-cText pb-6">
-                <span class="text-4xl mb-3 block" aria-hidden="true">🛡️</span>
-                <h1 class="text-3xl font-bold tracking-tight uppercase" style="letter-spacing: -0.02em;">Engine Registration</h1>
-                <p class="text-cSubtext text-xs sm:text-sm font-typewriter mt-2 uppercase tracking-widest font-bold">Create Credentials</p>
+       <div id="registerScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
+            
+            <div class="relative flex justify-between items-center mb-8 px-4 sm:px-12">
+                <div class="absolute top-1/2 left-0 w-full h-[3px] bg-cText -z-10 translate-y-2"></div>
+                <div class="flex flex-col items-center bg-cCard px-2">
+                    <span class="text-2xl sm:text-3xl mb-2" aria-hidden="true">👤</span>
+                    <div id="circle-1" class="w-8 h-8 rounded-full border-[3px] border-cText bg-cText text-cBg flex items-center justify-center font-bold text-sm transition-colors duration-300">1</div>
+                </div>
+                <div class="flex flex-col items-center bg-cCard px-2">
+                    <span class="text-2xl sm:text-3xl mb-2" aria-hidden="true">💼</span>
+                    <div id="circle-2" class="w-8 h-8 rounded-full border-[3px] border-cText bg-cBg text-cText flex items-center justify-center font-bold text-sm transition-colors duration-300">2</div>
+                </div>
+                <div class="flex flex-col items-center bg-cCard px-2">
+                    <span class="text-2xl sm:text-3xl mb-2" aria-hidden="true">🗺️</span>
+                    <div id="circle-3" class="w-8 h-8 rounded-full border-[3px] border-cText bg-cBg text-cText flex items-center justify-center font-bold text-sm transition-colors duration-300">3</div>
+                </div>
+                <div class="flex flex-col items-center bg-cCard px-2">
+                    <span class="text-2xl sm:text-3xl mb-2" aria-hidden="true">🔑</span>
+                    <div id="circle-4" class="w-8 h-8 rounded-full border-[3px] border-cText bg-cBg text-cText flex items-center justify-center font-bold text-sm transition-colors duration-300">4</div>
+                </div>
             </div>
-            <div class="space-y-4">
-                
-                <div>
-                    <label for="regName" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Full Name</label>
-                    <input type="text" id="regName" placeholder="e.g. John Doe" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
-                </div>
-                <div>
-                    <label for="regUsername" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Username</label>
-                    <input type="text" id="regUsername" placeholder="e.g. johndoe99" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
-                </div>
-                <div>
-                    <label for="regEmail" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Email Address</label>
-                    <input type="email" id="regEmail" placeholder="operator@company.com" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
-                </div>
 
-                <div class="border-t-[2px] border-cText/20 pt-4 mt-4 space-y-4">
-                    <h3 class="text-[10px] font-bold tracking-widest uppercase text-cAcc2 flex items-center gap-2"><span class="h-[2px] flex-1 bg-cAcc2/30"></span>COMPANY DETAILS<span class="h-[2px] flex-1 bg-cAcc2/30"></span></h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <div class="border-[3px] border-cText p-5 sm:p-6 bg-cBg relative shadow-hard-sm">
                     
-                    <div>
-                        <label for="regCompanyType" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Company Type</label>
-                        <select id="regCompanyType" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm cursor-pointer appearance-none">
-                            <option value="" disabled selected>Select an entity type...</option>
-                            <option value="Charity & Other">Charity & Other</option>
-                            <option value="Limited Liability Partnership">Limited Liability Partnership</option>
-                            <option value="Partnership">Partnership</option>
-                            <option value="Private Limited Company">Private Limited Company</option>
-                            <option value="Public Limited Company">Public Limited Company</option>
-                            <option value="Sole Trader (Freelance)">Sole Trader (Freelance)</option>
-                        </select>
+                    <div id="step-1-content" class="step-content block space-y-4">
+                        <div>
+                            <h2 class="font-bold text-xl mb-1 uppercase tracking-wider">1- Operator Profile</h2>
+                            <p class="text-xs sm:text-sm text-cMuted mb-4 font-typewriter font-bold uppercase tracking-widest">Primary Details</p>
+                        </div>
+                        <div>
+                            <label for="regName" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Full Name</label>
+                            <input type="text" id="regName" placeholder="e.g. John Doe" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
+                        </div>
+                        <div>
+                            <label for="regUsername" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Username</label>
+                            <input type="text" id="regUsername" placeholder="e.g. johndoe99" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
+                        </div>
+                        <div>
+                            <label for="regEmail" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Email Address</label>
+                            <input type="email" id="regEmail" placeholder="operator@company.com" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
+                        </div>
                     </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="sm:col-span-2">
+
+                    <div id="step-2-content" class="step-content hidden space-y-4">
+                        <div>
+                            <h2 class="font-bold text-xl mb-1 uppercase tracking-wider">2- Briefcase</h2>
+                            <p class="text-xs sm:text-sm text-cMuted mb-4 font-typewriter font-bold uppercase tracking-widest">Company Details</p>
+                        </div>
+                        <div>
+                            <label for="regCompanyType" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Company Type</label>
+                            <select id="regCompanyType" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm cursor-pointer appearance-none">
+                                <option value="" disabled selected>Select an entity type...</option>
+                                <option value="Charity & Other">Charity & Other</option>
+                                <option value="Limited Liability Partnership">Limited Liability Partnership</option>
+                                <option value="Partnership">Partnership</option>
+                                <option value="Private Limited Company">Private Limited Company</option>
+                                <option value="Public Limited Company">Public Limited Company</option>
+                                <option value="Sole Trader (Freelance)">Sole Trader (Freelance)</option>
+                            </select>
+                        </div>
+                        <div>
                             <label for="regCompanyName" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Company Name</label>
                             <input type="text" id="regCompanyName" placeholder="e.g. DeepCut Systems" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                         </div>
@@ -145,53 +169,85 @@
                             <label for="regEmployees" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Employees</label>
                             <input type="number" id="regEmployees" placeholder="e.g. 50" min="1" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                         </div>
+                    </div>
+
+                    <div id="step-3-content" class="step-content hidden space-y-4">
+                        <div>
+                            <h2 class="font-bold text-xl mb-1 uppercase tracking-wider">3- Map</h2>
+                            <p class="text-xs sm:text-sm text-cMuted mb-4 font-typewriter font-bold uppercase tracking-widest">Location Data</p>
+                        </div>
                         <div>
                             <label for="regCountry" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Country</label>
                             <input type="text" id="regCountry" placeholder="e.g. United Kingdom" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                         </div>
-                        <div class="sm:col-span-2">
+                        <div>
                             <label for="regAddress1" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Address Line 1</label>
                             <input type="text" id="regAddress1" placeholder="Street address" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                         </div>
-                        <div class="sm:col-span-2">
+                        <div>
                             <label for="regAddress2" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Address Line 2 <span class="text-cMuted lowercase font-sans font-normal">(Optional)</span></label>
                             <input type="text" id="regAddress2" placeholder="Suite, building, etc." class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
                         </div>
-                        <div>
-                            <label for="regCity" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">City/Town</label>
-                            <input type="text" id="regCity" placeholder="City" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="regCity" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">City/Town</label>
+                                <input type="text" id="regCity" placeholder="City" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
+                            </div>
+                            <div>
+                                <label for="regPostcode" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Postcode</label>
+                                <input type="text" id="regPostcode" placeholder="Postcode" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
+                            </div>
                         </div>
+                    </div>
+
+                    <div id="step-4-content" class="step-content hidden space-y-4">
                         <div>
-                            <label for="regPostcode" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Postcode</label>
-                            <input type="text" id="regPostcode" placeholder="Postcode" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm">
+                            <h2 class="font-bold text-xl mb-1 uppercase tracking-wider">4- Key</h2>
+                            <p class="text-xs sm:text-sm text-cMuted mb-4 font-typewriter font-bold uppercase tracking-widest">Security & Verification</p>
+                        </div>
+                        
+                        <div>
+                            <label for="regPassword" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Secure Password</label>
+                            <input type="password" id="regPassword" placeholder="Create a secure password" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm mb-2">
+                        </div>
+                        <div class="bg-cBg/30 border-[2px] border-cText p-3 shadow-inner">
+                            <ul class="space-y-2 text-xs font-typewriter font-bold" id="validationList">
+                                <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> Min 12 characters</li>
+                                <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> One uppercase letter</li>
+                                <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> One special character</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="flex items-start bg-cBg/20 p-3 border-[2px] border-cText shadow-inner mt-4">
+                            <input type="checkbox" id="regConsent" class="mt-1 mr-3 h-4 w-4 accent-cAcc2 border-[2px] border-cText cursor-pointer">
+                            <label for="regConsent" class="text-[11px] sm:text-xs font-bold text-cText leading-relaxed">
+                                I confirm that I have reviewed and agree to the 
+                                <button type="button" id="triggerTermsModalBtn" class="underline text-cAcc3 uppercase tracking-wider hover:opacity-80 font-bold">Terms & Conditions</button> 
+                                governing data logging.
+                            </label>
                         </div>
                     </div>
                 </div>
 
-                <div class="border-t-[2px] border-cText/20 pt-4 mt-4">
-                    <label for="regPassword" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Secure Password</label>
-                    <input type="password" id="regPassword" placeholder="Create a secure password" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm mb-2">
+                <div class="flex flex-col gap-3 justify-center font-typewriter font-bold text-sm sm:text-base">
+                    <div id="indicator-1" class="border-[3px] border-cText bg-cText text-cBg p-4 transition-all duration-300 shadow-hard-sm -translate-y-1 -translate-x-1">1- OPERATOR PROFILE</div>
+                    <div id="indicator-2" class="border-[3px] border-transparent bg-black/5 text-cText/50 p-4 transition-all duration-300">2- BRIEFCASE</div>
+                    <div id="indicator-3" class="border-[3px] border-transparent bg-black/5 text-cText/50 p-4 transition-all duration-300">3- MAP</div>
+                    <div id="indicator-4" class="border-[3px] border-transparent bg-black/5 text-cText/50 p-4 transition-all duration-300">4- KEY</div>
                 </div>
-                <div class="bg-cBg/30 border-[2px] border-cText p-3 shadow-inner">
-                    <ul class="space-y-2 text-xs font-typewriter font-bold" id="validationList">
-                        <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> Min 12 characters</li>
-                        <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> One uppercase letter</li>
-                        <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> One special character</li>
-                    </ul>
-                </div>
-                
-                <div class="flex items-start bg-cBg/20 p-3 border-[2px] border-cText shadow-inner mb-2 mt-4">
-                    <input type="checkbox" id="regConsent" class="mt-1 mr-3 h-4 w-4 accent-cAcc2 border-[2px] border-cText cursor-pointer">
-                    <label for="regConsent" class="text-[11px] sm:text-xs font-bold text-cText leading-relaxed">
-                        I confirm that I have reviewed and agree to the 
-                        <button type="button" id="triggerTermsModalBtn" class="underline text-cAcc3 uppercase tracking-wider hover:opacity-80 font-bold">Terms & Conditions</button> 
-                        governing data logging via OpenAI.
-                    </label>
-                </div>
+            </div>
 
-                <button id="registerBtn" disabled class="w-full bg-cAcc2 disabled:bg-cMuted disabled:cursor-not-allowed text-cBg font-bold px-6 py-4 uppercase tracking-widest border-[3px] border-cText shadow-hard shadow-hard-hover shadow-hard-active transition-all mt-4 text-sm sm:text-base">Create Operator</button>
-                <div class="text-center mt-6 border-t-[2px] border-cText/20 pt-4">
-                    <button id="showLoginBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-cAcc3 hover:text-cAcc2 transition-colors focus:outline-none p-1">&larr; Back to Login</button>
+            <div class="mt-8 flex justify-between items-center border-t-[3px] border-cText/20 pt-6">
+                <button id="showLoginBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-cAcc3 hover:text-cAcc2 transition-colors focus:outline-none p-1">&larr; Back to Login</button>
+                
+                <div class="flex gap-3">
+                    <button id="prevBtn" type="button" class="hidden px-6 py-3 bg-[#e5e5e5] border-[3px] border-cText text-cText font-bold uppercase tracking-widest shadow-hard-sm hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-[1px_1px_0px_rgba(45,40,36,1)] transition-all" onclick="changeStep(-1)">
+                        Prev
+                    </button>
+                    <button id="nextBtn" type="button" class="px-8 py-3 bg-cAcc1 border-[3px] border-cText text-cText font-bold uppercase tracking-widest shadow-hard-sm hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-[1px_1px_0px_rgba(45,40,36,1)] transition-all" onclick="changeStep(1)">
+                        Next
+                    </button>
+                    <button id="registerBtn" disabled class="hidden bg-cAcc2 disabled:bg-cMuted disabled:cursor-not-allowed text-cBg font-bold px-6 py-3 uppercase tracking-widest border-[3px] border-cText shadow-hard-sm hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-[1px_1px_0px_rgba(45,40,36,1)] transition-all text-sm sm:text-base">Create Operator</button>
                 </div>
             </div>
         </div>
@@ -1401,6 +1457,82 @@
             const activeBtn = document.activeElement; const cleanup = trapModalFocus(modal, document.getElementById('msgAcknowledgeBtn'), activeBtn);
             document.getElementById('msgAcknowledgeBtn').addEventListener('click', () => { cleanup(); modal.remove(); });
         }
+
+        // --- STEPPER UI CONTROLLER ---
+        let currentStep = 1;
+        const totalSteps = 4;
+
+        function updateRegUI() {
+            // Swap visible form panes
+            document.querySelectorAll('.step-content').forEach((el, index) => {
+                if (index + 1 === currentStep) {
+                    el.classList.replace('hidden', 'block');
+                } else {
+                    el.classList.replace('block', 'hidden');
+                }
+            });
+
+            // Update top progress circles
+            for (let i = 1; i <= totalSteps; i++) {
+                const circle = document.getElementById(`circle-${i}`);
+                if (circle) {
+                    if (i <= currentStep) {
+                        circle.classList.replace('bg-cBg', 'bg-cText');
+                        circle.classList.replace('text-cText', 'text-cBg');
+                    } else {
+                        circle.classList.replace('bg-cText', 'bg-cBg');
+                        circle.classList.replace('text-cBg', 'text-cText');
+                    }
+                }
+                
+                // Update side indicators
+                const indicator = document.getElementById(`indicator-${i}`);
+                if (indicator) {
+                    if (i === currentStep) {
+                        indicator.className = "border-[3px] border-cText bg-cText text-cBg p-4 transition-all duration-300 shadow-hard-sm -translate-y-1 -translate-x-1";
+                    } else {
+                        indicator.className = "border-[3px] border-transparent bg-black/5 text-cText/50 p-4 transition-all duration-300";
+                    }
+                }
+            }
+
+            // Manage button visibility
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const apiSubmitBtn = document.getElementById('registerBtn'); // Your existing API button
+
+            if (prevBtn) {
+                if (currentStep === 1) prevBtn.classList.add('hidden');
+                else prevBtn.classList.remove('hidden');
+            }
+
+            if (nextBtn && apiSubmitBtn) {
+                if (currentStep === totalSteps) {
+                    // Hide 'Next', reveal your real 'Create Operator' button
+                    nextBtn.classList.add('hidden');
+                    apiSubmitBtn.classList.remove('hidden');
+                } else {
+                    nextBtn.classList.remove('hidden');
+                    apiSubmitBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        window.changeStep = function(direction) {
+            currentStep += direction;
+            if (currentStep < 1) currentStep = 1;
+            if (currentStep > totalSteps) currentStep = totalSteps;
+            updateRegUI();
+        };
+
+        // Reset stepper if they hit 'Back to Login'
+        document.getElementById('showLoginBtn').addEventListener('click', () => {
+            currentStep = 1;
+            updateRegUI();
+        });
+
+        // Initialize UI
+        updateRegUI();
         
     </script>
 </body>
