@@ -38,7 +38,7 @@
 
     <body class="min-h-screen flex flex-col relative selection:bg-cAcc1 selection:text-cText">
 
-   <div id="introOverlay" class="fixed inset-0 z-[9999] bg-[#F1D6AB] flex items-center justify-center pointer-events-auto transition-opacity duration-1000">
+<div id="introOverlay" class="fixed inset-0 z-[9999] bg-[#F1D6AB] flex items-center justify-center transition-opacity duration-1000 opacity-100">
     <div id="countdownText" class="text-cText font-typewriter font-bold text-6xl uppercase tracking-[0.2em]">3</div>
 </div>
 
@@ -146,7 +146,7 @@
             }
         });
 
-const introOverlay = document.getElementById('introOverlay');
+    const introOverlay = document.getElementById('introOverlay');
     const countdownText = document.getElementById('countdownText');
     const sequence = ["3", "2", "1", "ACTION"];
     let i = 0;
@@ -159,15 +159,19 @@ const introOverlay = document.getElementById('introOverlay');
         } else {
             // Fade out
             introOverlay.style.opacity = "0";
-            // Remove from the DOM entirely so it doesn't block clicks
+            
+            // Remove the overlay after 1 second
             setTimeout(() => { 
-                introOverlay.remove(); 
+                introOverlay.remove();
+                // FINAL SAFETY CHECK: Force document overflow to visible
+                document.body.style.overflow = "visible";
             }, 1000);
         }
     }
     
-    window.onload = playSequence;
-        
+    // Trigger on page load
+    window.onload = playSequence;     
+      
     </script>
 </body>
 </html>
