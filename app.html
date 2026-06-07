@@ -960,9 +960,16 @@
         const reqSpecial = document.getElementById('reqSpecial');
 
         // --- DEEP LINK HASH ROUTER ---
+       // --- DEEP LINK HASH ROUTER ---
         function handleHashRoute() {
             const hash = window.location.hash;
+            const authContainer = document.getElementById('authContainer');
+
             if (hash === '#register') {
+                // Expand container for the wide stepper layout
+                authContainer.classList.remove('max-w-lg');
+                authContainer.classList.add('max-w-4xl', 'md:mt-8'); // Added top margin adjustment
+                
                 loginScreen.classList.add('fade-hidden');
                 forgotPasswordScreen.classList.add('fade-hidden');
                 loginScreen.style.position = 'absolute';
@@ -971,6 +978,10 @@
                 registerScreen.classList.remove('fade-hidden');
                 regName.focus();
             } else if (hash === '#forgot') {
+                // Shrink container back to standard size for the forgot password screen
+                authContainer.classList.remove('max-w-4xl', 'md:mt-8');
+                authContainer.classList.add('max-w-lg');
+
                 loginScreen.classList.add('fade-hidden');
                 registerScreen.classList.add('fade-hidden');
                 loginScreen.style.position = 'absolute';
@@ -979,6 +990,10 @@
                 forgotPasswordScreen.classList.remove('fade-hidden');
                 resetEmailInput.focus();
             } else {
+                // Shrink container back to standard size for the login screen
+                authContainer.classList.remove('max-w-4xl', 'md:mt-8');
+                authContainer.classList.add('max-w-lg');
+
                 registerScreen.classList.add('fade-hidden');
                 forgotPasswordScreen.classList.add('fade-hidden');
                 registerScreen.style.position = 'absolute';
