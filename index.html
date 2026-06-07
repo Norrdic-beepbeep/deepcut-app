@@ -35,6 +35,14 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative selection:bg-cAcc1 selection:text-cText">
+
+    <body class="min-h-screen flex flex-col relative selection:bg-cAcc1 selection:text-cText">
+
+    <div id="introOverlay" class="fixed inset-0 z-[9999] bg-[#F1D6AB] flex items-center justify-center transition-opacity duration-1000">
+        <div id="countdownText" class="text-cText font-typewriter font-bold text-6xl uppercase tracking-[0.2em]">3</div>
+    </div>
+
+    <nav class="w-full flex flex-col sm:flex-row ...">
     
     <!-- TOP NAVIGATION -->
     <nav class="w-full flex flex-col sm:flex-row justify-between items-center p-6 sm:p-12 gap-4 sm:gap-0 shrink-0">
@@ -137,6 +145,24 @@
                 closeModal();
             }
         });
+
+        const introOverlay = document.getElementById('introOverlay');
+        const countdownText = document.getElementById('countdownText');
+        const sequence = ["3", "2", "1", "ACTION"];
+        let i = 0;
+
+        function playSequence() {
+            if (i < sequence.length) {
+                countdownText.textContent = sequence[i];
+                i++;
+                setTimeout(playSequence, 1000);
+            } else {
+                introOverlay.style.opacity = "0";
+                setTimeout(() => { introOverlay.classList.add('hidden'); }, 1000);
+            }
+        }
+        window.onload = playSequence;
+        
     </script>
 </body>
 </html>
