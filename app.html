@@ -1426,6 +1426,13 @@
         }
 
         function populateAndRevealDashboard(data) {
+
+            // --- THE BUG FIX: HARD RESET ---
+            // Force the container to be completely empty before adding new rows
+            document.getElementById('auditTableBody').innerHTML = ''; 
+            document.getElementById('interactiveTimeline').innerHTML = '';
+            // -------------------------------
+            
             if(data.error) {
                 showCustomMsg(data.error);
                 document.getElementById('progressContainer').classList.add('hidden');
