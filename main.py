@@ -26,7 +26,9 @@ from jose import JWTError, jwt
 # ==========================================
 # 1. CONFIGURATION & SECURITY SETTINGS
 # ==========================================
-SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key-deepcut-123")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable must be set")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week token lifespan
 
@@ -837,6 +839,10 @@ async def start_audit(
     return {"task_id": job_id}
 
 
+
+    
+
+
 # ==========================================
 # 10. ENGINE DISPATCH ROUTES
 # ==========================================
@@ -988,27 +994,38 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
 
 
 @app.get("/api/audit/status/{task_id}")
-def get_audit_status(task_id: str, db: Session = Depends(get_db)):
+def get_audit_status(
+    task_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     global active_jobs
-    job_state = active_jobs.get(task_id)
-    if not job_state:
-        audit_record = db.query(Audit).filter(Audit.id == task_id).first()
-        if audit_record:
-            return {
-                "status": "complete", 
-                "result": {
-                    "filename": audit_record.filename,
-                    "format": audit_record.format,
-                    "anomalies": audit_record.anomalies
-                }
-            }
-        return {"status": "error", "message": "Unknown audit task."}
 
-    if "status" in job_state:
-        if job_state["status"] == "complete":
-            return {"status": "complete", "result": job_state}
-        elif job_state["status"] == "error":
-            return {"status": "error", "message": job_state["message"]}
+    audit_record = db.query(Audit).filter(
+        Audit.id == task_id,
+        Audit.user_id == current_user.id
+    ).first()
+
+    if not audit_record:
+        raise HTTPException(status_code=404, detail="Unknown audit task.")
+
+    job_state = active_jobs.get(task_id)
+
+    if not job_state:
+        return {
+            "status": audit_record.status.lower(),
+            "result": {
+                "filename": audit_record.filename,
+                "format": audit_record.format,
+                "anomalies": audit_record.anomalies or []
+            }
+        }
+
+    if job_state.get("status") == "complete":
+        return {"status": "complete", "result": job_state}
+
+    if job_state.get("status") == "error":
+        return {"status": "error", "message": job_state.get("message", "Audit failed.")}
 
     return {
         "status": "running",
