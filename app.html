@@ -46,6 +46,20 @@
             .adaptive-table td::before { content: attr(data-label); display: block; font-family: 'Courier Prime', monospace; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: rgb(var(--c-muted)); margin-bottom: 0.5rem; }
         }
         button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid rgb(var(--c-acc1)) !important; outline-offset: 2px !important; }
+
+        /* --- HIGH-RES MONITOR SCALING --- */
+        /* Standard desktops stay at default 16px (100%) */
+        
+        /* Large monitors (1536px and up) - Scales everything up by 15% */
+        @media (min-width: 1536px) {
+            html { font-size: 18.5px; } 
+        }
+        
+        /* 4K / Ultrawide monitors (1920px and up) - Scales everything up by 35% */
+        @media (min-width: 1920px) {
+            html { font-size: 22px; } 
+        }
+        
     </style>
     <script>
         tailwind.config = { theme: { extend: { colors: { cBg: 'rgb(var(--c-bg) / <alpha-value>)', cText: 'rgb(var(--c-text) / <alpha-value>)', cCard: 'rgb(var(--c-card) / <alpha-value>)', cAcc1: 'rgb(var(--c-acc1) / <alpha-value>)', cAcc2: 'rgb(var(--c-acc2) / <alpha-value>)', cAcc3: 'rgb(var(--c-acc3) / <alpha-value>)', cSuccess: 'rgb(var(--c-success) / <alpha-value>)', cMuted: 'rgb(var(--c-muted) / <alpha-value>)', cSubtext: 'rgb(var(--c-subtext) / <alpha-value>)' } } } }
@@ -1577,19 +1591,6 @@ function updateRequirement(element, isMet) {
 
         // Initialize UI
         updateRegUI();
-
-        /* --- HIGH-RES MONITOR SCALING --- */
-        /* Standard desktops stay at default 16px (100%) */
-        
-        /* Large monitors (1536px and up) - Scales everything up by 15% */
-        @media (min-width: 1536px) {
-            html { font-size: 18.5px; } 
-        }
-        
-        /* 4K / Ultrawide monitors (1920px and up) - Scales everything up by 35% */
-        @media (min-width: 1920px) {
-            html { font-size: 22px; } 
-        }
         
     </script>
 </body>
