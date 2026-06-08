@@ -830,32 +830,13 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
                 xml_content = f.read().strip()
                 
         time.sleep(2.0)
-        active_jobs[job_id] = {"stage": "scan", "progress": 50, "message": "Auditing raw waveforms for licensing signatures..."}
+        active_jobs[job_id] = {"stage": "scan", "progress": 100, "message": "Auditing raw waveforms for licensing signatures..."}
         
         time.sleep(2.0)
-        active_jobs[job_id] = {"stage": "detect", "progress": 80, "message": "Detecting physical continuity and visual violations..."}
+        active_jobs[job_id] = {"stage": "detect", "progress": 100, "message": "Detecting physical continuity and visual violations..."}
         
         time.sleep(2.0)
         
-        # 2. Existing Mock AI Results (Placeholders)
-        ai_anomalies = [
-            {
-                "timecode": "00:01:14", 
-                "type": "High Risk", 
-                "description": "Warner Chappell music license signature matched on background track. Action required."
-            },
-            {
-                "timecode": "00:02:40", 
-                "type": "Medium Risk", 
-                "description": "Glaring lighting luminance spike exceeds broadcast standards. Continuity disruption."
-            },
-            {
-                "timecode": "00:03:05", 
-                "type": "Low Risk", 
-                "description": "Potential visual brand trademark identified on actor apparel (un-cleared logo)."
-            }
-        ]
-
         # 3. NEW: Run the conform audit based on the actual uploaded XML text
         conform_anomalies = run_conform_audit(xml_content) if xml_content else []
 
