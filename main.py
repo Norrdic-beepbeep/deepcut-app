@@ -1037,35 +1037,80 @@ def get_audit_status(
 
 @app.websocket("/ws/audit/{task_id}")
 async def websocket_audit_status(websocket: WebSocket, task_id: str):
-    await websocket.accept()
-    global active_jobs
-    
+    token = websocket.query_params.get("token")
+
+    if not token:
+        await websocket.close(code=1008)
+        return
+
+    db = SessionLocal()
+
     try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+
+        if not username:
+            await websocket.close(code=1008)
+            return
+
+        user = db.query(User).filter(User.username == username).first()
+
+        if not user:
+            await websocket.close(code=1008)
+            return
+
+        audit_record = db.query(Audit).filter(
+            Audit.id == task_id,
+            Audit.user_id == user.id
+        ).first()
+
+        if not audit_record:
+            await websocket.close(code=1008)
+            return
+
+        await websocket.accept()
+
         while True:
             job_state = active_jobs.get(task_id)
+
             if not job_state:
-                await websocket.send_json({"status": "progress", "stage": "scan", "progress": 0, "message": "Warming up engine..."})
-            elif "status" in job_state:
-                if job_state["status"] == "complete":
-                    await websocket.send_json({"status": "complete", "result": job_state})
-                    break
-                elif job_state["status"] == "error":
-                    await websocket.send_json({"status": "error", "message": job_state["message"]})
-                    break
-            else:
                 await websocket.send_json({
-                    "status": "progress", 
-                    "stage": job_state.get("stage", "scan"), 
-                    "progress": job_state.get("progress", 0), 
-                    "message": job_state.get("message", "Processing...")
+                    "status": audit_record.status.lower(),
+                    "result": {
+                        "filename": audit_record.filename,
+                        "format": audit_record.format,
+                        "anomalies": audit_record.anomalies or []
+                    }
                 })
+                break
+
+            if job_state.get("status") == "complete":
+                await websocket.send_json({"status": "complete", "result": job_state})
+                break
+
+            if job_state.get("status") == "error":
+                await websocket.send_json({
+                    "status": "error",
+                    "message": job_state.get("message", "Audit failed.")
+                })
+                break
+
+            await websocket.send_json({
+                "status": "progress",
+                "stage": job_state.get("stage", "scan"),
+                "progress": job_state.get("progress", 0),
+                "message": job_state.get("message", "Processing...")
+            })
+
             await asyncio.sleep(0.5)
-    except Exception as e:
-        pass
+
+    except JWTError:
+        await websocket.close(code=1008)
     finally:
+        db.close()
         try:
             await websocket.close()
-        except:
+        except Exception:
             pass
 
 
