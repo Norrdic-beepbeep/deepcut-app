@@ -4,12 +4,15 @@ import uuid
 import datetime
 import asyncio
 import time
+import openai
+import json
 from typing import List, Optional
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import secrets
 import xml.etree.ElementTree as ET
+
 
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, BackgroundTasks
 from fastapi.responses import JSONResponse
@@ -208,6 +211,44 @@ app.add_middleware(
 @app.head("/")
 def health_check():
     return {"status": "DeepCut Engine is online and operational."}
+
+
+def get_ai_compliance_audit(xml_content):
+    """
+    Sends the timeline XML to OpenAI to detect copyright, 
+    continuity, and broadcast standard issues.
+    """
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
+    # We truncate the XML to keep token costs down and stay within limits
+    truncated_xml = xml_content[:15000] 
+    
+    system_prompt = """
+    You are a senior broadcast compliance officer. Analyze this video timeline metadata.
+    Detect: 
+    1. Copyright/Music licensing issues.
+    2. Continuity errors (lighting, continuity).
+    3. Broadcast standard violations.
+    
+    Return ONLY a JSON object with a key "anomalies" which is a list of objects 
+    containing "timecode", "type", and "description".
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Timeline XML: {truncated_xml}"}
+            ],
+            response_format={"type": "json_object"}
+        )
+        
+        result = json.loads(response.choices[0].message.content)
+        return result.get("anomalies", [])
+    except Exception as e:
+        print(f"AI Audit Error: {e}")
+        return [] # Return empty list if AI fails so the rest of the audit proceeds
 
 # ==========================================
 # 6. EMAIL & PUBLIC ROUTES
@@ -814,10 +855,14 @@ def run_conform_audit(xml_string: str):
     return anomalies
 
 
+    
+
+
 # ==========================================
 # 10. BACKGROUND WORKER & AUDIT LOGIC
 # ==========================================
-def process_audit_in_background(job_id: str, file_path: str, filename: str, user_id: int):
+# 1. Change 'def' to 'async def'
+async def process_audit_in_background(job_id: str, file_path: str, filename: str, user_id: int):
     global active_jobs
     db = SessionLocal()
     try:
@@ -828,24 +873,24 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
         if os.path.exists(file_path):
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 xml_content = f.read().strip()
-                
-        time.sleep(2.0)
-        active_jobs[job_id] = {"stage": "scan", "progress": 50, "message": "Auditing raw waveforms for licensing signatures..."}
+
+        # 2. Extract the metadata for the AI
+        # Use your parse_fcpxml_timeline helper to get the clips data
+        parsed_data = parse_fcpxml_timeline(file_path)
+        extracted_metadata = parsed_data.get("clips", []) if parsed_data["success"] else []
         
-        time.sleep(2.0)
-        active_jobs[job_id] = {"stage": "detect", "progress": 80, "message": "Detecting physical continuity and visual violations..."}
+        active_jobs[job_id] = {"stage": "scan", "progress": 50, "message": "Auditing for licensing signatures..."}
         
-        time.sleep(2.0)
-        
-        # 2. real Ai a
+        # 3. Call the real AI
         ai_anomalies = await call_openai_for_compliance(extracted_metadata)
-
-
-        # 3. NEW: Run the conform audit based on the actual uploaded XML text
+        
+        # 4. Run the conform audit
         conform_anomalies = run_conform_audit(xml_content) if xml_content else []
 
-        # 4. Merge results
+        # 5. Merge results
         final_anomalies = ai_anomalies + conform_anomalies
+
+        # ... (save to DB and finalize as before) ...
 
         audit_record = db.query(Audit).filter(Audit.id == job_id).first()
         if audit_record:
@@ -877,6 +922,43 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
         if os.path.exists(file_path):
             os.remove(file_path)
         db.close()
+
+async def call_openai_for_compliance(extracted_metadata):
+    """
+    Sends the extracted clip metadata to OpenAI and waits for a JSON response.
+    """
+    # Initialize the Async client
+    client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
+    system_prompt = """
+    You are a senior broadcast compliance officer. Analyze this video timeline metadata.
+    Detect: 
+    1. Copyright/Music licensing issues.
+    2. Continuity errors (lighting, wardrobe).
+    3. Broadcast standard violations.
+    
+    Return ONLY a valid JSON object with a key "anomalies" which is a list of objects 
+    containing "timecode", "type", and "description".
+    """
+
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Analyze these timeline clips: {json.dumps(extracted_metadata)}"}
+            ],
+            response_format={"type": "json_object"}
+        )
+        
+        # Parse the JSON string into a Python list
+        return json.loads(response.choices[0].message.content).get("anomalies", [])
+    
+    except Exception as e:
+        print(f"--- AI API ERROR: {e} ---")
+        return [] # Return empty list so the app doesn't crash if AI fails
+
+        
 
 
 @app.post("/api/audit/start")
