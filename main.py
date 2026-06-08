@@ -99,7 +99,6 @@ class Audit(Base):
     owner = relationship("User", back_populates="audits")
 
 class AdminUserResponse(BaseModel):
-    id: int
     name: Optional[str] = None
     username: str
     email: str
@@ -107,6 +106,7 @@ class AdminUserResponse(BaseModel):
     company_name: Optional[str] = None
     is_suspended: bool
     last_login: Optional[datetime.datetime] = None
+    id: int
 
     class Config:
         orm_mode = True
