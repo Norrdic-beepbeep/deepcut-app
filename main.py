@@ -1152,13 +1152,35 @@ def generate_summary(payload: ReportPayload, current_user: User = Depends(get_cu
     return {"text": summary_text}
 
 @app.post("/api/ai/suggest")
-def suggest_fix(payload: SuggestPayload, current_user: User = Depends(get_current_user)):
-    suggestion = (
-        f"To resolve the '{payload.type}' anomaly regarding '{payload.description}', "
-        "we recommend reviewing the source clip at this timecode. Consider replacing the flagged "
-        "asset with cleared media from the Vault, or applying a localized blur/mask if visual."
-    )
-    return {"text": suggestion}
+async def suggest_fix(payload: SuggestPayload, current_user: User = Depends(get_current_user)):
+    # 1. Initialize the Async OpenAI Client
+    client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
+    # 2. Give the AI a specific post-production persona
+    prompt = f"""
+    You are an expert post-production supervisor and conform artist. 
+    An editor has encountered the following anomaly in their timeline XML:
+    
+    Type: {payload.type}
+    Description: {payload.description}
+    
+    Provide a highly specific, technical, and actionable strategy (1-3 sentences maximum) on how to fix this issue in NLEs like Premiere Pro, Final Cut Pro, or DaVinci Resolve. Do not use generic filler.
+    """
+    
+    try:
+        # 3. Call the AI
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3 # Keep it analytical, not creative
+        )
+        
+        strategy = response.choices[0].message.content.strip()
+        return {"text": strategy}
+        
+    except Exception as e:
+        print(f"Suggestion AI Error: {e}")
+        return {"text": "Secure broker connection failed. Unable to generate dynamic strategy at this time."}
 
 
 # ==========================================
