@@ -1288,27 +1288,14 @@
             if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
         }
 
-function handleProgressUpdate(stage, progress, message) {
-    const scanContainer = document.getElementById('scanProgressContainer').parentElement.parentElement;
-    const detectContainer = document.getElementById('detectProgressContainer').parentElement.parentElement;
-    
-    // Toggle visibility based on the active stage
-    if (stage === 'scan') {
-        scanContainer.classList.remove('hidden');
-        detectContainer.classList.add('hidden');
-        
-        document.getElementById('scanBar').style.width = progress + '%';
-        document.getElementById('scanPercent').textContent = progress + '%';
-        document.getElementById('scanText').textContent = message;
-    } else {
-        scanContainer.classList.add('hidden');
-        detectContainer.classList.remove('hidden');
-        
-        document.getElementById('detectBar').style.width = progress + '%';
-        document.getElementById('detectPercent').textContent = progress + '%';
-        document.getElementById('detectText').textContent = message;
-    }
-}
+        function handleProgressUpdate(stage, progress, message) {
+            const barId = stage === 'scan' ? 'scanBar' : 'detectBar';
+            const percentId = stage === 'scan' ? 'scanPercent' : 'detectPercent';
+            const textId = stage === 'scan' ? 'scanText' : 'detectText';
+            document.getElementById(barId).style.width = progress + '%';
+            document.getElementById(percentId).textContent = progress + '%';
+            document.getElementById(textId).textContent = message;
+        }
 
         document.getElementById('runAuditBtn').addEventListener('click', async () => {
             if (selectedFiles.length === 0 && !submittedUrl) return;
@@ -1356,7 +1343,7 @@ function handleProgressUpdate(stage, progress, message) {
                         const res = await fetch(`https://deepcut-app.onrender.com/api/audit/status/${task_id}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
                         const data = await res.json();
                         if (data.status === 'running') handleProgressUpdate(data.stage, data.progress, data.message);
-                        else if (data.status === 'complete') { stopMonitoring(); clearPreviousResults(); populateAndRevealDashboard(data.result); loadHistory(); }
+                        else if (data.status === 'complete') { stopMonitoring(); populateAndRevealDashboard(data.result); loadHistory(); }
                         else if (data.status === 'error') {
                             stopMonitoring();
                             showCustomMsg(data.message || "Audit failed.");
@@ -1372,15 +1359,14 @@ function handleProgressUpdate(stage, progress, message) {
 
                     ws.onmessage = (event) => {
                         const payload = JSON.parse(event.data);
-                        if (payload.status === 'progress') {
-                            handleProgressUpdate(payload.stage, payload.progress, payload.message);
-                        } else if (payload.status === 'complete') { 
-                            stopMonitoring(); 
-                            clearPreviousResults(); // --- ADD THIS ---
-                            populateAndRevealDashboard(payload.result); 
-                            loadHistory(); 
+                        if (payload.status === 'progress') handleProgressUpdate(payload.stage, payload.progress, payload.message);
+                        else if (payload.status === 'complete') { stopMonitoring(); populateAndRevealDashboard(payload.result); loadHistory(); }
+                        else if (payload.status === 'error') {
+                            stopMonitoring();
+                            showCustomMsg(payload.message || "Audit failed due to an engine error.");
+                            document.getElementById('progressContainer').classList.add('hidden');
+                            inputWorkspace.classList.remove('hidden');
                         }
-                        // ... rest of logic
                     };
                     ws.onerror = () => startPollingFallback();
                 } catch (e) { startPollingFallback(); }
