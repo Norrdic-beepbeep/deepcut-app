@@ -1577,6 +1577,19 @@ function updateRequirement(element, isMet) {
 
         // Initialize UI
         updateRegUI();
+
+        /* --- HIGH-RES MONITOR SCALING --- */
+        /* Standard desktops stay at default 16px (100%) */
+        
+        /* Large monitors (1536px and up) - Scales everything up by 15% */
+        @media (min-width: 1536px) {
+            html { font-size: 18.5px; } 
+        }
+        
+        /* 4K / Ultrawide monitors (1920px and up) - Scales everything up by 35% */
+        @media (min-width: 1920px) {
+            html { font-size: 22px; } 
+        }
         
     </script>
 </body>
