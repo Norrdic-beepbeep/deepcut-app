@@ -1425,7 +1425,7 @@
             return parts.length >= 3 ? (parts[0] * 3600) + (parts[1] * 60) + parts[2] : (parts.length === 2 ? (parts[0] * 60) + parts[1] : 0);
         }
 
-        function populateAndRevealDashboard(data) {
+function populateAndRevealDashboard(data) {
 
             // --- THE BUG FIX: HARD RESET ---
             // Force the container to be completely empty before adding new rows
@@ -1471,6 +1471,36 @@
                         timelineTrack.appendChild(marker);
                     }
                 });
+
+                data.anomalies.forEach((a, index) => {
+                    let severityClass = "bg-cText text-cCard";
+                    if (a.type && a.type.toLowerCase().includes("high")) severityClass = "bg-cAcc3 text-cCard";
+                    else if (a.type && a.type.toLowerCase().includes("medium")) severityClass = "bg-cAcc1 text-cCard";
+                    else if (a.type && a.type.toLowerCase().includes("low")) severityClass = "bg-cAcc2 text-cCard";
+
+                    // THE FIX IS ON THE LINE BELOW (inline-block whitespace-nowrap)
+                    tableBody.innerHTML += `<tr id="row-anomaly-${index}" class="border-b-[2px] sm:border-b-[3px] border-cText block sm:table-row row-highlight"><td class="p-4 sm:p-6 font-bold border-b sm:border-b-0 sm:border-r-[3px] border-cText block sm:table-cell w-full sm:w-auto">${a.timecode}</td><td class="p-4 sm:p-6 border-b sm:border-b-0 sm:border-r-[3px] border-cText block sm:table-cell w-full sm:w-auto"><span class="${severityClass} px-3 py-1.5 text-[10px] sm:text-xs font-bold inline-block whitespace-nowrap">${a.type}</span></td><td class="p-4 sm:p-6 block sm:table-cell w-full sm:w-auto"><span class="block leading-relaxed text-sm">${a.description}</span><div class="mt-4"><button class="btn-sugerir bg-cText text-cBg px-4 py-2 text-xs font-bold hover:bg-cAcc2 uppercase tracking-widest transition-colors focus:outline-none" data-type="${a.type}" data-desc="${a.description}">✨ Suggest Fix</button><div class="sugerencia-out hidden mt-3 p-4 bg-cCard border-[2px] border-dashed border-cText text-sm leading-relaxed"></div></div></td></tr>`;
+                });
+            } else {
+                timelineContainer.classList.add('hidden');
+                tableBody.innerHTML = `<tr><td colspan="3" class="p-8 text-center font-bold text-cSubtext text-sm">No compliance violations or anomalies detected.</td></tr>`;
+            }
+
+            document.querySelectorAll('.btn-sugerir').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const t = e.target; t.disabled = true; const out = t.nextElementSibling; out.classList.remove('hidden'); out.textContent = "Generating strategy...";
+                    try {
+                        const res = await fetch('https://deepcut-app.onrender.com/api/ai/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` }, body: JSON.stringify({ type: t.getAttribute('data-type'), description: t.getAttribute('data-desc') }) });
+                        const ctx = await res.json(); t.style.display = 'none';
+                        out.innerHTML = `<span class="font-bold text-cAcc2 text-[11px] block mb-2 uppercase tracking-widest">✨ Recommended Strategy:</span> ${ctx.text}`;
+                    } catch (err) { out.textContent = "Error communicating with secure broker."; t.disabled = false; }
+                });
+            });
+
+            document.getElementById('progressContainer').classList.add('hidden'); inputWorkspace.classList.remove('hidden'); 
+            const d = document.getElementById('resultsDashboard'); d.classList.remove('hidden');
+            setTimeout(() => { d.classList.remove('opacity-0', 'translate-y-4'); d.scrollIntoView({ behavior: 'smooth' }); }, 50);
+        }
 
                 data.anomalies.forEach((a, index) => {
                     let severityClass = "bg-cText text-cCard";
