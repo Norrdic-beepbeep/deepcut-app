@@ -48,18 +48,13 @@
         button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid rgb(var(--c-acc1)) !important; outline-offset: 2px !important; }
 
         /* --- HIGH-RES MONITOR SCALING --- */
-        /* Standard desktops stay at default 16px (100%) */
-        
-        /* Large monitors (1536px and up) - Scales everything up by 15% */
         @media (min-width: 1536px) {
             html { font-size: 18.5px; } 
         }
         
-        /* 4K / Ultrawide monitors (1920px and up) - Scales everything up by 35% */
         @media (min-width: 1920px) {
             html { font-size: 22px; } 
         }
-
     </style>
     <script>
         tailwind.config = { theme: { extend: { colors: { cBg: 'rgb(var(--c-bg) / <alpha-value>)', cText: 'rgb(var(--c-text) / <alpha-value>)', cCard: 'rgb(var(--c-card) / <alpha-value>)', cAcc1: 'rgb(var(--c-acc1) / <alpha-value>)', cAcc2: 'rgb(var(--c-acc2) / <alpha-value>)', cAcc3: 'rgb(var(--c-acc3) / <alpha-value>)', cSuccess: 'rgb(var(--c-success) / <alpha-value>)', cMuted: 'rgb(var(--c-muted) / <alpha-value>)', cSubtext: 'rgb(var(--c-subtext) / <alpha-value>)' } } } }
@@ -69,8 +64,6 @@
 
     <a href="#mainContent" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-cCard focus:text-cText focus:border-4 focus:border-cText focus:shadow-hard font-bold uppercase tracking-wider text-sm">Skip to main content</a>
 
-
-    
     <div id="vaultDrawer" class="fixed inset-y-0 left-0 w-[18rem] sm:w-[22rem] bg-cCard border-r-[4px] border-cText z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-hard" role="dialog" aria-modal="true" aria-label="Vault Archive">
         
         <div id="vaultResizer" class="absolute top-0 right-[-2px] w-3 h-full cursor-col-resize z-[60] group flex items-center justify-center hover:bg-cAcc1/20 transition-colors">
@@ -97,6 +90,7 @@
     <div id="vaultOverlay" class="fixed inset-0 bg-cText/60 z-40 hidden transition-opacity duration-300 opacity-0" aria-hidden="true"></div>
 
     <div id="authContainer" class="w-full max-w-lg mx-auto mt-8 sm:mt-16 z-20 transition-all duration-500 relative px-2 sm:px-0">
+        
         <div id="loginScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-8 sm:p-10 shadow-hard relative overflow-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="text-center mb-8 border-b-[3px] border-cText pb-6">
                 <img src="/logo.png" alt="DeepCut Logo" class="h-16 w-auto mx-auto mb-4 object-contain drop-shadow-[2px_2px_0px_rgba(45,40,36,1)]">
@@ -120,8 +114,7 @@
             </div>
         </div>
 
-       <div id="registerScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
-            
+        <div id="registerScreen" class="bg-cCard border-[3px] sm:border-[4px] border-cText p-6 sm:p-10 shadow-hard relative overflow-hidden fade-hidden transition-all duration-500 w-full mb-4 mr-2 sm:mr-3">
             <div class="relative flex justify-between items-center mb-8 px-4 sm:px-12">
                 <div class="absolute top-1/2 left-0 w-full h-[3px] bg-cText -z-10 translate-y-2"></div>
                 <div class="flex flex-col items-center bg-cCard px-2">
@@ -143,7 +136,6 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
                 <div class="border-[3px] border-cText p-5 sm:p-6 bg-cBg relative shadow-hard-sm">
                     
                     <div id="step-1-content" class="step-content block space-y-4">
@@ -226,34 +218,30 @@
                             <h2 class="font-bold text-xl mb-1 uppercase tracking-wider">4- Key</h2>
                             <p class="text-xs sm:text-sm text-cMuted mb-4 font-typewriter font-bold uppercase tracking-widest">Security & Verification</p>
                         </div>
-                        
                         <div>
                             <label for="regPassword" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Secure Password</label>
                             <input type="password" id="regPassword" placeholder="Create a secure password" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm mb-2">
                         </div>
-                        <<div class="bg-cBg/30 border-[2px] border-cText p-3 shadow-inner">
-    <ul class="space-y-2 text-xs font-typewriter font-bold" id="validationList" aria-live="polite">
-        
-        <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2">
-            <span class="status-icon" aria-hidden="true">○</span> 
-            <span class="sr-only status-text">Requirement not met:</span> 
-            Min 12 characters
-        </li>
-        
-        <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2">
-            <span class="status-icon" aria-hidden="true">○</span> 
-            <span class="sr-only status-text">Requirement not met:</span> 
-            One uppercase letter
-        </li>
-        
-        <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2">
-            <span class="status-icon" aria-hidden="true">○</span> 
-            <span class="sr-only status-text">Requirement not met:</span> 
-            One special character
-        </li>
-        
-    </ul>
-</div>
+                        
+                        <div class="bg-cBg/30 border-[2px] border-cText p-3 shadow-inner">
+                            <ul class="space-y-2 text-xs font-typewriter font-bold" id="validationList" aria-live="polite">
+                                <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2">
+                                    <span class="status-icon" aria-hidden="true">○</span> 
+                                    <span class="sr-only status-text">Requirement not met:</span> 
+                                    Min 12 characters
+                                </li>
+                                <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2">
+                                    <span class="status-icon" aria-hidden="true">○</span> 
+                                    <span class="sr-only status-text">Requirement not met:</span> 
+                                    One uppercase letter
+                                </li>
+                                <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2">
+                                    <span class="status-icon" aria-hidden="true">○</span> 
+                                    <span class="sr-only status-text">Requirement not met:</span> 
+                                    One special character
+                                </li>
+                            </ul>
+                        </div>
                         
                         <div class="flex items-start bg-cBg/20 p-3 border-[2px] border-cText shadow-inner mt-4">
                             <input type="checkbox" id="regConsent" class="mt-1 mr-3 h-4 w-4 accent-cAcc2 border-[2px] border-cText cursor-pointer">
@@ -276,7 +264,6 @@
 
             <div class="mt-8 flex justify-between items-center border-t-[3px] border-cText/20 pt-6">
                 <button id="showLoginBtn" class="text-xs sm:text-sm font-bold tracking-widest uppercase text-cAcc3 hover:text-cAcc2 transition-colors focus:outline-none p-1">&larr; Back to Login</button>
-                
                 <div class="flex gap-3">
                     <button id="prevBtn" type="button" class="hidden px-6 py-3 bg-[#e5e5e5] border-[3px] border-cText text-cText font-bold uppercase tracking-widest shadow-hard-sm hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-[1px_1px_0px_rgba(45,40,36,1)] transition-all" onclick="changeStep(-1)">
                         Prev
@@ -581,32 +568,48 @@
         let vaultFocusCleanup = null;
         let authToken = null;
         let currentAudits = [];
-        let currentDashboardData = null; // Holds the active audit data for the CSV
+        let currentDashboardData = null;
 
-        
+        // --- VAULT RESIZER LOGIC ---
+        const vaultResizer = document.getElementById('vaultResizer');
+        let isResizing = false;
 
-        // Centralized utility to reset the UI layout before a new scan runs
+        vaultResizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none'; 
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            let newWidth = e.clientX;
+            const minWidth = 250;
+            const maxWidth = window.innerWidth * 0.5;
+            if (newWidth < minWidth) newWidth = minWidth;
+            if (newWidth > maxWidth) newWidth = maxWidth;
+            vaultDrawer.style.width = `${newWidth}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        });
+
         function clearPreviousResults() {
             console.log("Clearing ghost data from previous audit...");
-            
-            // Hide the main container and remove entry animations
             const resultsDash = document.getElementById('resultsDashboard');
             if (resultsDash) {
                 resultsDash.classList.add('hidden', 'opacity-0', 'translate-y-4');
             }
-            
-            // Hide and wipe the AI Summary box
             const geminiBox = document.getElementById('geminiSummaryContainer');
             if (geminiBox) geminiBox.classList.add('hidden');
-            
             const geminiText = document.getElementById('geminiSummaryText');
             if (geminiText) geminiText.innerHTML = '';
-            
-            // Empty out the dynamic visual timeline blocks
             const timeline = document.getElementById('interactiveTimeline');
             if (timeline) timeline.innerHTML = '';
-            
-            // Completely purge the text table body entries
             const tableBody = document.getElementById('auditTableBody');
             if (tableBody) tableBody.innerHTML = '';
         }
@@ -648,7 +651,7 @@
             setTimeout(() => { termsPopModal.classList.add('hidden'); }, 300);
             if (agreed) regConsentCheckbox.checked = true;
             if (termsFocusCleanup) { termsFocusCleanup(); termsFocusCleanup = null; }
-            regPassword.dispatchEvent(new Event('input')); // Force recalculate register button availability
+            regPassword.dispatchEvent(new Event('input')); 
         };
         closeTermsPopBtn.addEventListener('click', () => dismissTermsPop(false));
         acknowledgeTermsPopBtn.addEventListener('click', () => dismissTermsPop(true));
@@ -729,7 +732,6 @@
 
         async function loadAdminDashboard() {
             try {
-                // 1. Fetch Users
                 const res = await fetch('https://deepcut-app.onrender.com/api/admin/users', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
@@ -737,7 +739,6 @@
                 const users = await res.json();
                 renderAdminDirectory(users);
 
-                // 2. Fetch Audit Logs
                 const logRes = await fetch('https://deepcut-app.onrender.com/api/admin/logs', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
@@ -746,7 +747,6 @@
                     renderAdminLogs(logs);
                 }
 
-                // Show the modal
                 const modal = document.getElementById('adminModal');
                 modal.classList.remove('hidden');
                 setTimeout(() => modal.classList.remove('opacity-0'), 10);
@@ -756,7 +756,6 @@
             }
         }
 
-        // 3. Render the Logs
         function renderAdminLogs(logs) {
             const logBody = document.getElementById('adminLogTableBody');
             logBody.innerHTML = '';
@@ -945,28 +944,24 @@
                 return (b.flag_count || 0) - (a.flag_count || 0);
             });
             
-           // ... inside renderVaultList() ...
-        sortedAudits.forEach(audit => {
-            const card = document.createElement('button');
-            
-            // 1. Increased padding (p-5) and added a nice hover lift effect
-            card.className = "w-full text-left p-5 bg-cCard border-[3px] border-cText shadow-hard-sm cursor-pointer hover:bg-cBg/20 mb-4 block focus:outline-none transition-all hover:-translate-y-1 hover:shadow-hard";
-            
-            let statusLabel = audit.status === "Flagged" ? `🚩 ${audit.flag_count} Flags` : `🌟 Clean`;
-            
-            // 2. Swapped text-[9px] for text-xs, increased title to text-sm, and adjusted tag padding
-            card.innerHTML = `
-                <p class="font-typewriter font-bold text-sm truncate tracking-wide">${audit.filename}</p>
-                <div class="flex justify-between items-center mt-4">
-                    <span class="text-xs font-bold border-[2px] border-cText bg-cBg/40 px-2 py-1 uppercase tracking-widest">${audit.format}</span>
-                    <span class="text-xs font-bold border-[2px] ${audit.status === 'Flagged' ? 'border-cAcc3 text-cAcc3' : 'border-cSuccess text-cSuccess'} px-2 py-1 uppercase tracking-widest">${statusLabel}</span>
-                </div>
-            `;
-            
-            card.addEventListener('click', () => { loadSingleAudit(audit.id); closeVault(); });
-            vaultList.appendChild(card);
-        });
-        
+            vaultList.innerHTML = ''; // Clear prior entries
+            sortedAudits.forEach(audit => {
+                const card = document.createElement('button');
+                card.className = "w-full text-left p-5 bg-cCard border-[3px] border-cText shadow-hard-sm cursor-pointer hover:bg-cBg/20 mb-4 block focus:outline-none transition-all hover:-translate-y-1 hover:shadow-hard";
+                
+                let statusLabel = audit.status === "Flagged" ? `🚩 ${audit.flag_count} Flags` : `🌟 Clean`;
+                
+                card.innerHTML = `
+                    <p class="font-typewriter font-bold text-sm truncate tracking-wide">${audit.filename}</p>
+                    <div class="flex justify-between items-center mt-4">
+                        <span class="text-xs font-bold border-[2px] border-cText bg-cBg/40 px-2 py-1 uppercase tracking-widest">${audit.format}</span>
+                        <span class="text-xs font-bold border-[2px] ${audit.status === 'Flagged' ? 'border-cAcc3 text-cAcc3' : 'border-cSuccess text-cSuccess'} px-2 py-1 uppercase tracking-widest">${statusLabel}</span>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => { loadSingleAudit(audit.id); closeVault(); });
+                vaultList.appendChild(card);
+            });
         }
         vaultSortDropdown.addEventListener('change', renderVaultList);
 
@@ -1012,15 +1007,13 @@
         const reqSpecial = document.getElementById('reqSpecial');
 
         // --- DEEP LINK HASH ROUTER ---
-       // --- DEEP LINK HASH ROUTER ---
         function handleHashRoute() {
             const hash = window.location.hash;
             const authContainer = document.getElementById('authContainer');
 
             if (hash === '#register') {
-                // Expand container for the wide stepper layout
                 authContainer.classList.remove('max-w-lg');
-                authContainer.classList.add('max-w-4xl', 'md:mt-8'); // Added top margin adjustment
+                authContainer.classList.add('max-w-4xl', 'md:mt-8'); 
                 
                 loginScreen.classList.add('fade-hidden');
                 forgotPasswordScreen.classList.add('fade-hidden');
@@ -1030,7 +1023,6 @@
                 registerScreen.classList.remove('fade-hidden');
                 regName.focus();
             } else if (hash === '#forgot') {
-                // Shrink container back to standard size for the forgot password screen
                 authContainer.classList.remove('max-w-4xl', 'md:mt-8');
                 authContainer.classList.add('max-w-lg');
 
@@ -1042,7 +1034,6 @@
                 forgotPasswordScreen.classList.remove('fade-hidden');
                 resetEmailInput.focus();
             } else {
-                // Shrink container back to standard size for the login screen
                 authContainer.classList.remove('max-w-4xl', 'md:mt-8');
                 authContainer.classList.add('max-w-lg');
 
@@ -1076,28 +1067,21 @@
             } catch (e) { showLoginFromAnywhere(); } finally { sendResetBtn.disabled = false; sendResetBtn.textContent = "SEND RESET LINK"; }
         });
 
-function updateRequirement(element, isMet) {
-    // Target the hidden screen reader text specifically
-    const srText = element.querySelector('.status-text');
-    
-    if (isMet) {
-        // Update the visual styling
-        element.classList.remove('req-unmet'); 
-        element.classList.add('req-met');
-        element.querySelector('.status-icon').textContent = '●';
-        
-        // Update the hidden screen reader text
-        if (srText) srText.textContent = "Requirement met:";
-    } else {
-        // Revert the visual styling
-        element.classList.remove('req-met'); 
-        element.classList.add('req-unmet');
-        element.querySelector('.status-icon').textContent = '○';
-        
-        // Revert the hidden screen reader text
-        if (srText) srText.textContent = "Requirement not met:";
-    }
-}
+        function updateRequirement(element, isMet) {
+            const srText = element.querySelector('.status-text');
+            
+            if (isMet) {
+                element.classList.remove('req-unmet'); 
+                element.classList.add('req-met');
+                element.querySelector('.status-icon').textContent = '●';
+                if (srText) srText.textContent = "Requirement met:";
+            } else {
+                element.classList.remove('req-met'); 
+                element.classList.add('req-unmet');
+                element.querySelector('.status-icon').textContent = '○';
+                if (srText) srText.textContent = "Requirement not met:";
+            }
+        }
 
         // VALIDATION CHECKER INCLUDING NEW FIELDS
         regPassword.addEventListener('input', (e) => {
@@ -1182,7 +1166,6 @@ function updateRequirement(element, isMet) {
             formData.append('username', username); 
             formData.append('password', password);
             
-            // Visual loading state
             loginBtn.disabled = true;
             loginBtn.textContent = "AUTHORIZING...";
 
@@ -1193,7 +1176,6 @@ function updateRequirement(element, isMet) {
                     body: formData 
                 });
                 
-                // --- THE FIX: Read the backend's specific error message! ---
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.detail || "Login failed. Check your identification parameters.");
@@ -1211,10 +1193,8 @@ function updateRequirement(element, isMet) {
                 loadHistory();
                 
             } catch (e) { 
-                // Display the dynamic error message we caught from Python
                 showCustomMsg(e.message); 
             } finally {
-                // Reset the button state
                 loginBtn.disabled = false;
                 loginBtn.textContent = "AUTHORIZE";
             }
@@ -1231,9 +1211,8 @@ function updateRequirement(element, isMet) {
 
         fileInput.addEventListener('change', (e) => { 
             if(e.target.files.length) {
-                // Frontend guardrail for file size
                 const file = e.target.files[0];
-                const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+                const MAX_SIZE = 100 * 1024 * 1024;
                 if (file.size > MAX_SIZE) {
                     showCustomMsg("File too large. Maximum allowed size is 100MB.");
                     fileInput.value = '';
@@ -1286,13 +1265,11 @@ function updateRequirement(element, isMet) {
             if (selectedFiles.length === 0 && !submittedUrl) return;
             if (!authToken) return;
             
-            // CALL THE CENTRAL CLEANER HERE
             clearPreviousResults(); 
             
             fileMetaRow.classList.add('hidden');
             document.getElementById('progressContainer').classList.remove('hidden');
             
-            // Reset Progress Bars
             handleProgressUpdate('scan', 0, 'INITIALIZING...');
             handleProgressUpdate('detect', 0, 'Waiting for engine...');
             stopMonitoring(); 
@@ -1333,23 +1310,20 @@ function updateRequirement(element, isMet) {
                 }
 
                 try {
-const accessToken = localStorage.getItem("access_token") || localStorage.getItem("token");
+                    const accessToken = localStorage.getItem("access_token") || localStorage.getItem("token") || authToken;
+                    ws = new WebSocket(`wss://deepcut-app.onrender.com/ws/audit/${task_id}?token=${encodeURIComponent(accessToken)}`);
 
-ws = new WebSocket(
-    `wss://deepcut-app.onrender.com/ws/audit/${task_id}?token=${encodeURIComponent(accessToken)}`
-);
-
-ws.onmessage = (event) => {
-    const payload = JSON.parse(event.data);
-    if (payload.status === 'progress') handleProgressUpdate(payload.stage, payload.progress, payload.message);
-    else if (payload.status === 'complete') { stopMonitoring(); populateAndRevealDashboard(payload.result); loadHistory(); }
-    else if (payload.status === 'error') {
-        stopMonitoring();
-        showCustomMsg(payload.message || "Audit failed due to an engine error.");
-        document.getElementById('progressContainer').classList.add('hidden');
-        inputWorkspace.classList.remove('hidden');
-    }
-};
+                    ws.onmessage = (event) => {
+                        const payload = JSON.parse(event.data);
+                        if (payload.status === 'progress') handleProgressUpdate(payload.stage, payload.progress, payload.message);
+                        else if (payload.status === 'complete') { stopMonitoring(); populateAndRevealDashboard(payload.result); loadHistory(); }
+                        else if (payload.status === 'error') {
+                            stopMonitoring();
+                            showCustomMsg(payload.message || "Audit failed due to an engine error.");
+                            document.getElementById('progressContainer').classList.add('hidden');
+                            inputWorkspace.classList.remove('hidden');
+                        }
+                    };
                     ws.onerror = () => startPollingFallback();
                 } catch (e) { startPollingFallback(); }
             } catch (error) { 
@@ -1365,23 +1339,18 @@ ws.onmessage = (event) => {
             exportCsvBtn.addEventListener('click', () => {
                 if (!currentDashboardData || !currentDashboardData.anomalies) return;
 
-                // 1. Create the CSV Headers
                 let csvContent = "Timecode,Risk Level,Description\n";
 
-                // 2. Loop through the anomalies and format them for a spreadsheet
                 currentDashboardData.anomalies.forEach(a => {
-                    // We wrap the description in quotes so commas inside the text don't break the spreadsheet columns
                     const safeDescription = `"${a.description.replace(/"/g, '""')}"`;
                     csvContent += `${a.timecode},${a.type},${safeDescription}\n`;
                 });
 
-                // 3. Package it into a Browser Blob and force download
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
                 
                 const link = document.createElement("a");
                 link.setAttribute("href", url);
-                // Name the file dynamically based on the timeline they audited
                 link.setAttribute("download", `DeepCut_Audit_${currentDashboardData.filename}.csv`);
                 link.style.visibility = 'hidden';
                 
@@ -1413,7 +1382,6 @@ ws.onmessage = (event) => {
         }
 
         function populateAndRevealDashboard(data) {
-            // 1. If there is an error, the function stops here.
             if(data.error) {
                 showCustomMsg(data.error);
                 document.getElementById('progressContainer').classList.add('hidden');
@@ -1421,14 +1389,12 @@ ws.onmessage = (event) => {
                 return; 
             }
 
-            // 2. THIS IS THE MAGIC KEY THAT REVEALS THE BUTTON
             currentDashboardData = data; 
             const exportBtn = document.getElementById('exportCsvBtn');
             if (exportBtn) {
                 exportBtn.classList.remove('hidden');
             }
 
-            // 3. The rest of the dashboard logic continues...
             document.getElementById('dashFileName').textContent = data.filename;
             document.getElementById('dashStatus').textContent = data.anomalies && data.anomalies.length ? `🚩 ${data.anomalies.length} Flags` : "🌟 Clean";
             const tableBody = document.getElementById('auditTableBody'); tableBody.innerHTML = '';
@@ -1456,7 +1422,7 @@ ws.onmessage = (event) => {
                 });
 
                 data.anomalies.forEach((a, index) => {
-                    let severityClass = "bg-cText text-cCard"; // Default
+                    let severityClass = "bg-cText text-cCard";
                     if (a.type && a.type.toLowerCase().includes("high")) severityClass = "bg-cAcc3 text-cCard";
                     else if (a.type && a.type.toLowerCase().includes("medium")) severityClass = "bg-cAcc1 text-cCard";
                     else if (a.type && a.type.toLowerCase().includes("low")) severityClass = "bg-cAcc2 text-cCard";
@@ -1520,7 +1486,6 @@ ws.onmessage = (event) => {
 
                     showCustomMsg(`Operator [${username}] provisioned successfully.<br><br>Temporary Access Code: <span class="font-typewriter tracking-widest bg-cBg p-2 font-bold select-all border border-cText">${data.temporary_password}</span>`, true);
 
-                    // Clear fields and visually refresh the directory
                     document.getElementById('newOpName').value = '';
                     document.getElementById('newOpUsername').value = '';
                     document.getElementById('newOpEmail').value = '';
@@ -1530,7 +1495,7 @@ ws.onmessage = (event) => {
                     showCustomMsg(err.message);
                 } finally {
                     addOperatorBtn.disabled = false;
-                    addOperatorBtn.textContent = "ADD TO ORGANIZATION";
+                    addOperatorBtn.textContent = "Add to Organization";
                 }
             });
         }
@@ -1548,7 +1513,6 @@ ws.onmessage = (event) => {
         const totalSteps = 4;
 
         function updateRegUI() {
-            // Swap visible form panes
             document.querySelectorAll('.step-content').forEach((el, index) => {
                 if (index + 1 === currentStep) {
                     el.classList.replace('hidden', 'block');
@@ -1557,7 +1521,6 @@ ws.onmessage = (event) => {
                 }
             });
 
-            // Update top progress circles
             for (let i = 1; i <= totalSteps; i++) {
                 const circle = document.getElementById(`circle-${i}`);
                 if (circle) {
@@ -1570,7 +1533,6 @@ ws.onmessage = (event) => {
                     }
                 }
                 
-                // Update side indicators
                 const indicator = document.getElementById(`indicator-${i}`);
                 if (indicator) {
                     if (i === currentStep) {
@@ -1581,10 +1543,9 @@ ws.onmessage = (event) => {
                 }
             }
 
-            // Manage button visibility
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
-            const apiSubmitBtn = document.getElementById('registerBtn'); // Your existing API button
+            const apiSubmitBtn = document.getElementById('registerBtn');
 
             if (prevBtn) {
                 if (currentStep === 1) prevBtn.classList.add('hidden');
@@ -1593,7 +1554,6 @@ ws.onmessage = (event) => {
 
             if (nextBtn && apiSubmitBtn) {
                 if (currentStep === totalSteps) {
-                    // Hide 'Next', reveal your real 'Create Operator' button
                     nextBtn.classList.add('hidden');
                     apiSubmitBtn.classList.remove('hidden');
                 } else {
@@ -1610,15 +1570,12 @@ ws.onmessage = (event) => {
             updateRegUI();
         };
 
-        // Reset stepper if they hit 'Back to Login'
         document.getElementById('showLoginBtn').addEventListener('click', () => {
             currentStep = 1;
             updateRegUI();
         });
 
-        // Initialize UI
         updateRegUI();
-        
     </script>
 </body>
 </html>
