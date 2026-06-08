@@ -69,7 +69,14 @@
 
     <a href="#mainContent" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-cCard focus:text-cText focus:border-4 focus:border-cText focus:shadow-hard font-bold uppercase tracking-wider text-sm">Skip to main content</a>
 
-    <div id="vaultDrawer" class="fixed inset-y-0 left-0 w-[290px] sm:w-[350px] bg-cCard border-r-[4px] border-cText z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-hard" role="dialog" aria-modal="true" aria-label="Vault Archive">
+
+    
+    <div id="vaultDrawer" class="fixed inset-y-0 left-0 w-[18rem] sm:w-[22rem] bg-cCard border-r-[4px] border-cText z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-hard" role="dialog" aria-modal="true" aria-label="Vault Archive">
+        
+        <div id="vaultResizer" class="absolute top-0 right-[-2px] w-3 h-full cursor-col-resize z-[60] group flex items-center justify-center hover:bg-cAcc1/20 transition-colors">
+            <div class="w-[2px] h-10 bg-cText/20 group-hover:bg-cText transition-colors"></div>
+        </div>
+
         <div class="p-6 border-b-[3px] border-cText flex justify-between items-center bg-cBg/30">
             <h3 class="text-lg font-bold tracking-widest uppercase font-typewriter">📁 Vault Archive</h3>
             <button id="closeVaultBtn" class="text-2xl font-bold text-cText hover:text-cAcc3 focus:outline-none p-2" aria-label="Close Vault Archive">&times;</button>
@@ -575,6 +582,44 @@
         let authToken = null;
         let currentAudits = [];
         let currentDashboardData = null; // Holds the active audit data for the CSV
+
+        // --- VAULT RESIZER LOGIC ---
+        const vaultResizer = document.getElementById('vaultResizer');
+        let isResizing = false;
+
+        vaultResizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            // Change cursor for the whole page so it doesn't flicker while dragging
+            document.body.style.cursor = 'col-resize';
+            // Stop text from accidentally highlighting while dragging
+            document.body.style.userSelect = 'none'; 
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            
+            // Calculate the new width based on the mouse X position
+            let newWidth = e.clientX;
+            
+            // Set some smart constraints (Min 250px, Max 50% of their screen)
+            const minWidth = 250;
+            const maxWidth = window.innerWidth * 0.5;
+            
+            if (newWidth < minWidth) newWidth = minWidth;
+            if (newWidth > maxWidth) newWidth = maxWidth;
+            
+            // Apply the pixel width directly to the drawer
+            vaultDrawer.style.width = `${newWidth}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                // Reset page styles back to normal
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        });
 
         // Centralized utility to reset the UI layout before a new scan runs
         function clearPreviousResults() {
