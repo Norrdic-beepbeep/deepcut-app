@@ -59,7 +59,7 @@
         @media (min-width: 1920px) {
             html { font-size: 22px; } 
         }
-        
+
     </style>
     <script>
         tailwind.config = { theme: { extend: { colors: { cBg: 'rgb(var(--c-bg) / <alpha-value>)', cText: 'rgb(var(--c-text) / <alpha-value>)', cCard: 'rgb(var(--c-card) / <alpha-value>)', cAcc1: 'rgb(var(--c-acc1) / <alpha-value>)', cAcc2: 'rgb(var(--c-acc2) / <alpha-value>)', cAcc3: 'rgb(var(--c-acc3) / <alpha-value>)', cSuccess: 'rgb(var(--c-success) / <alpha-value>)', cMuted: 'rgb(var(--c-muted) / <alpha-value>)', cSubtext: 'rgb(var(--c-subtext) / <alpha-value>)' } } } }
@@ -936,15 +936,28 @@
                 return (b.flag_count || 0) - (a.flag_count || 0);
             });
             
-            vaultList.innerHTML = '';
-            sortedAudits.forEach(audit => {
-                const card = document.createElement('button');
-                card.className = "w-full text-left p-4 bg-cCard border-[2px] border-cText shadow-hard-sm cursor-pointer hover:bg-cBg/20 mb-3 block focus:outline-none";
-                let statusLabel = audit.status === "Flagged" ? `🚩 ${audit.flag_count} Flags` : `🌟 Clean`;
-                card.innerHTML = `<p class="font-typewriter font-bold text-xs truncate">${audit.filename}</p><div class="flex justify-between items-center mt-3"><span class="text-[9px] font-bold border border-cText bg-cBg/40 px-2 py-0.5">${audit.format}</span><span class="text-[9px] font-bold border ${audit.status === 'Flagged' ? 'border-cAcc3 text-cAcc3' : 'border-cSuccess text-cSuccess'} px-2 py-0.5">${statusLabel}</span></div>`;
-                card.addEventListener('click', () => { loadSingleAudit(audit.id); closeVault(); });
-                vaultList.appendChild(card);
-            });
+           // ... inside renderVaultList() ...
+        sortedAudits.forEach(audit => {
+            const card = document.createElement('button');
+            
+            // 1. Increased padding (p-5) and added a nice hover lift effect
+            card.className = "w-full text-left p-5 bg-cCard border-[3px] border-cText shadow-hard-sm cursor-pointer hover:bg-cBg/20 mb-4 block focus:outline-none transition-all hover:-translate-y-1 hover:shadow-hard";
+            
+            let statusLabel = audit.status === "Flagged" ? `🚩 ${audit.flag_count} Flags` : `🌟 Clean`;
+            
+            // 2. Swapped text-[9px] for text-xs, increased title to text-sm, and adjusted tag padding
+            card.innerHTML = `
+                <p class="font-typewriter font-bold text-sm truncate tracking-wide">${audit.filename}</p>
+                <div class="flex justify-between items-center mt-4">
+                    <span class="text-xs font-bold border-[2px] border-cText bg-cBg/40 px-2 py-1 uppercase tracking-widest">${audit.format}</span>
+                    <span class="text-xs font-bold border-[2px] ${audit.status === 'Flagged' ? 'border-cAcc3 text-cAcc3' : 'border-cSuccess text-cSuccess'} px-2 py-1 uppercase tracking-widest">${statusLabel}</span>
+                </div>
+            `;
+            
+            card.addEventListener('click', () => { loadSingleAudit(audit.id); closeVault(); });
+            vaultList.appendChild(card);
+        });
+        
         }
         vaultSortDropdown.addEventListener('change', renderVaultList);
 
