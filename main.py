@@ -837,10 +837,10 @@ def process_audit_in_background(job_id: str, file_path: str, filename: str, user
         
         time.sleep(2.0)
         
-        # 2. Existing Mock AI Results (Placeholders)
-        ai_anomalies = []
+        # 2. real Ai a
+        ai_anomalies = await call_openai_for_compliance(extracted_metadata)
 
-        
+
         # 3. NEW: Run the conform audit based on the actual uploaded XML text
         conform_anomalies = run_conform_audit(xml_content) if xml_content else []
 
