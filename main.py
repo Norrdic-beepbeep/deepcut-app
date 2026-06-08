@@ -31,6 +31,8 @@ if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable must be set")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week token lifespan
+PASSWORD_RESET_EXPIRE_MINUTES = 30
+APP_BASE_URL = os.getenv("APP_BASE_URL", "https://deepcut.video")
 
 
 # ==========================================
@@ -96,8 +98,21 @@ class Audit(Base):
     
     owner = relationship("User", back_populates="audits")
 
-Base.metadata.create_all(bind=engine)
+class AdminUserResponse(BaseModel):
+    id: int
+    name: Optional[str] = None
+    username: str
+    email: str
+    role: str
+    company_name: Optional[str] = None
+    is_suspended: bool
+    last_login: Optional[datetime.datetime] = None
 
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+Base.metadata.create_all(bind=engine)
 
 # ==========================================
 # 3. GLOBAL TRANSIENT JOB TRACKER & VAULT
@@ -125,6 +140,15 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+def create_password_reset_token(email: str):
+    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=PASSWORD_RESET_EXPIRE_MINUTES)
+    payload = {
+        "sub": email,
+        "purpose": "password_reset",
+        "exp": expire
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
 def get_db():
     db = SessionLocal()
     try:
@@ -149,6 +173,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
+    if user.is_suspended:
+        raise HTTPException(status_code=403, detail="Account is suspended.")
     return user
 
 
@@ -246,7 +272,7 @@ def send_welcome_email_task(recipient_email: str, username: str, company_name: s
         print(f"SMTP Error: {str(e)}")
 
 
-def send_reset_email_task(recipient_email: str, temp_password: str):
+def send_reset_email_task(recipient_email: str, reset_link: str):
     smtp_server = os.getenv("SMTP_SERVER", "smtp.resend.com") 
     smtp_port = int(os.getenv("SMTP_PORT", 587))
     smtp_user = os.getenv("SMTP_USER", "resend")
@@ -269,14 +295,14 @@ def send_reset_email_task(recipient_email: str, temp_password: str):
                 <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: bold; letter-spacing: 3px; color: #B45044;">SECURITY OVERRIDE INITIATED</p>
             </div>
             
-            <p style="font-size: 14px; line-height: 1.6;">A structural override has been authorized for your Operator account.</p>
-            <p style="font-size: 14px; line-height: 1.6;">Use the following temporary clearance code to bypass the login gate:</p>
+             <p style="font-size: 14px; line-height: 1.6;">A structural recovery request has been authorized for your Operator account.</p>
+            <p style="font-size: 14px; line-height: 1.6;">Use the secure recovery link below to set a new access code. This link expires in 30 minutes.</p>
             
-            <div style="background-color: #EAE3D2; border: 2px solid #2D2824; padding: 15px; text-align: center; margin: 20px 0;">
-                <span style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">{temp_password}</span>
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="{reset_link}" style="display: inline-block; background-color: #2D2824; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px;">RESET ACCESS CODE</a>
             </div>
             
-            <p style="font-size: 14px; line-height: 1.6;">Return to the DeepCut Engine, log in with this temporary code, and update your access parameters immediately.</p>
+            <p style="font-size: 14px; line-height: 1.6;">If you did not request this recovery, you can ignore this message. Your existing access code has not been changed.</p>
         </div>
     </body>
     </html>
@@ -449,6 +475,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     # 1. Handle non-existent users immediately
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
+    if user.is_suspended:
+        raise HTTPException(status_code=403, detail="Account is suspended.")
 
     # 2. Check for Cooldown
     now = datetime.datetime.utcnow()
@@ -504,22 +532,54 @@ def forgot_password(
         user = db.query(User).filter(User.email == email).first()
         
         if user:
-            # Generate a secure 10-character temporary password
-            alphabet = string.ascii_letters + string.digits
-            temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
-            
-            # Hash it and save it to the database immediately
-            user.hashed_password = get_password_hash(temp_password)
+            reset_token = create_password_reset_token(user.email)
+            reset_link = f"{APP_BASE_URL.rstrip('/')}/reset-password?token={reset_token}"
             user.reset_requested = True
             db.commit()
             
-            # Fire off the email silently in the background
-            background_tasks.add_task(send_reset_email_task, user.email, temp_password)
+            # Fire off the reset link silently in the background
+            background_tasks.add_task(send_reset_email_task, user.email, reset_link)
             
         return {"message": "Recovery instructions dispatched if email exists."}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+
+
+@app.post("/api/reset-password")
+def reset_password(
+    token: str = Form(...),
+    new_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("purpose") != "password_reset":
+            raise JWTError()
+        email = payload.get("sub")
+        if not email:
+            raise JWTError()
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
+
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
+        if user.is_suspended:
+            raise HTTPException(status_code=403, detail="Account is suspended.")
+
+        user.hashed_password = get_password_hash(new_password)
+        user.reset_requested = False
+        user.failed_login_attempts = 0
+        user.lockout_time = None
+        db.commit()
+        return {"message": "Access code updated securely."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Reset Error: {str(e)}")
 
 
 @app.post("/api/change-password")
@@ -551,7 +611,7 @@ def change_password(
 # ==========================================
 # 7. ADMIN ROUTES
 # ==========================================
-@app.get("/api/admin/users")
+@app.get("/api/admin/users", response_model=List[AdminUserResponse])
 def get_all_users(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
