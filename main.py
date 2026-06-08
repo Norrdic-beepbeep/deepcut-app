@@ -3,11 +3,11 @@ import shutil
 import uuid
 import datetime
 import asyncio
+import time
 from typing import List, Optional
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import string
 import secrets
 import xml.etree.ElementTree as ET
 
@@ -26,14 +26,11 @@ from jose import JWTError, jwt
 # ==========================================
 # 1. CONFIGURATION & SECURITY SETTINGS
 # ==========================================
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY environment variable must be set")
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key_for_local_dev")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week token lifespan
 PASSWORD_RESET_EXPIRE_MINUTES = 30
 APP_BASE_URL = os.getenv("APP_BASE_URL", "https://deepcut.video")
-
 
 # ==========================================
 # 2. DATABASE SETUP (SQLAlchemy)
@@ -76,10 +73,8 @@ class User(Base):
     
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
-
 class AdminLog(Base):
     __tablename__ = "deepcut_admin_logs"
-    
     id = Column(Integer, primary_key=True, index=True)
     admin_username = Column(String, nullable=False)
     action = Column(String, nullable=False)
@@ -120,7 +115,6 @@ Base.metadata.create_all(bind=engine)
 active_jobs = {}
 TEMP_UPLOAD_DIR = "tmp_uploads"
 os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
-
 
 # ==========================================
 # 4. AUTHENTICATION & TOKENS
@@ -177,13 +171,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=403, detail="Account is suspended.")
     return user
 
-
 class RoleChecker:
     def __init__(self, allowed_roles: List[str]):
         self.allowed_roles = allowed_roles
 
     def __call__(self, current_user: User = Depends(get_current_user)):
-        # If their role isn't on the VIP list, instantly block them
         if current_user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=403, 
@@ -191,7 +183,6 @@ class RoleChecker:
             )
         return current_user
 
-# Create specific bouncers you can attach to any route
 require_master = RoleChecker(["Master_Control"])
 require_admin = RoleChecker(["Master_Control", "Org_Admin"])
 
@@ -200,8 +191,6 @@ def get_current_admin(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin privileges required")
     return current_user
 
-
-# ==========================================
 # ==========================================
 # 5. FASTAPI INITIALIZATION
 # ==========================================
@@ -215,13 +204,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- ADD THIS HEARTBEAT ROUTE ---
 @app.get("/")
 @app.head("/")
 def health_check():
     return {"status": "DeepCut Engine is online and operational."}
-# --------------------------------
-
 
 # ==========================================
 # 6. EMAIL & PUBLIC ROUTES
@@ -248,13 +234,11 @@ def send_welcome_email_task(recipient_email: str, username: str, company_name: s
                 <h1 style="margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">DeepCut Engine</h1>
                 <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: bold; letter-spacing: 3px; color: #504840;">AUTHORIZED PERSONNEL ONLY</p>
             </div>
-            
             <p style="font-size: 14px; line-height: 1.6;"><strong>STATUS:</strong> CLEARANCE GRANTED</p>
             <p style="font-size: 14px; line-height: 1.6;">Operator <strong>[{username}]</strong> has been successfully provisioned under the enterprise entity: <strong>{company_name}</strong>.</p>
             <p style="font-size: 14px; line-height: 1.6;">Your structural workspace is now active. You may begin initializing compliance audits immediately.</p>
-            
             <div style="text-align: center; margin-top: 30px; border-top: 2px dashed #2D2824; padding-top: 20px;">
-                <a href="https://deepcut.video" style="display: inline-block; background-color: #40635A; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px; box-shadow: 3px 3px 0px #2D2824;">ACCESS TERMINAL ENTRANCE</a>
+                <a href="{APP_BASE_URL}" style="display: inline-block; background-color: #40635A; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px; box-shadow: 3px 3px 0px #2D2824;">ACCESS TERMINAL ENTRANCE</a>
             </div>
         </div>
     </body>
@@ -270,7 +254,6 @@ def send_welcome_email_task(recipient_email: str, username: str, company_name: s
         server.quit()
     except Exception as e:
         print(f"SMTP Error: {str(e)}")
-
 
 def send_reset_email_task(recipient_email: str, reset_link: str):
     smtp_server = os.getenv("SMTP_SERVER", "smtp.resend.com") 
@@ -294,14 +277,11 @@ def send_reset_email_task(recipient_email: str, reset_link: str):
                 <h1 style="margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">System Recovery</h1>
                 <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: bold; letter-spacing: 3px; color: #B45044;">SECURITY OVERRIDE INITIATED</p>
             </div>
-            
              <p style="font-size: 14px; line-height: 1.6;">A structural recovery request has been authorized for your Operator account.</p>
             <p style="font-size: 14px; line-height: 1.6;">Use the secure recovery link below to set a new access code. This link expires in 30 minutes.</p>
-            
             <div style="text-align: center; margin: 20px 0;">
                 <a href="{reset_link}" style="display: inline-block; background-color: #2D2824; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px;">RESET ACCESS CODE</a>
             </div>
-            
             <p style="font-size: 14px; line-height: 1.6;">If you did not request this recovery, you can ignore this message. Your existing access code has not been changed.</p>
         </div>
     </body>
@@ -317,7 +297,6 @@ def send_reset_email_task(recipient_email: str, reset_link: str):
         server.quit()
     except Exception as e:
         print(f"SMTP Error: {str(e)}")
-
 
 def send_audit_complete_email(recipient_email: str, filename: str, flag_count: int):
     smtp_server = os.getenv("SMTP_SERVER", "smtp.resend.com") 
@@ -345,7 +324,6 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
                 <h1 style="margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Audit Complete</h1>
                 <p style="margin: 5px 0 0 0; font-size: 12px; font-weight: bold; letter-spacing: 3px; color: {status_color};">{status_text}</p>
             </div>
-            
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                 <tr>
                     <td style="padding: 10px; border-bottom: 1px solid #2D2824; font-weight: bold; width: 40%;">FILE:</td>
@@ -356,11 +334,9 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
                     <td style="padding: 10px; border-bottom: 1px solid #2D2824; font-weight: bold; color: {status_color}; font-size: 18px;">{flag_count}</td>
                 </tr>
             </table>
-            
             <p style="font-size: 14px; line-height: 1.6;">The DeepCut Engine has finished processing the timeline parameters. Log in to the dashboard to review the full compliance log and AI executive summary.</p>
-            
             <div style="text-align: center; margin-top: 30px;">
-                <a href="https://deepcut.video style="display: inline-block; background-color: #2D2824; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px; box-shadow: 3px 3px 0px #D2911E;">OPEN DASHBOARD</a>
+                <a href="{APP_BASE_URL}" style="display: inline-block; background-color: #2D2824; color: #FDFBF7; text-decoration: none; padding: 12px 24px; font-weight: bold; border: 2px solid #2D2824; letter-spacing: 2px; box-shadow: 3px 3px 0px #D2911E;">OPEN DASHBOARD</a>
             </div>
         </div>
     </body>
@@ -376,7 +352,6 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
         server.quit()
     except Exception as e:
         print(f"SMTP Error: {str(e)}")
-
 
 @app.post("/api/register")
 def register_user(
@@ -397,15 +372,12 @@ def register_user(
     db: Session = Depends(get_db)
 ):
     try:
-        # 1. Check if username or email is already taken
         existing_user = db.query(User).filter((User.email == email) | (User.username == username)).first()
         if existing_user:
             raise HTTPException(status_code=400, detail="Email or Username already registered.")
 
-        # 2. Hash the secure password
         hashed_pw = get_password_hash(password)
 
-        # 3. Build the COMPLETE operator profile
         new_user = User(
             name=name,
             username=username,
@@ -422,12 +394,10 @@ def register_user(
             country=country
         )
         
-        # 4. Save to database
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         
-        # 5. Dispatch the newly styled HTML welcome email
         background_tasks.add_task(send_welcome_email_task, new_user.email, new_user.username, new_user.company_name)
         
         return {"message": "Enterprise account successfully created."}
@@ -437,48 +407,16 @@ def register_user(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Registration Error: {str(e)}")
-
-def register_user(
-    background_tasks: BackgroundTasks, # <--- ADD THIS TO THE FUNCTION ARGUMENTS
-    name: str = Form(...),
-    username: str = Form(...),
-    # ... other arguments ...
-):
-    try:
-        # ... your existing check user and hash password logic ...
-
-        new_user = User(
-            # ... your existing user mapping ...
-        )
-        
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        
-        # --- NEW CODE: DISPATCH THE HTML WELCOME EMAIL ---
-        background_tasks.add_task(send_welcome_email_task, new_user.email, new_user.username, new_user.company_name)
-        # -------------------------------------------------
-        
-        return {"message": "Enterprise account successfully created."}
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Registration Error: {str(e)}")
-
 
 @app.post("/api/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter((User.username == form_data.username) | (User.email == form_data.username)).first()
     
-    # 1. Handle non-existent users immediately
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     if user.is_suspended:
         raise HTTPException(status_code=403, detail="Account is suspended.")
 
-    # 2. Check for Cooldown
     now = datetime.datetime.utcnow()
     if user.lockout_time and user.lockout_time > now:
         wait_time = int((user.lockout_time - now).total_seconds() / 60)
@@ -487,27 +425,17 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             detail=f"Account locked. Cooldown active. Try again in {wait_time} minutes."
         )
 
-    # 3. Check password
     if not verify_password(form_data.password, user.hashed_password):
         user.failed_login_attempts += 1
-
-        print(
-            f"Failed login: {user.username}, "
-            f"attempts={user.failed_login_attempts}"
-        )
+        print(f"Failed login: {user.username}, attempts={user.failed_login_attempts}")
 
         if user.failed_login_attempts >= 5:
             user.lockout_time = now + datetime.timedelta(minutes=2)
             print(f"LOCKED UNTIL: {user.lockout_time}")
 
         db.commit()
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password"
-        )
-
-    # 4. Successful login: Reset counters
     user.failed_login_attempts = 0
     user.lockout_time = None
     user.last_login = now
@@ -530,21 +458,17 @@ def forgot_password(
 ):
     try:
         user = db.query(User).filter(User.email == email).first()
-        
         if user:
             reset_token = create_password_reset_token(user.email)
             reset_link = f"{APP_BASE_URL.rstrip('/')}/reset-password?token={reset_token}"
             user.reset_requested = True
             db.commit()
-            
-            # Fire off the reset link silently in the background
             background_tasks.add_task(send_reset_email_task, user.email, reset_link)
             
         return {"message": "Recovery instructions dispatched if email exists."}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
-
 
 @app.post("/api/reset-password")
 def reset_password(
@@ -581,7 +505,6 @@ def reset_password(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Reset Error: {str(e)}")
 
-
 @app.post("/api/change-password")
 def change_password(
     current_password: str = Form(...),
@@ -593,12 +516,8 @@ def change_password(
         if not verify_password(current_password, current_user.hashed_password):
             raise HTTPException(status_code=400, detail="Current access code is incorrect.")
         
-        # 1. Update to the new secure password
         current_user.hashed_password = get_password_hash(new_password)
-        
-        # 2. Uncheck the reset box in DBeaver!
         current_user.reset_requested = False 
-        
         db.commit()
         return {"message": "Access code updated securely."}
     except HTTPException:
@@ -620,7 +539,6 @@ def get_all_users(
         users = db.query(User).all()
     else:
         users = db.query(User).filter(User.company_name == current_user.company_name).all()
-        
     return users
 
 @app.get("/api/admin/logs")
@@ -632,7 +550,6 @@ def get_admin_logs(
         logs = db.query(AdminLog).order_by(AdminLog.timestamp.desc()).limit(50).all()
     else:
         logs = db.query(AdminLog).filter(AdminLog.admin_username == current_user.username).order_by(AdminLog.timestamp.desc()).limit(50).all()
-        
     return logs
 
 @app.delete("/api/admin/users/{user_id}")
@@ -771,143 +688,7 @@ def get_single_audit(audit_id: str, current_user: User = Depends(get_current_use
 
 
 # ==========================================
-# 9. ASYNCHRONOUS FREE BACKGROUND AUDITOR
-# ==========================================
-def process_audit_in_background(job_id: str, file_path: str, filename: str, user_id: int):
-    global active_jobs
-    db = SessionLocal()
-    try:
-        active_jobs[job_id] = {"stage": "scan", "progress": 10, "message": "Parsing timeline XML metadata..."}
-        time_to_wait = 2.0
-        
-        import time
-        time.sleep(time_to_wait)
-        active_jobs[job_id] = {"stage": "scan", "progress": 50, "message": "Auditing raw waveforms for licensing signatures..."}
-        
-        time.sleep(time_to_wait)
-        active_jobs[job_id] = {"stage": "detect", "progress": 80, "message": "Detecting physical continuity and visual violations..."}
-        
-        time.sleep(time_to_wait)
-        
-        anomalies = [
-            {
-                "timecode": "00:01:14", 
-                "type": "High Risk", 
-                "description": "Warner Chappell music license signature matched on background track. Action required."
-            },
-            {
-                "timecode": "00:02:40", 
-                "type": "Medium Risk", 
-                "description": "Glaring lighting luminance spike exceeds broadcast standards. Continuity disruption."
-            },
-            {
-                "timecode": "00:03:05", 
-                "type": "Low Risk", 
-                "description": "Potential visual brand trademark identified on actor apparel (un-cleared logo)."
-            }
-        ]
-
-        audit_record = db.query(Audit).filter(Audit.id == job_id).first()
-        if audit_record:
-            audit_record.status = "Flagged" if len(anomalies) > 0 else "Clean"
-            audit_record.anomalies = anomalies
-            db.commit()
-
-            user = db.query(User).filter(User.id == user_id).first()
-            if user:
-                send_audit_complete_email(user.email, filename, len(anomalies))
-
-        active_jobs[job_id] = {
-            "status": "complete",
-            "filename": filename,
-            "format": "H.264 / AAC Pro",
-            "flag_count": len(anomalies),
-            "anomalies": anomalies
-        }
-
-    except Exception as e:
-        db.rollback()
-        audit_record = db.query(Audit).filter(Audit.id == job_id).first()
-        if audit_record:
-            audit_record.status = "Error"
-            db.commit()
-        active_jobs[job_id] = {"status": "error", "message": str(e)}
-    finally:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        db.close()
-
-        # ==========================================
-# 10. ENGINE DISPATCH ROUTES
-# ==========================================
-@app.post("/api/audit/start")
-async def start_audit(
-    background_tasks: BackgroundTasks,
-    file: UploadFile = File(None),
-    video_url: str = Form(None),
-    current_user: User = Depends(get_current_user)
-):
-    if not file and not video_url:
-        raise HTTPException(status_code=400, detail="No timeline file or URL provided.")
-        
-    # Generate a unique tracking ID for this specific audit
-    import uuid
-    import shutil
-    job_id = str(uuid.uuid4())
-    filename = file.filename if file else "URL_Stream"
-    file_path = f"temp_{job_id}.xml"
-    
-    # Save the incoming XML file to the server's local storage
-    if file:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    else:
-        # Placeholder for URL logic
-        with open(file_path, "w") as f:
-            f.write("<fcpxml><project name='URL_Stream'></project></fcpxml>")
-
-    # 1. Register the audit in the persistent SQLite database
-    db = SessionLocal()
-    new_audit = Audit(
-        id=job_id,
-        user_id=current_user.id,
-        filename=filename,
-        format="FCPXML Sequence",
-        status="Running"
-    )
-    db.add(new_audit)
-    db.commit()
-    db.close()
-
-    # 2. Register the audit in the live memory tracker for WebSockets
-    active_jobs[job_id] = {
-        "stage": "scan", 
-        "progress": 0, 
-        "message": "INITIALIZING..."
-    }
-
-    # 3. Fire the forensic engine in the background so the user doesn't freeze
-    background_tasks.add_task(
-        process_audit_in_background, 
-        job_id, 
-        file_path, 
-        filename, 
-        current_user.id
-    )
-
-    # Immediately hand the tracking ID back to the frontend
-    return {"task_id": job_id}
-
-
-
-    
-
-
-# ==========================================
-# 10. ENGINE DISPATCH ROUTES
-# ==========================================
-# ==========================================
-# 9. ASYNCHRONOUS FREE BACKGROUND AUDITOR
+# 9. XML PARSING & CONFORM LOGIC
 # ==========================================
 def parse_fcpxml_timeline(file_path: str):
     """Parses an FCPXML file and extracts timeline structure, clips, and hidden forensic file paths."""
@@ -930,7 +711,7 @@ def parse_fcpxml_timeline(file_path: str):
         sequence_tag = root.find('.//sequence')
         sequence_duration = sequence_tag.get('duration', '00:00:00:00') if sequence_tag is not None else '00:00:00:00'
         
-        # --- FORENSIC UPGRADE: Map all hidden original file pathways ---
+        # Forensic upgrade: Map all hidden original file pathways
         asset_map = {}
         for asset in root.findall('.//asset'):
             asset_id = asset.get('id')
@@ -945,10 +726,8 @@ def parse_fcpxml_timeline(file_path: str):
             offset = item.get('offset', '00:00:00:00')
             duration = item.get('duration', '00:00:00:00')
             
-            # Find the reference ID linking this timeline clip to its original hard drive file
             ref_id = item.get('ref')
             if not ref_id:
-                # Sometimes the reference is nested in an audio or video sub-tag
                 media_tag = item.find('*[@ref]')
                 if media_tag is not None:
                     ref_id = media_tag.get('ref')
@@ -973,8 +752,196 @@ def parse_fcpxml_timeline(file_path: str):
         return {"success": False, "error": f"Failed to parse XML: {str(e)}"}
 
 
+def run_conform_audit(xml_string: str):
+    """
+    Scans a timeline XML for technical conform errors.
+    Returns a list of anomaly dictionaries for the frontend.
+    """
+    anomalies = []
+    
+    try:
+        # Some XML files might have leading whitespaces/newlines before the declaration
+        start_index = xml_string.find('<')
+        if start_index != -1:
+            xml_string = xml_string[start_index:]
+        root = ET.fromstring(xml_string)
+    except ET.ParseError:
+        return [{"timecode": "00:00:00", "type": "High Risk - Parsing", "description": "XML file is corrupted or malformed."}]
+
+    # --- RULE 1: OFFLINE MEDIA & LOCAL PATH CHECKS ---
+    for asset in root.iter('asset'):
+        asset_id = asset.get('id', 'Unknown ID')
+        asset_name = asset.get('name', f'Asset_{asset_id}')
+        src = asset.get('src', '')
+
+        # 1A. Blank or Missing File Paths
+        if not src or src.strip() == '':
+            anomalies.append({
+                "timecode": "N/A", 
+                "type": "High Risk - Offline Media",
+                "description": f"Media Offline: The clip '{asset_name}' has a blank source pathway and cannot be conformed."
+            })
+            continue
+
+        # 1B. Local Drive References (A nightmare for post-houses)
+        if "C:/Users/" in src or "/Users/" in src or "Desktop" in src:
+            anomalies.append({
+                "timecode": "N/A",
+                "type": "Medium Risk - Local Drive Reference",
+                "description": f"Path Warning: '{asset_name}' points to a local user drive rather than a shared post-production server."
+            })
+
+    # --- RULE 2: FRAMERATE MISMATCH CHECKS ---
+    master_framerate = None
+    for format_tag in root.iter('format'):
+        fd = format_tag.get('frameDuration', '')
+        if fd:
+            master_framerate = fd
+            break 
+            
+    if master_framerate:
+        for clip in root.iter('asset-clip'):
+            clip_name = clip.get('name', 'Unknown Clip')
+            clip_fd = clip.get('tcFormat', '') 
+            
+            if clip_fd and clip_fd != master_framerate:
+                anomalies.append({
+                    "timecode": clip.get('start', 'N/A'),
+                    "type": "High Risk - Framerate Mismatch",
+                    "description": f"Timing Slip Risk: Clip '{clip_name}' has a different timebase ({clip_fd}) than the master sequence ({master_framerate})."
+                })
+
+    return anomalies
 
 
+# ==========================================
+# 10. BACKGROUND WORKER & AUDIT LOGIC
+# ==========================================
+def process_audit_in_background(job_id: str, file_path: str, filename: str, user_id: int):
+    global active_jobs
+    db = SessionLocal()
+    try:
+        active_jobs[job_id] = {"stage": "scan", "progress": 10, "message": "Parsing timeline XML metadata..."}
+        
+        # 1. Read the incoming XML content
+        xml_content = ""
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                xml_content = f.read().strip()
+                
+        time.sleep(2.0)
+        active_jobs[job_id] = {"stage": "scan", "progress": 50, "message": "Auditing raw waveforms for licensing signatures..."}
+        
+        time.sleep(2.0)
+        active_jobs[job_id] = {"stage": "detect", "progress": 80, "message": "Detecting physical continuity and visual violations..."}
+        
+        time.sleep(2.0)
+        
+        # 2. Existing Mock AI Results (Placeholders)
+        ai_anomalies = [
+            {
+                "timecode": "00:01:14", 
+                "type": "High Risk", 
+                "description": "Warner Chappell music license signature matched on background track. Action required."
+            },
+            {
+                "timecode": "00:02:40", 
+                "type": "Medium Risk", 
+                "description": "Glaring lighting luminance spike exceeds broadcast standards. Continuity disruption."
+            },
+            {
+                "timecode": "00:03:05", 
+                "type": "Low Risk", 
+                "description": "Potential visual brand trademark identified on actor apparel (un-cleared logo)."
+            }
+        ]
+
+        # 3. NEW: Run the conform audit based on the actual uploaded XML text
+        conform_anomalies = run_conform_audit(xml_content) if xml_content else []
+
+        # 4. Merge results
+        final_anomalies = ai_anomalies + conform_anomalies
+
+        audit_record = db.query(Audit).filter(Audit.id == job_id).first()
+        if audit_record:
+            audit_record.status = "Flagged" if len(final_anomalies) > 0 else "Clean"
+            audit_record.anomalies = final_anomalies
+            db.commit()
+
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                send_audit_complete_email(user.email, filename, len(final_anomalies))
+
+        active_jobs[job_id] = {
+            "status": "complete",
+            "filename": filename,
+            "format": "FCPXML Sequence",
+            "flag_count": len(final_anomalies),
+            "anomalies": final_anomalies
+        }
+
+    except Exception as e:
+        db.rollback()
+        audit_record = db.query(Audit).filter(Audit.id == job_id).first()
+        if audit_record:
+            audit_record.status = "Error"
+            db.commit()
+        active_jobs[job_id] = {"status": "error", "message": str(e)}
+    finally:
+        # Cleanup the temporary XML file
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        db.close()
+
+
+@app.post("/api/audit/start")
+async def start_audit(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(None),
+    video_url: str = Form(None),
+    current_user: User = Depends(get_current_user)
+):
+    if not file and not video_url:
+        raise HTTPException(status_code=400, detail="No timeline file or URL provided.")
+        
+    job_id = str(uuid.uuid4())
+    filename = file.filename if file else "URL_Stream"
+    file_path = f"temp_{job_id}.xml"
+    
+    if file:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    else:
+        with open(file_path, "w") as f:
+            f.write("<fcpxml><project name='URL_Stream'></project></fcpxml>")
+
+    db = SessionLocal()
+    new_audit = Audit(
+        id=job_id,
+        user_id=current_user.id,
+        filename=filename,
+        format="FCPXML Sequence",
+        status="Running"
+    )
+    db.add(new_audit)
+    db.commit()
+    db.close()
+
+    active_jobs[job_id] = {
+        "stage": "scan", 
+        "progress": 0, 
+        "message": "INITIALIZING..."
+    }
+
+    background_tasks.add_task(
+        process_audit_in_background, 
+        job_id, 
+        file_path, 
+        filename, 
+        current_user.id
+    )
+
+    return {"task_id": job_id}
 
 @app.get("/api/audit/status/{task_id}")
 def get_audit_status(
@@ -1016,7 +983,6 @@ def get_audit_status(
         "progress": job_state.get("progress", 0),
         "message": job_state.get("message", "Processing...")
     }
-
 
 @app.websocket("/ws/audit/{task_id}")
 async def websocket_audit_status(websocket: WebSocket, task_id: str):
