@@ -1221,6 +1221,42 @@
                 handleFile(file); 
             }
         });
+
+        // --- REAL DRAG & DROP SUPPORT ---
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        // Add a visual highlight when a file is hovered over the box
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => {
+                uploadZone.classList.add('bg-cAcc1/20', 'border-cAcc1');
+            }, false);
+        });
+
+        // Remove the highlight when dragged away or dropped
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => {
+                uploadZone.classList.remove('bg-cAcc1/20', 'border-cAcc1');
+            }, false);
+        });
+
+        // Handle the actual drop
+        uploadZone.addEventListener('drop', (e) => {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            
+            if (files.length) {
+                const file = files[0];
+                const MAX_SIZE = 100 * 1024 * 1024;
+                if (file.size > MAX_SIZE) {
+                    showCustomMsg("File too large. Maximum allowed size is 100MB.");
+                    return;
+                }
+                handleFile(file); // Send it to your existing handler
+            }
+        });
         
         document.getElementById('clearSelectionBtn').addEventListener('click', () => {
             fileInput.value = ''; document.getElementById('urlInput').value = '';
