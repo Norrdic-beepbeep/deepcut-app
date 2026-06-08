@@ -761,27 +761,29 @@ def parse_fcpxml_timeline(file_path: str):
                 asset_map[asset_id] = src_path
         
         clips = []
-        for item in root.findall('.//spine/*'):
-            clip_type = item.tag  
-            name = item.get('name', 'Unknown')
-            offset = item.get('offset', '00:00:00:00')
-            duration = item.get('duration', '00:00:00:00')
-            
-            ref_id = item.get('ref')
-            if not ref_id:
-                media_tag = item.find('*[@ref]')
-                if media_tag is not None:
-                    ref_id = media_tag.get('ref')
-                    
-            hidden_path = asset_map.get(ref_id, "No forensic path found")
+        for item in root.iter():
+            # Only process elements that are actually clips
+            if item.tag in ['asset-clip', 'clip', 'mc-clip', 'sync-clip', 'ref-clip']:
+                name = item.get('name', 'Unknown')
+                offset = item.get('offset', '00:00:00:00')
+                duration = item.get('duration', '00:00:00:00')
                 
-            clips.append({
-                "type": clip_type,
-                "name": name,
-                "timecode": offset,
-                "duration": duration,
-                "hidden_path": hidden_path
-            })
+                # Logic to resolve ref_id remains the same
+                ref_id = item.get('ref')
+                if not ref_id:
+                    media_tag = item.find('*[@ref]')
+                    if media_tag is not None:
+                        ref_id = media_tag.get('ref')
+                
+                hidden_path = asset_map.get(ref_id, "No forensic path found")
+                
+                clips.append({
+                    "type": item.tag,
+                    "name": name,
+                    "timecode": offset,
+                    "duration": duration,
+                    "hidden_path": hidden_path
+                })
             
         return {
             "success": True,
