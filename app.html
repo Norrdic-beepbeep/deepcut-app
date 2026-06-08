@@ -210,13 +210,29 @@
                             <label for="regPassword" class="block text-cText text-xs font-bold tracking-widest uppercase mb-1">Secure Password</label>
                             <input type="password" id="regPassword" placeholder="Create a secure password" class="w-full bg-cBg/50 border-[2px] border-cText text-cText px-4 py-3 focus:outline-none focus:bg-cBg transition-colors text-sm font-typewriter font-bold shadow-hard-sm mb-2">
                         </div>
-                        <div class="bg-cBg/30 border-[2px] border-cText p-3 shadow-inner">
-                            <ul class="space-y-2 text-xs font-typewriter font-bold" id="validationList">
-                                <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> Min 12 characters</li>
-                                <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> One uppercase letter</li>
-                                <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2"><span class="status-icon" aria-hidden="true">○</span> One special character</li>
-                            </ul>
-                        </div>
+                        <<div class="bg-cBg/30 border-[2px] border-cText p-3 shadow-inner">
+    <ul class="space-y-2 text-xs font-typewriter font-bold" id="validationList" aria-live="polite">
+        
+        <li id="reqLength" class="req-unmet transition-all duration-300 flex items-center gap-2">
+            <span class="status-icon" aria-hidden="true">○</span> 
+            <span class="sr-only status-text">Requirement not met:</span> 
+            Min 12 characters
+        </li>
+        
+        <li id="reqUpper" class="req-unmet transition-all duration-300 flex items-center gap-2">
+            <span class="status-icon" aria-hidden="true">○</span> 
+            <span class="sr-only status-text">Requirement not met:</span> 
+            One uppercase letter
+        </li>
+        
+        <li id="reqSpecial" class="req-unmet transition-all duration-300 flex items-center gap-2">
+            <span class="status-icon" aria-hidden="true">○</span> 
+            <span class="sr-only status-text">Requirement not met:</span> 
+            One special character
+        </li>
+        
+    </ul>
+</div>
                         
                         <div class="flex items-start bg-cBg/20 p-3 border-[2px] border-cText shadow-inner mt-4">
                             <input type="checkbox" id="regConsent" class="mt-1 mr-3 h-4 w-4 accent-cAcc2 border-[2px] border-cText cursor-pointer">
@@ -1024,15 +1040,28 @@
             } catch (e) { showLoginFromAnywhere(); } finally { sendResetBtn.disabled = false; sendResetBtn.textContent = "SEND RESET LINK"; }
         });
 
-        function updateRequirement(element, isMet) {
-            if (isMet) {
-                element.classList.remove('req-unmet'); element.classList.add('req-met');
-                element.querySelector('.status-icon').textContent = '●';
-            } else {
-                element.classList.remove('req-met'); element.classList.add('req-unmet');
-                element.querySelector('.status-icon').textContent = '○';
-            }
-        }
+function updateRequirement(element, isMet) {
+    // Target the hidden screen reader text specifically
+    const srText = element.querySelector('.status-text');
+    
+    if (isMet) {
+        // Update the visual styling
+        element.classList.remove('req-unmet'); 
+        element.classList.add('req-met');
+        element.querySelector('.status-icon').textContent = '●';
+        
+        // Update the hidden screen reader text
+        if (srText) srText.textContent = "Requirement met:";
+    } else {
+        // Revert the visual styling
+        element.classList.remove('req-met'); 
+        element.classList.add('req-unmet');
+        element.querySelector('.status-icon').textContent = '○';
+        
+        // Revert the hidden screen reader text
+        if (srText) srText.textContent = "Requirement not met:";
+    }
+}
 
         // VALIDATION CHECKER INCLUDING NEW FIELDS
         regPassword.addEventListener('input', (e) => {
