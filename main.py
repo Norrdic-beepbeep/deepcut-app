@@ -13,8 +13,7 @@ from email.mime.multipart import MIMEMultipart
 import secrets
 import xml.etree.ElementTree as ET
 
-
-from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -73,7 +72,7 @@ class User(Base):
     role = Column(String, default="Operator")
     failed_login_attempts = Column(Integer, default=0)
     lockout_time = Column(DateTime, nullable=True)
-    
+
     audits = relationship("Audit", back_populates="owner", cascade="all, delete-orphan")
 
 class AdminLog(Base):
@@ -93,7 +92,7 @@ class Audit(Base):
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     status = Column(String, nullable=False) 
     anomalies = Column(SQLA_JSON, nullable=True) 
-    
+
     owner = relationship("User", back_populates="audits")
 
 class AdminUserResponse(BaseModel):
@@ -166,7 +165,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    
+
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
@@ -211,44 +210,6 @@ app.add_middleware(
 @app.head("/")
 def health_check():
     return {"status": "DeepCut Engine is online and operational."}
-
-
-def get_ai_compliance_audit(xml_content):
-    """
-    Sends the timeline XML to OpenAI to detect copyright, 
-    continuity, and broadcast standard issues.
-    """
-    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    
-    # We truncate the XML to keep token costs down and stay within limits
-    truncated_xml = xml_content[:15000] 
-    
-    system_prompt = """
-    You are a senior broadcast compliance officer. Analyze this video timeline metadata.
-    Detect: 
-    1. Copyright/Music licensing issues.
-    2. Continuity errors (lighting, continuity).
-    3. Broadcast standard violations.
-    
-    Return ONLY a JSON object with a key "anomalies" which is a list of objects 
-    containing "timecode", "type", and "description".
-    """
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Timeline XML: {truncated_xml}"}
-            ],
-            response_format={"type": "json_object"}
-        )
-        
-        result = json.loads(response.choices[0].message.content)
-        return result.get("anomalies", [])
-    except Exception as e:
-        print(f"AI Audit Error: {e}")
-        return [] # Return empty list if AI fails so the rest of the audit proceeds
 
 # ==========================================
 # 6. EMAIL & PUBLIC ROUTES
@@ -351,10 +312,10 @@ def send_audit_complete_email(recipient_email: str, filename: str, flag_count: i
     msg = MIMEMultipart("alternative")
     msg['From'] = f"DeepCut Engine <{sender_email}>"
     msg['To'] = recipient_email
-    
+
     status_text = "ACTION REQUIRED" if flag_count > 0 else "CLEAN"
     status_color = "#B45044" if flag_count > 0 else "#4B7350"
-    
+
     msg['Subject'] = f"DeepCut Audit Complete [{status_text}]: {filename}"
 
     html_body = f"""
@@ -434,15 +395,15 @@ def register_user(
             postcode=postcode,
             country=country
         )
-        
+
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        
+
         background_tasks.add_task(send_welcome_email_task, new_user.email, new_user.username, new_user.company_name)
-        
+
         return {"message": "Enterprise account successfully created."}
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -452,7 +413,7 @@ def register_user(
 @app.post("/api/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter((User.username == form_data.username) | (User.email == form_data.username)).first()
-    
+
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     if user.is_suspended:
@@ -505,7 +466,7 @@ def forgot_password(
             user.reset_requested = True
             db.commit()
             background_tasks.add_task(send_reset_email_task, user.email, reset_link)
-            
+
         return {"message": "Recovery instructions dispatched if email exists."}
     except Exception as e:
         db.rollback()
@@ -556,7 +517,7 @@ def change_password(
     try:
         if not verify_password(current_password, current_user.hashed_password):
             raise HTTPException(status_code=400, detail="Current access code is incorrect.")
-        
+
         current_user.hashed_password = get_password_hash(new_password)
         current_user.reset_requested = False 
         db.commit()
@@ -602,17 +563,17 @@ def delete_user(
     user_to_delete = db.query(User).filter(User.id == user_id).first()
     if not user_to_delete:
         raise HTTPException(status_code=404, detail="Operator not found")
-        
+
     if current_user.role == "Org_Admin":
         if getattr(user_to_delete, 'company_name', None) != getattr(current_user, 'company_name', None):
             raise HTTPException(
                 status_code=403, 
                 detail="Security Override: Cannot modify operators outside your organization."
             )
-            
+
     target_username_cache = user_to_delete.username
     db.delete(user_to_delete)
-    
+
     log_entry = AdminLog(
         admin_username=current_user.username,
         action="PURGED_OPERATOR",
@@ -620,7 +581,7 @@ def delete_user(
     )
     db.add(log_entry)
     db.commit()
-    
+
     return {"message": f"Operator {user_id} structurally purged."}
 
 @app.post("/api/admin/users/{user_id}/reset-password")
@@ -632,7 +593,7 @@ def admin_reset_password(
     target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="Operator not found")
-        
+
     if current_user.role == "Org_Admin":
         if getattr(target_user, 'company_name', None) != getattr(current_user, 'company_name', None):
             raise HTTPException(
@@ -651,7 +612,7 @@ def admin_reset_password(
     )
     db.add(log_entry)
     db.commit()
-    
+
     return {"message": "Access code overridden.", "temporary_code": temporary_code}
 
 @app.post("/api/admin/users/create")
@@ -685,9 +646,9 @@ def admin_create_user(
         postcode=current_user.postcode,
         country=current_user.country
     )
-    
+
     db.add(new_user)
-    
+
     log_entry = AdminLog(
         admin_username=current_user.username,
         action="PROVISIONED_OPERATOR",
@@ -695,7 +656,7 @@ def admin_create_user(
     )
     db.add(log_entry)
     db.commit()
-    
+
     return {"message": "Operator provisioned.", "temporary_password": temp_password}
 
 
@@ -736,22 +697,22 @@ def parse_fcpxml_timeline(file_path: str):
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             raw_content = f.read().strip()
-            
+
         if not raw_content:
             return {"success": False, "error": "The uploaded XML file is empty."}
-            
+
         start_index = raw_content.find('<')
         if start_index != -1:
             raw_content = raw_content[start_index:]
 
         root = ET.fromstring(raw_content)
-        
+
         project_tag = root.find('.//project')
         project_name = project_tag.get('name', 'Unknown Project') if project_tag is not None else 'Unknown Project'
-        
+
         sequence_tag = root.find('.//sequence')
         sequence_duration = sequence_tag.get('duration', '00:00:00:00') if sequence_tag is not None else '00:00:00:00'
-        
+
         # Forensic upgrade: Map all hidden original file pathways
         asset_map = {}
         for asset in root.findall('.//asset'):
@@ -759,24 +720,22 @@ def parse_fcpxml_timeline(file_path: str):
             src_path = asset.get('src', 'Unknown Path')
             if asset_id:
                 asset_map[asset_id] = src_path
-        
+
         clips = []
         for item in root.iter():
-            # Only process elements that are actually clips
             if item.tag in ['asset-clip', 'clip', 'mc-clip', 'sync-clip', 'ref-clip']:
                 name = item.get('name', 'Unknown')
                 offset = item.get('offset', '00:00:00:00')
                 duration = item.get('duration', '00:00:00:00')
-                
-                # Logic to resolve ref_id remains the same
+
                 ref_id = item.get('ref')
                 if not ref_id:
                     media_tag = item.find('*[@ref]')
                     if media_tag is not None:
                         ref_id = media_tag.get('ref')
-                
+
                 hidden_path = asset_map.get(ref_id, "No forensic path found")
-                
+
                 clips.append({
                     "type": item.tag,
                     "name": name,
@@ -784,7 +743,7 @@ def parse_fcpxml_timeline(file_path: str):
                     "duration": duration,
                     "hidden_path": hidden_path
                 })
-            
+
         return {
             "success": True,
             "project_name": project_name,
@@ -796,14 +755,10 @@ def parse_fcpxml_timeline(file_path: str):
 
 
 def run_conform_audit(xml_string: str):
-    """
-    Scans a timeline XML for technical conform errors.
-    Returns a list of anomaly dictionaries for the frontend.
-    """
+    """Scans a timeline XML for technical conform errors."""
     anomalies = []
-    
+
     try:
-        # Some XML files might have leading whitespaces/newlines before the declaration
         start_index = xml_string.find('<')
         if start_index != -1:
             xml_string = xml_string[start_index:]
@@ -817,7 +772,6 @@ def run_conform_audit(xml_string: str):
         asset_name = asset.get('name', f'Asset_{asset_id}')
         src = asset.get('src', '')
 
-        # 1A. Blank or Missing File Paths
         if not src or src.strip() == '':
             anomalies.append({
                 "timecode": "N/A", 
@@ -826,7 +780,6 @@ def run_conform_audit(xml_string: str):
             })
             continue
 
-        # 1B. Local Drive References (A nightmare for post-houses)
         if "C:/Users/" in src or "/Users/" in src or "Desktop" in src:
             anomalies.append({
                 "timecode": "N/A",
@@ -841,12 +794,12 @@ def run_conform_audit(xml_string: str):
         if fd:
             master_framerate = fd
             break 
-            
+
     if master_framerate:
         for clip in root.iter('asset-clip'):
             clip_name = clip.get('name', 'Unknown Clip')
             clip_fd = clip.get('tcFormat', '') 
-            
+
             if clip_fd and clip_fd != master_framerate:
                 anomalies.append({
                     "timecode": clip.get('start', 'N/A'),
@@ -857,42 +810,29 @@ def run_conform_audit(xml_string: str):
     return anomalies
 
 
-    
-
-
 # ==========================================
 # 10. BACKGROUND WORKER & AUDIT LOGIC
 # ==========================================
-# 1. Change 'def' to 'async def'
 async def process_audit_in_background(job_id: str, file_path: str, filename: str, user_id: int):
     global active_jobs
     db = SessionLocal()
     try:
         active_jobs[job_id] = {"stage": "scan", "progress": 10, "message": "Parsing timeline XML metadata..."}
-        
-        # 1. Read the incoming XML content
+
         xml_content = ""
         if os.path.exists(file_path):
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 xml_content = f.read().strip()
 
-        # 2. Extract the metadata for the AI
-        # Use your parse_fcpxml_timeline helper to get the clips data
         parsed_data = parse_fcpxml_timeline(file_path)
         extracted_metadata = parsed_data.get("clips", []) if parsed_data["success"] else []
-        
+
         active_jobs[job_id] = {"stage": "scan", "progress": 50, "message": "Auditing for licensing signatures..."}
-        
-        # 3. Call the real AI
+
         ai_anomalies = await call_openai_for_compliance(extracted_metadata)
-        
-        # 4. Run the conform audit
         conform_anomalies = run_conform_audit(xml_content) if xml_content else []
 
-        # 5. Merge results
         final_anomalies = ai_anomalies + conform_anomalies
-
-        # ... (save to DB and finalize as before) ...
 
         audit_record = db.query(Audit).filter(Audit.id == job_id).first()
         if audit_record:
@@ -902,7 +842,8 @@ async def process_audit_in_background(job_id: str, file_path: str, filename: str
 
             user = db.query(User).filter(User.id == user_id).first()
             if user:
-                send_audit_complete_email(user.email, filename, len(final_anomalies))
+                # FIX: Offload the blocking SMTP call to a separate thread
+                await asyncio.to_thread(send_audit_complete_email, user.email, filename, len(final_anomalies))
 
         active_jobs[job_id] = {
             "status": "complete",
@@ -920,18 +861,14 @@ async def process_audit_in_background(job_id: str, file_path: str, filename: str
             db.commit()
         active_jobs[job_id] = {"status": "error", "message": str(e)}
     finally:
-        # Cleanup the temporary XML file
         if os.path.exists(file_path):
             os.remove(file_path)
         db.close()
 
 async def call_openai_for_compliance(extracted_metadata):
-    """
-    Sends the extracted clip metadata to OpenAI and waits for a JSON response.
-    """
-    # Initialize the Async client
+    """Sends the extracted clip metadata to OpenAI and waits for a JSON response."""
     client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    
+
     system_prompt = """
     You are a senior broadcast compliance officer. Analyze this video timeline metadata.
     Detect: 
@@ -952,15 +889,12 @@ async def call_openai_for_compliance(extracted_metadata):
             ],
             response_format={"type": "json_object"}
         )
-        
-        # Parse the JSON string into a Python list
+
         return json.loads(response.choices[0].message.content).get("anomalies", [])
-    
+
     except Exception as e:
         print(f"--- AI API ERROR: {e} ---")
-        return [] # Return empty list so the app doesn't crash if AI fails
-
-        
+        return []
 
 
 @app.post("/api/audit/start")
@@ -972,11 +906,11 @@ async def start_audit(
 ):
     if not file and not video_url:
         raise HTTPException(status_code=400, detail="No timeline file or URL provided.")
-        
+
     job_id = str(uuid.uuid4())
     filename = file.filename if file else "URL_Stream"
     file_path = f"temp_{job_id}.xml"
-    
+
     if file:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -1088,39 +1022,44 @@ async def websocket_audit_status(websocket: WebSocket, task_id: str):
 
         await websocket.accept()
 
-        while True:
-            job_state = active_jobs.get(task_id)
+        # FIX: Wrap the loop to catch client disconnects gracefully
+        try:
+            while True:
+                job_state = active_jobs.get(task_id)
 
-            if not job_state:
+                if not job_state:
+                    await websocket.send_json({
+                        "status": audit_record.status.lower(),
+                        "result": {
+                            "filename": audit_record.filename,
+                            "format": audit_record.format,
+                            "anomalies": audit_record.anomalies or []
+                        }
+                    })
+                    break
+
+                if job_state.get("status") == "complete":
+                    await websocket.send_json({"status": "complete", "result": job_state})
+                    break
+
+                if job_state.get("status") == "error":
+                    await websocket.send_json({
+                        "status": "error",
+                        "message": job_state.get("message", "Audit failed.")
+                    })
+                    break
+
                 await websocket.send_json({
-                    "status": audit_record.status.lower(),
-                    "result": {
-                        "filename": audit_record.filename,
-                        "format": audit_record.format,
-                        "anomalies": audit_record.anomalies or []
-                    }
+                    "status": "progress",
+                    "stage": job_state.get("stage", "scan"),
+                    "progress": job_state.get("progress", 0),
+                    "message": job_state.get("message", "Processing...")
                 })
-                break
 
-            if job_state.get("status") == "complete":
-                await websocket.send_json({"status": "complete", "result": job_state})
-                break
-
-            if job_state.get("status") == "error":
-                await websocket.send_json({
-                    "status": "error",
-                    "message": job_state.get("message", "Audit failed.")
-                })
-                break
-
-            await websocket.send_json({
-                "status": "progress",
-                "stage": job_state.get("stage", "scan"),
-                "progress": job_state.get("progress", 0),
-                "message": job_state.get("message", "Processing...")
-            })
-
-            await asyncio.sleep(0.5)
+                await asyncio.sleep(0.5)
+        except (WebSocketDisconnect, RuntimeError):
+            # Client disconnected safely or connection was aborted
+            pass
 
     except JWTError:
         await websocket.close(code=1008)
@@ -1153,10 +1092,8 @@ def generate_summary(payload: ReportPayload, current_user: User = Depends(get_cu
 
 @app.post("/api/ai/suggest")
 async def suggest_fix(payload: SuggestPayload, current_user: User = Depends(get_current_user)):
-    # 1. Initialize the Async OpenAI Client
     client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    
-    # 2. Give the AI a specific post-production persona
+
     prompt = f"""
     You are an expert post-production supervisor and conform artist. 
     An editor has encountered the following anomaly in their timeline XML:
@@ -1166,18 +1103,17 @@ async def suggest_fix(payload: SuggestPayload, current_user: User = Depends(get_
     
     Provide a highly specific, technical, and actionable strategy (1-3 sentences maximum) on how to fix this issue in NLEs like Premiere Pro, Final Cut Pro, or DaVinci Resolve. Do not use generic filler.
     """
-    
+
     try:
-        # 3. Call the AI
         response = await client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3 # Keep it analytical, not creative
+            temperature=0.3
         )
-        
+
         strategy = response.choices[0].message.content.strip()
         return {"text": strategy}
-        
+
     except Exception as e:
         print(f"Suggestion AI Error: {e}")
         return {"text": "Secure broker connection failed. Unable to generate dynamic strategy at this time."}
